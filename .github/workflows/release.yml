@@ -1,7 +1,7 @@
 # Nieuwe versie uitbrengen:  git tag v2.0.0 && git push origin v2.0.0
 # Maakt een GitHub-release met de zips (programma + WordPress-plugin) en een
 # Docker-image voor x86 en ARM (Raspberry Pi) op ghcr.io/<eigenaar>/innli,
-# en publiceert het npm-pakket innli.
+# en publiceert het npm-pakket innli-stays.
 name: Release
 on:
   push:
