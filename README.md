@@ -162,7 +162,7 @@ curl -X POST localhost:3000/api/admin/agents -H "authorization: Bearer $INNLI_AD
 
 ## Onderzoek
 
-INNLI is een **open onderzoeksproject**: hoe vinden en boeken AI-agents kleine accommodaties eerlijk, veilig en zuinig, zonder tussenpersoon? De onderzoeksvragen, meetmethodes en eerste resultaten staan in [research/](research/README.md). Alles is reproduceerbaar met `npm run measure` en `npm run research:injection`. We zoeken financiering bij publieke fondsen; verdienen komt later en houdt het project open ([research/funding/](research/funding/overzicht.md)). Citeren: [CITATION.cff](CITATION.cff).
+INNLI is een **open onderzoeksproject**: hoe vinden en boeken AI-agents kleine accommodaties eerlijk, veilig en zuinig, zonder tussenpersoon? De onderzoeksvragen, meetmethodes en eerste resultaten staan in [research/](research/README.md). Alles is reproduceerbaar met `npm run measure` en `npm run research:injection`. Het project wordt nu uit eigen middelen gefinancierd; fondsen en verdienen zijn opties voor later en houden het project open ([research/funding/](research/funding/overzicht.md)). Citeren: [CITATION.cff](CITATION.cff).
 
 ## Steun INNLI
 

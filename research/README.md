@@ -1,6 +1,6 @@
 # INNLI als open onderzoeksproject
 
-**Status (oktober 2026):** INNLI is een open onderzoeksproject. We zoeken financiering bij publieke en maatschappelijke fondsen. Er is nog geen financiering toegekend. Verdienen komt later, en alleen op manieren die het open karakter niet aantasten (zie [funding/overzicht.md](funding/overzicht.md)).
+**Status (oktober 2026):** INNLI is een open onderzoeksproject onder de MIT-licentie, gefinancierd uit eigen middelen van de maker. Er is geen externe financiering. Publieke fondsen zijn een optie voor later; verdienen ook, en alleen op manieren die het open karakter niet aantasten (zie [funding/overzicht.md](funding/overzicht.md)).
 
 ## De vraag
 
@@ -43,4 +43,4 @@ Zie [../CITATION.cff](../CITATION.cff).
 
 ---
 
-**English summary.** INNLI is an open research project on how AI agents can find and book small independent accommodations honestly, safely and efficiently, without an intermediary owning the data or the customer. It has six questions: efficiency, prompt-injection safety, consent, matchmaking through stay wishes, trust signals and discoverability. The first results are reproducible with `npm run measure` and `npm run research:injection`. The project is seeking funding, and none has been awarded yet. Monetisation comes later and will keep the project open.
+**English summary.** INNLI is an open research project on how AI agents can find and book small independent accommodations honestly, safely and efficiently, without an intermediary owning the data or the customer. It has six questions: efficiency, prompt-injection safety, consent, matchmaking through stay wishes, trust signals and discoverability. The first results are reproducible with `npm run measure` and `npm run research:injection`. It is MIT-licensed and self-funded by its maker; there is no external funding. Grants and monetisation are options for later, and will keep the project open.

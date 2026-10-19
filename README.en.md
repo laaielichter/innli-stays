@@ -136,7 +136,7 @@ More documentation (in Dutch): [docs/](docs/).
 
 ## Research
 
-INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. We are seeking public funding. Monetisation comes later and keeps the project open. To cite INNLI, see [CITATION.cff](CITATION.cff).
+INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. It is self-funded for now; grants and monetisation are options for later and will keep the project open. To cite INNLI, see [CITATION.cff](CITATION.cff).
 
 ## Support INNLI
 

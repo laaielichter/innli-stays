@@ -2,20 +2,24 @@
 
 Gecontroleerd op 19 oktober 2026. Fondsen veranderen vaak: controleer de officiële pagina voordat je aanvraagt.
 
+## Nu
+
+INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe financiering, en de licentie blijft MIT. Onderstaande fondsen en verdienmodellen zijn opties voor later, geen lopende aanvragen.
+
 ## Fondsen
 
 | Fonds | Past het? | Bedrag | Wie mag aanvragen | Status | Wat te doen |
 |---|---|---|---|---|---|
-| **SIDN fonds – Pioniers** | Goed: open internet, digitale autonomie, kennis delen | Tot € 10.000, project van maximaal 6 maanden | Ook natuurlijke personen (geen KvK nodig) | Doorlopend open, antwoord binnen ongeveer 6 weken | **Nu aanvragen**, met het concept in [sidn-pioniers.md](sidn-pioniers.md) |
+| **SIDN fonds – Pioniers** | Goed: open internet, digitale autonomie, kennis delen | Tot € 10.000, project van maximaal 6 maanden | Ook natuurlijke personen (geen KvK nodig) | Doorlopend open, antwoord binnen ongeveer 6 weken | Concept klaar in [sidn-pioniers.md](sidn-pioniers.md) |
 | **NLnet (NGI Zero)** | Zeer goed: open internettechniek, individuen welkom | Meestal € 5.000–50.000 per project | Ook individuen | Nieuwe aanvragen gepauzeerd sinds juni 2026. NLnet kondigde aan na de zomer nieuwe programma's te openen ("Open Internet Stack"). | Concept klaar in [nlnet.md](nlnet.md). Indienen zodra er een call open is. |
 | **SIDN fonds – themacalls** | Mogelijk, bij het thema "Sterk internet" | Tot € 200.000 | Consortia met een kennisinstelling en een bedrijf | De call van 2026 sloot op 23 februari. Een tweede call voor 2026 is aangekondigd, zonder datum. | Partner zoeken bij een hogeschool of universiteit (toerisme of informatica) |
 | **Amazon Research Awards (Agentic AI)** | Inhoudelijk goed | Ongeveer $ 50.000–70.000 plus AWS-tegoed | Alleen onderzoekers van universiteiten | Deadline 4 november 2026 | Alleen via een universitaire partner |
 | **AI Grant (open source)** | Mogelijk | $ 5.000–50.000, of rekenkracht | Individuen en teams | Deadline onbekend | Voorwaarden controleren |
 
-**Volgorde:**
-1. Nu de SIDN Pioniers-aanvraag.
-2. NLnet volgen en indienen bij heropening.
-3. Een universitaire partner zoeken voor grotere calls.
+**Volgorde, wanneer het zover is:**
+1. De SIDN Pioniers-aanvraag.
+2. NLnet, zodra er weer een oproep open is.
+3. Een universitaire partner voor grotere calls.
 4. Donaties via de *Sponsor*-knop.
 
 ## Later verdienen
