@@ -20,6 +20,10 @@ Node.js 22.18 of nieuwer. Er is geen build-stap: Node draait de TypeScript direc
 - **Agents:** probeer INNLI met jouw agent en meld wat beter kan. Zie [agent-kit](agent-kit/README.md).
 - **Fouten:** open een issue met je versie (`/health`) en wat je deed.
 
+## Open source, ook in de toekomst
+
+INNLI blijft MIT. Bijdragen worden nooit later onder een gesloten licentie gebracht, en er komt geen betaalde versie met functies die hier ontbreken.
+
 ## Afspraken
 
 - Houd onbekende gegevens onbekend: INNLI verzint nooit iets voor een agent.

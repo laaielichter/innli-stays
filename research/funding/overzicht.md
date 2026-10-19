@@ -24,12 +24,17 @@ INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe fin
 
 ## Later verdienen
 
-INNLI blijft open source (MIT). Verdienen komt later, en alleen op manieren die gebruikers niet opsluiten:
+INNLI is en blijft open source. Dat is een vaste keuze, geen tussenfase:
+- **Licentie:** alle code blijft MIT. Er komt geen gesloten "pro"-versie en er gaan geen functies achter een betaalmuur.
+- **Standaarden:** het paspoort, de toestemmings-hash en de uitwisseling van verblijfswensen worden open specificaties die iedereen mag implementeren.
+- **Gegevens:** die blijven bij de eigenaar. Iedereen kan een eigen installatie of een eigen gids draaien.
+
+Verdienen komt later, en alleen met diensten rond de open software:
 
 - **Gehoste installatie** voor wie geen Raspberry Pi of server wil, voor een vast bedrag per maand. De software blijft gratis zelf te draaien.
 - **Installatie en ondersteuning** voor accommodaties en hotels.
 - **Koppelingen met boekingssystemen** die een PMS-leverancier laat bouwen of certificeren.
-- **Een besloten gids** voor ketens of regio's. De code kan al alleen installaties met een sleutel opnemen (`GIDS_LICENTIE_VEREIST=1`, `tools/license.ts`).
+- **Een eigen gids beheren** voor een keten, regio of toeristische organisatie. De code daarvoor is open: `GIDS_LICENTIE_VEREIST=1` en `tools/license.ts`.
 - **Donaties en sponsoring** door agentplatforms die INNLI gebruiken.
 
 Wat we níet doen: commissie per boeking, gegevens van gasten of eigenaren verkopen, of advertentieplekken in zoekresultaten. Dat zou de onafhankelijkheid ondermijnen waar het project om draait.
