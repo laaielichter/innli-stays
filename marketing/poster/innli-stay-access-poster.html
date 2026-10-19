@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1080">
+<title>INNLI Stay Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5efe4;
+    --ink: #17202a;
+    --terra: #d9643a;
+    --sage: #7a9a7e;
+    --night: #101820;
+    --glow: #ffcf8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #2a2a2a; }
+  .poster {
+    width: 1080px; height: 1350px; position: relative; overflow: hidden;
+    background: var(--cream); color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+  }
+  .grain { position: absolute; inset: 0; opacity: .35; mix-blend-mode: multiply; pointer-events: none; }
+
+  .top { position: absolute; top: 64px; left: 72px; right: 72px; display: flex; justify-content: space-between; align-items: center; }
+  .logo { font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 44px; letter-spacing: .04em; }
+  .logo span { color: var(--terra); }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: .14em; text-transform: uppercase;
+         border: 2px solid var(--ink); border-radius: 999px; padding: 10px 20px; }
+
+  .hook { position: absolute; top: 168px; left: 72px; font-family: 'JetBrains Mono', monospace; font-size: 22px;
+          color: var(--terra); letter-spacing: .06em; }
+  h1 { position: absolute; top: 210px; left: 68px; right: 72px;
+       font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 104px; line-height: .96; letter-spacing: -.025em; }
+  h1 em { font-style: italic; font-weight: 500; color: var(--terra); }
+
+  .scene { position: absolute; left: 0; right: 0; top: 450px; height: 560px; }
+
+  .bubble {
+    position: absolute; background: var(--night); color: #e9eef2; border-radius: 22px;
+    font-family: 'JetBrains Mono', monospace; font-size: 19px; line-height: 1.5; padding: 20px 26px;
+    box-shadow: 0 18px 40px rgba(16,24,32,.25);
+  }
+  .bubble .who { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); margin-bottom: 6px; }
+  .b1 { left: 64px; top: 0px; width: 400px; border-bottom-left-radius: 4px; }
+  .b2 { right: 48px; top: 250px; width: 330px; background: #fff; color: var(--ink); border: 2px solid var(--ink); border-bottom-right-radius: 4px; }
+  .b2 .who { color: var(--terra); }
+  .b2 .k { color: var(--sage); }
+  .b2 .ok { color: var(--terra); font-weight: 600; }
+
+  .bottom { position: absolute; left: 72px; right: 72px; bottom: 64px; }
+  .sub { font-size: 30px; line-height: 1.32; font-weight: 500; max-width: 760px; }
+  .sub b { font-weight: 700; }
+  .cta { margin-top: 28px; display: flex; align-items: center; justify-content: space-between; }
+  .btn { background: var(--ink); color: var(--cream); font-weight: 700; font-size: 26px; padding: 22px 34px; border-radius: 999px; }
+  .btn span { color: var(--glow); }
+  .chips { display: flex; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 16px; }
+  .chips div { border: 2px solid var(--ink); border-radius: 8px; padding: 8px 12px; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <svg class="grain" width="1080" height="1350"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .4  0 0 0 0 .35  0 0 0 0 .3  0 0 0 .25 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+  <div class="top">
+    <div class="logo">INN<span>LI</span></div>
+    <div class="tag">Stay Access</div>
+  </div>
+
+  <div class="hook">// guests don't scroll anymore. their agents do.</div>
+  <h1>Your stay,<br><em>bookable</em> by AI&nbsp;agents.</h1>
+
+  <div class="scene">
+    <svg width="1080" height="560" viewBox="0 40 1080 560" style="position:absolute;inset:0">
+      <defs>
+        <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffcf8a"/><stop offset="1" stop-color="#ffcf8a" stop-opacity="0"/>
+        </radialGradient>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="2" fill="#17202a" opacity=".18"/></pattern>
+      </defs>
+      <!-- signal rings -->
+      <circle cx="540" cy="350" r="300" fill="url(#sun)" opacity=".7"/>
+      <g fill="none" stroke="#d9643a" stroke-width="2">
+        <circle cx="540" cy="350" r="190" opacity=".55" stroke-dasharray="4 10"/>
+        <circle cx="540" cy="350" r="250" opacity=".35" stroke-dasharray="4 14"/>
+        <circle cx="540" cy="350" r="310" opacity=".2" stroke-dasharray="4 18"/>
+      </g>
+      <!-- hill -->
+      <path d="M0 560 C 220 470, 420 500, 560 520 C 760 548, 900 470, 1080 500 L1080 640 L0 640 Z" fill="#7a9a7e"/>
+      <path d="M0 600 C 260 560, 520 600, 700 585 C 860 572, 980 590, 1080 580 L1080 640 L0 640 Z" fill="#17202a" opacity=".85"/>
+      <!-- B&B house -->
+      <g transform="translate(330 250)">
+        <rect x="10" y="100" width="240" height="190" fill="#f5efe4" stroke="#17202a" stroke-width="5"/>
+        <rect x="10" y="100" width="240" height="190" fill="url(#dots)"/>
+        <path d="M-14 112 L130 10 L274 112 Z" fill="#d9643a" stroke="#17202a" stroke-width="5" stroke-linejoin="round"/>
+        <rect x="186" y="28" width="30" height="58" fill="#17202a"/>
+        <!-- windows lit -->
+        <rect x="38" y="138" width="56" height="56" fill="#ffcf8a" stroke="#17202a" stroke-width="5"/>
+        <rect x="166" y="138" width="56" height="56" fill="#ffcf8a" stroke="#17202a" stroke-width="5"/>
+        <path d="M66 138 V194 M38 166 H94 M194 138 V194 M166 166 H222" stroke="#17202a" stroke-width="4"/>
+        <!-- door -->
+        <path d="M106 290 V222 a24 24 0 0 1 48 0 V290 Z" fill="#17202a"/>
+        <circle cx="145" cy="258" r="4" fill="#ffcf8a"/>
+        <!-- sign -->
+        <rect x="88" y="62" width="84" height="32" rx="6" fill="#17202a"/>
+        <text x="130" y="85" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="20" fill="#ffcf8a">B&amp;B</text>
+      </g>
+      <!-- data beams from house to bubbles -->
+      <g stroke="#17202a" stroke-width="3" fill="none" stroke-linecap="round">
+        <path d="M380 300 C 330 280, 300 265, 270 255" stroke-dasharray="2 10"/>
+        <path d="M600 400 C 620 385, 640 370, 650 360" stroke-dasharray="2 10"/>
+      </g>
+      <!-- agent cursor / spark -->
+      <g transform="translate(250 240)">
+        <circle r="26" fill="#17202a"/>
+        <path d="M0 -14 L4 -4 L14 0 L4 4 L0 14 L-4 4 L-14 0 L-4 -4 Z" fill="#ffcf8a"/>
+      </g>
+      <g transform="translate(668 345)">
+        <circle r="22" fill="#d9643a" stroke="#17202a" stroke-width="4"/>
+        <path d="M-9 0 L-2 7 L10 -6" stroke="#f5efe4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+    </svg>
+
+    <div class="bubble b1">
+      <div class="who">✦ guest's AI agent</div>
+      “Quiet B&amp;B near the coast,<br>2 nights, dog-friendly,<br>breakfast included?”
+    </div>
+    <div class="bubble b2">
+      <div class="who">⌂ your stay via INNLI</div>
+      <span class="k">rooms</span>: 3 available<br>
+      <span class="k">pets</span>: welcome 🐾<br>
+      <span class="k">breakfast</span>: included<br>
+      <span class="ok">→ booked direct.<br>&nbsp;&nbsp;no OTA cut.</span>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <p class="sub">INNLI makes your B&amp;B <b>discoverable, understandable and bookable</b> by the AI agents your next guests already use.</p>
+    <div class="cta">
+      <div class="btn">Is your stay agent-ready? <span>→</span></div>
+      <div class="chips"><div>#AgentReady</div><div>#IndieStays</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
