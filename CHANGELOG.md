@@ -42,6 +42,13 @@ Agents en accommodaties vinden elkaar. We zochten uit waar het tussen AI-agents 
 - `/.well-known/agent-card.json`, `/.well-known/mcp.json` en `/llms.txt`, op elke installatie en op de gids.
 - `agent-kit/` met een Claude-plugin (skill `find-stay`) en `server.json` voor het MCP-register.
 
+### Onderzoek
+- INNLI is opgezet als open onderzoeksproject ([research/](research/README.md)), met zes onderzoeksvragen, meetmethodes, eerste resultaten en conceptaanvragen voor fondsen.
+- Een gelabelde testset tegen prompt-injectie (`npm run research:injection`): 30 van de 30 aanvallen gevangen, 0 van de 40 gewone zinnen geknipt.
+- De evaluatie vond twee fouten in de tekstfilter, die nu zijn opgelost:
+  - een markdown-link naar een kwaadaardige site werd gemist;
+  - getallen en links in geknipte teksten raakten verminkt ("8.00" werd "8. 00").
+
 ### Open source
 - INNLI is nu open source onder de [MIT-licentie](LICENSE). De WordPress-plugin blijft GPL.
 - De openbare INNLI-gids neemt elke installatie gratis op. Een licentiesleutel is niet meer nodig.

@@ -160,6 +160,10 @@ curl -X POST localhost:3000/api/admin/agents -H "authorization: Bearer $INNLI_AD
 - Publicatie in ChatGPT/Claude-appdirectories: een werkende MCP-server is niet hetzelfde als een goedgekeurde, gepubliceerde koppeling.
 - Productie-opslag op een database: de bestandsopslag (JSON + JSONL met indexen) is gemeten met 300 accommodaties en 200.000 gebeurtenissen, en heeft een smalle interface om naar Postgres te verhuizen.
 
+## Onderzoek
+
+INNLI is een **open onderzoeksproject**: hoe vinden en boeken AI-agents kleine accommodaties eerlijk, veilig en zuinig, zonder tussenpersoon? De onderzoeksvragen, meetmethodes en eerste resultaten staan in [research/](research/README.md). Alles is reproduceerbaar met `npm run measure` en `npm run research:injection`. We zoeken financiering bij publieke fondsen; verdienen komt later en houdt het project open ([research/funding/](research/funding/overzicht.md)). Citeren: [CITATION.cff](CITATION.cff).
+
 ## Steun INNLI
 
 INNLI is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent mee? Steun het project:

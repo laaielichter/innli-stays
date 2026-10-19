@@ -22,7 +22,8 @@
     "bench": "node scripts/bench.ts",
     "pakket": "node scripts/package.ts",
     "demo:intl": "INNLI_DEMO=intl INNLI_LANG=en node src/main.ts",
-    "measure": "node scripts/measure.ts"
+    "measure": "node scripts/measure.ts",
+    "research:injection": "node research/injection-eval.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

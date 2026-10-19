@@ -42,18 +42,26 @@ export function scanText(input: string): Scan {
   }
   HIDDEN.lastIndex = 0;
   if (!RULES.some((r) => r.re.test(text))) return { text, reasons: [...reasons] };
-  // Sentence by sentence, keeping the separators, so normal text around a bad sentence survives.
-  const parts = text.split(/(?<=[.!?\n])\s*/);
+  // Sentence by sentence (a sentence ends at . ! or ? followed by a space, or at a line break),
+  // keeping the original separators, so normal text around a bad sentence survives untouched.
+  const parts = text.split(/((?<=[.!?])\s+|\n+)/);
   text = parts
-    .map((sentence) => {
-      const hit = RULES.filter((r) => r.re.test(sentence));
-      if (!hit.length) return sentence;
+    .map((part, i) => {
+      if (i % 2 === 1) return part;
+      const hit = RULES.filter((r) => r.re.test(part));
+      if (!hit.length) return part;
       for (const h of hit) reasons.add(h.reason);
       return REMOVED;
     })
-    .join(' ')
-    .replace(new RegExp(`(${REMOVED.replace(/[[\]]/g, '\\$&')}\\s*)+`, 'g'), `${REMOVED} `)
+    .join('')
+    .replace(new RegExp(`${REMOVED.replace(/[[\]]/g, '\\$&')}(\\s+${REMOVED.replace(/[[\]]/g, '\\$&')})+`, 'g'), REMOVED)
     .trim();
+  // Whatever still matches (e.g. a payload spread over several sentences) is cut where it matches.
+  for (const r of RULES) {
+    if (!r.re.test(text)) continue;
+    reasons.add(r.reason);
+    text = text.replace(new RegExp(r.re.source, `${r.re.flags.replace('g', '')}g`), REMOVED);
+  }
   return { text, reasons: [...reasons] };
 }
 

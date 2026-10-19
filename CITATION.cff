@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use INNLI or its datasets in research, please cite it as below."
+title: "INNLI: an open agent gateway for independent accommodations"
+type: software
+authors:
+  - name: "The INNLI authors"
+version: 2.0.0
+date-released: "2026-10-19"
+license: MIT
+keywords:
+  - AI agents
+  - Model Context Protocol
+  - hospitality
+  - prompt injection
+  - federated directory
+abstract: >-
+  Open-source software that lets AI agents find and book small independent
+  accommodations honestly (host-confirmed facts), safely (prompt-injection
+  guard, consent hashes, signed passports) and efficiently (lean tool profile,
+  next actions), through a self-hosted installation and a free federated guide.

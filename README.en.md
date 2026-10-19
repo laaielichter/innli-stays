@@ -134,6 +134,10 @@ npm run pakket -- --concept  # download package (zip) in dist/
 
 More documentation (in Dutch): [docs/](docs/).
 
+## Research
+
+INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. We are seeking public funding. Monetisation comes later and keeps the project open. To cite INNLI, see [CITATION.cff](CITATION.cff).
+
 ## Support INNLI
 
 INNLI is free and stays free. Does it help your stay, or are you building an agent with it? Support the project:
