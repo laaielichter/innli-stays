@@ -56,4 +56,4 @@ jobs:
           labels: |
             org.opencontainers.image.version=${{ steps.image.outputs.version }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.licenses=LicenseRef-INNLI
+            org.opencontainers.image.licenses=AGPL-3.0-only

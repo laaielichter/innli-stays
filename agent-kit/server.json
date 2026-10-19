@@ -1,18 +1,41 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
-  "name": "io.github.OWNER/innli",
+  "name": "io.github.laaielichter/innli",
   "title": "INNLI stays",
   "description": "Independent stays whose hosts verify their own data: search, live availability, full prices, consent-based booking requests and stay wishes.",
   "version": "2.0.0",
-  "websiteUrl": "https://github.com/OWNER/REPO",
-  "repository": { "url": "https://github.com/OWNER/REPO", "source": "github" },
+  "websiteUrl": "https://github.com/laaielichter/innli-stays",
+  "repository": {
+    "url": "https://github.com/laaielichter/innli-stays",
+    "source": "github"
+  },
   "remotes": [
     {
       "type": "streamable-http",
       "url": "https://{host}/mcp",
       "variables": {
-        "host": { "description": "Host name of the INNLI installation or INNLI guide", "isRequired": true }
+        "host": {
+          "description": "Host name of the INNLI installation or INNLI guide",
+          "isRequired": true
+        }
       }
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "innli",
+      "version": "2.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "INNLI_DATA",
+          "description": "Path to the INNLI data file (default: data/innli.json in the working directory)",
+          "isRequired": false
+        }
+      ]
     }
   ]
 }

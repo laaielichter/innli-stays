@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Command line tool for local installs and small self-hosted setups.
  *
