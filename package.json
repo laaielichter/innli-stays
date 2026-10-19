@@ -1,5 +1,5 @@
 {
-  "name": "innli",
+  "name": "innli-stays",
   "version": "2.0.0",
   "description": "Self-hosted MCP + REST server that lets AI agents search, quote and request bookings at B&Bs and small hotels, from facts the owner confirmed. Unknown stays unknown.",
   "mcpName": "io.github.laaielichter/innli",
@@ -28,6 +28,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "bin": {
+    "innli-stays": "build/main.js",
     "innli": "build/main.js",
     "innli-admin": "build/cli.js",
     "innli-mcp": "build/mcp/stdio.js"

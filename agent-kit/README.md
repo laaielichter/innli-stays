@@ -24,7 +24,7 @@ claude --plugin-dir ./agent-kit/claude-plugin
 
 ## MCP registry
 
-`server.json` describes INNLI for the MCP registry as `io.github.laaielichter/innli`: the npm package `innli` (stdio, `innli-mcp`) and a remote Streamable HTTP endpoint on any installation.
+`server.json` describes INNLI for the MCP registry as `io.github.laaielichter/innli`: the npm package `innli-stays` (stdio, `innli-mcp`) and a remote Streamable HTTP endpoint on any installation.
 
 ## What agents get in 2.0
 

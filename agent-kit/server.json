@@ -24,7 +24,7 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "innli",
+      "identifier": "innli-stays",
       "version": "2.0.0",
       "transport": {
         "type": "stdio"
