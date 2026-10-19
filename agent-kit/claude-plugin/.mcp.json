@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "innli": {
+      "type": "http",
+      "url": "${INNLI_URL:-http://localhost:3000}/mcp?profile=core"
+    }
+  }
+}

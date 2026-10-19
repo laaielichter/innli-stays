@@ -1,0 +1,7 @@
+{
+  "name": "innli-stays",
+  "version": "2.0.0",
+  "description": "Find and book independent stays (B&Bs, guesthouses, small hotels) whose hosts verify their own data, honestly: confirmed facts, full prices, guest consent, and stay wishes hosts can answer with offers.",
+  "author": { "name": "INNLI" },
+  "keywords": ["travel", "accommodation", "booking", "bnb", "hotel", "mcp"]
+}

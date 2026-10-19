@@ -1,0 +1,40 @@
+{
+  "name": "innli",
+  "version": "2.0.0",
+  "private": true,
+  "description": "AI-native booking infrastructure for B&Bs and independent stays",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "dev": "node --watch src/main.ts",
+    "demo": "INNLI_DEMO=1 node src/main.ts",
+    "setup": "node src/cli.ts init",
+    "innli": "node src/cli.ts",
+    "gids": "node src/directory/main.ts",
+    "licentie": "node tools/license.ts",
+    "mcp:stdio": "node src/mcp/stdio.ts",
+    "test": "node --test 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "lint:php": "find wordpress-plugin -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "bench": "node scripts/bench.ts",
+    "pakket": "node scripts/package.ts",
+    "demo:intl": "INNLI_DEMO=intl INNLI_LANG=en node src/main.ts",
+    "measure": "node scripts/measure.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "express": "^5.2.1",
+    "nodemailer": "^10.0.15",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "^7.0.2"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

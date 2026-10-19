@@ -1,0 +1,13 @@
+node_modules
+data
+dist
+test
+scripts
+tools
+.git
+.github
+wordpress-plugin
+docs
+*.md
+*.pem
+.env

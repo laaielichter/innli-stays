@@ -1,0 +1,146 @@
+LICENTIEVOORWAARDEN INNLI
+
+Copyright (c) 2026 [VUL IN: naam / handelsnaam]. Alle rechten voorbehouden.
+
+Leverancier: [VUL IN: handelsnaam, KvK-nummer, adres, e-mailadres]
+
+Deze software ("INNLI") wordt in licentie gegeven, niet verkocht. Door INNLI te
+installeren of te gebruiken ga je akkoord met deze voorwaarden.
+
+1. Proefversie
+   Je mag INNLI zonder licentiesleutel kosteloos installeren en gebruiken om het
+   te proberen. Zonder geldige licentiesleutel wordt een installatie niet in de
+   INNLI-gids opgenomen.
+
+2. Licentie na betaling
+   Na betaling ontvang je een licentiesleutel. Daarmee krijg je een niet-
+   exclusief, niet-overdraagbaar en eeuwigdurend recht om INNLI te gebruiken:
+   a. op één installatie;
+   b. voor het aantal accommodaties dat in de licentiesleutel staat;
+   c. voor alle versies die verschijnen tijdens de updateperiode uit de
+      licentiesleutel. Na afloop van de updateperiode mag je de laatste versie
+      uit die periode onbeperkt blijven gebruiken.
+
+3. Wat niet mag
+   Zonder schriftelijke toestemming van de Leverancier mag je niet:
+   a. INNLI, of een aangepaste versie ervan, verkopen, verhuren, weggeven of op
+      een andere manier aan derden ter beschikking stellen;
+   b. INNLI als dienst aanbieden aan anderen (bijvoorbeeld als hosting of SaaS);
+   c. de licentiecontrole omzeilen, of een licentiesleutel delen of op meer
+      installaties gebruiken dan toegestaan;
+   d. een eigen gids of soortgelijke dienst bouwen op basis van INNLI.
+   Je mag INNLI wel aanpassen voor eigen gebruik binnen je licentie.
+   Webbouwers die INNLI voor klanten installeren, hebben per klant een eigen
+   licentie nodig. Ook kan het aantal accommodaties in de licentie daarop
+   worden afgestemd.
+
+4. Onderdelen van derden
+   INNLI bevat open-sourceonderdelen van derden. Daarvoor gelden hun eigen
+   licenties, die zijn meegeleverd in THIRD_PARTY_NOTICES.txt en in de map
+   node_modules. De WordPress-plugin (map wordpress-plugin) valt onder
+   GPL-2.0-or-later, zoals voor WordPress-plugins gebruikelijk is.
+
+5. Jouw gegevens
+   INNLI draait op jouw eigen apparaat of server. Gegevens van jou en je gasten
+   blijven daar. Jij bent daarvoor verwerkingsverantwoordelijke in de zin van
+   de AVG. De Leverancier ontvangt geen gastgegevens. De INNLI-gids ontvangt
+   alleen gegevens die je openbaar maakt: naam, plaats, korte omschrijving en
+   het adres van je installatie. Zorg zelf voor back-ups.
+
+6. Garantie en aansprakelijkheid
+   INNLI wordt geleverd zoals het is. De Leverancier spant zich in om fouten
+   tijdens de updateperiode te herstellen, maar garandeert niet dat INNLI
+   foutloos of ononderbroken werkt. INNLI maakt geen boekingen in externe
+   systemen en garandeert geen vindbaarheid of positie in zoekmachines of
+   AI-assistenten. De aansprakelijkheid van de Leverancier is beperkt tot het
+   bedrag dat je voor de licentie hebt betaald. De Leverancier is niet
+   aansprakelijk voor indirecte schade, zoals gederfde omzet, gemiste of
+   dubbele boekingen of verlies van gegevens, behalve bij opzet of grove
+   schuld.
+
+7. Zakelijk gebruik
+   De licentie is bedoeld voor ondernemers die INNLI voor hun bedrijf
+   gebruiken.
+
+8. Beëindiging
+   Handel je in strijd met deze voorwaarden, dan vervalt je licentie en kan
+   de licentiesleutel in de INNLI-gids worden geweigerd. Betaalde bedragen
+   worden dan niet terugbetaald.
+
+9. Toepasselijk recht
+   Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden
+   voorgelegd aan de bevoegde rechter in het arrondissement van de
+   Leverancier.
+
+----------------------------------------------------------------------------
+
+LICENCE TERMS INNLI (English translation; in case of differences the Dutch
+text above prevails)
+
+Copyright (c) 2026 [VUL IN / FILL IN: name / trading name]. All rights reserved.
+
+Supplier: [VUL IN / FILL IN: trading name, Chamber of Commerce (KvK) number,
+address, e-mail address]
+
+This software ("INNLI") is licensed, not sold. By installing or using INNLI
+you accept these terms.
+
+1. Trial version
+   You may install and use INNLI free of charge without a licence key to try
+   it. Without a valid licence key an installation is not listed in the INNLI
+   guide.
+
+2. Licence after payment
+   After payment you receive a licence key. It gives you a non-exclusive,
+   non-transferable and perpetual right to use INNLI:
+   a. on one installation;
+   b. for the number of properties stated in the licence key;
+   c. for all versions released during the update period stated in the
+      licence key. After the update period you may keep using the last
+      version from that period without limit.
+
+3. What is not allowed
+   Without the Supplier's written permission you may not:
+   a. sell, rent out, give away or otherwise make INNLI, or a modified
+      version of it, available to third parties;
+   b. offer INNLI as a service to others (for example as hosting or SaaS);
+   c. circumvent the licence check, or share a licence key or use it on more
+      installations than allowed;
+   d. build your own guide or a similar service based on INNLI.
+   You may modify INNLI for your own use within your licence. Web designers
+   who install INNLI for clients need a separate licence per client.
+
+4. Third-party components
+   INNLI contains open-source components of third parties. Their own licences
+   apply; they are included in THIRD_PARTY_NOTICES.txt and in the
+   node_modules folder. The WordPress plugin (wordpress-plugin folder) is
+   licensed under GPL-2.0-or-later, as is usual for WordPress plugins.
+
+5. Your data
+   INNLI runs on your own device or server. Your data and your guests' data
+   stay there. You are the controller of that data within the meaning of
+   the GDPR. The Supplier receives no guest data. The INNLI guide only
+   receives data you make public: name, place, short description and the
+   address of your installation. You are responsible for your own backups.
+
+6. Warranty and liability
+   INNLI is provided as is. The Supplier makes reasonable efforts to fix
+   errors during the update period, but does not guarantee that INNLI works
+   without errors or interruptions. INNLI does not make bookings in external
+   systems and does not guarantee findability or a position in search
+   engines or AI assistants. The Supplier's liability is limited to the
+   amount you paid for the licence. The Supplier is not liable for indirect
+   damage, such as lost revenue, missed or double bookings or loss of data,
+   except in case of intent or gross negligence.
+
+7. Business use
+   The licence is intended for entrepreneurs who use INNLI for their
+   business.
+
+8. Termination
+   If you act in breach of these terms, your licence lapses and the licence
+   key may be refused in the INNLI guide. Amounts paid are not refunded.
+
+9. Applicable law
+   These terms are governed by Dutch law. Disputes are submitted to the
+   competent court in the district of the Supplier.

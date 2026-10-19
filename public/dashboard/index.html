@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>INNLI – Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div id="login" class="login" hidden>
+    <form id="login-form" class="card login-card">
+      <div class="row" style="justify-content:space-between"><div class="brand">INNLI</div><select class="lang-switch" aria-label="Taal"><option value="nl">Nederlands</option><option value="en">English</option></select></div>
+      <h1>Jouw accommodatie, toegankelijk voor AI-agents</h1>
+      <p class="muted">Log in met de eigenaarssleutel die je bij aanmelding hebt ontvangen.</p>
+      <label>Eigenaarssleutel
+        <input id="login-key" type="password" autocomplete="off" required placeholder="innli_own_…">
+      </label>
+      <button class="btn primary" type="submit">Inloggen</button>
+      <p id="login-error" class="error" hidden></p>
+      <p class="muted small">Demo? Start met <code>npm run demo</code>; de sleutels staan in <code>data/demo-credentials.json</code>.</p>
+    </form>
+
+    <form id="setup-form" class="card login-card" hidden>
+      <div class="row" style="justify-content:space-between"><div class="brand">INNLI</div><select class="lang-switch" aria-label="Taal"><option value="nl">Nederlands</option><option value="en">English</option></select></div>
+      <h1>Welkom! Laten we je accommodatie aanmaken</h1>
+      <p class="muted small">Dit duurt twee minuten. Alles is later aan te passen.</p>
+      <label>Installatiecode
+        <input name="code" required autocomplete="off" placeholder="Staat in het venster waarin INNLI draait">
+      </label>
+      <label>Naam van je accommodatie <input name="name" required placeholder="B&amp;B De Hooiberg"></label>
+      <div class="form-grid">
+        <label>Type
+          <select name="type"><option value="bnb">B&amp;B</option><option value="pension">Pension</option><option value="guesthouse">Gastenverblijf</option><option value="holiday_home">Vakantiewoning</option><option value="unique_stay">Bijzonder verblijf</option><option value="hotel">Hotel</option></select>
+        </label>
+        <label>Plaats <input name="city" required></label>
+        <label>Land <input name="country" value="NL" maxlength="2" required title="ISO-code, bijv. NL, BE, DE, GB, FR"></label>
+      </div>
+      <label>Taal van je teksten
+        <select name="language"><option value="nl">Nederlands</option><option value="en">English</option><option value="de">Deutsch</option><option value="fr">Français</option></select>
+      </label>
+      <label>E-mailadres voor aanvragen <input name="contactEmail" type="email" placeholder="info@jouw-bnb.nl"></label>
+      <label>Website (optioneel) <input name="website" type="url" placeholder="https://"></label>
+      <h3>Je eerste kamer</h3>
+      <div class="form-grid">
+        <label>Naam <input name="roomName" required placeholder="Tuinkamer"></label>
+        <label>Max. gasten <input name="maxGuests" type="number" min="1" value="2" required></label>
+        <label>Prijs per nacht <input name="rate" type="number" min="0" step="0.01" required></label>
+      </div>
+      <button class="btn primary">Aanmaken</button>
+      <p id="setup-error" class="error" hidden></p>
+    </form>
+
+    <div id="setup-done" class="card login-card" hidden>
+      <div class="brand">INNLI</div>
+      <h1>Gelukt!</h1>
+      <p>Dit is je <strong>eigenaarssleutel</strong>. Je hebt hem nodig om in te loggen. Bewaar hem goed, bijvoorbeeld in je wachtwoordbeheerder: hij wordt niet opnieuw getoond.</p>
+      <div class="row"><input id="setup-key" readonly><button class="btn" type="button" id="setup-copy">Kopiëren</button></div>
+      <button class="btn primary" type="button" id="setup-continue">Ik heb hem bewaard, verder</button>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand">INNLI</div>
+      <div class="prop">
+        <strong id="prop-name"></strong>
+        <span class="chip info" id="who" hidden data-user-text></span>
+        <span id="prop-status" class="chip"></span>
+      </div>
+      <div class="spacer"></div>
+      <select class="lang-switch" aria-label="Taal"><option value="nl">Nederlands</option><option value="en">English</option></select>
+      <label class="toggle"><input type="checkbox" id="published"> Zichtbaar voor agents</label>
+      <button id="backup" class="btn ghost" title="Download al je gegevens als bestand">Back-up</button>
+      <button id="logout" class="btn ghost">Uitloggen</button>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="overview" class="active">Overzicht</button>
+      <button data-tab="requests">Aanvragen <span class="chip unconfirmed" id="req-badge" hidden></span></button>
+      <button data-tab="wishes">Gezocht <span class="chip info" id="wish-badge" hidden></span></button>
+      <button data-tab="passport">Paspoort</button>
+      <button data-tab="units">Kamers</button>
+      <button data-tab="booking">Boeking &amp; gegevens</button>
+      <button data-tab="audit">Vindbaarheid</button>
+      <button data-tab="preview">Agentweergave</button>
+    </nav>
+
+    <main>
+      <section data-panel="overview">
+        <div class="card alert" id="conflicts" hidden></div>
+        <div class="card" id="checklist" hidden>
+          <h2>Aan de slag</h2>
+          <p class="muted small">Zo word je vindbaar en boekbaar voor AI-agents.</p>
+          <ul class="steps" id="steps"></ul>
+        </div>
+        <div class="card" id="stay-page-card">
+          <h2>Jouw verblijfspagina</h2>
+          <p class="muted small">Een eigen pagina met je kamers, beschikbaarheid en een aanvraagformulier. Gasten van AI-agents komen hier uit, en je kunt hem op je eigen website zetten.</p>
+          <div class="row"><input id="stay-url" readonly><a class="btn" id="stay-open" target="_blank" rel="noopener">Bekijken</a></div>
+          <details><summary class="small">Formulier op je eigen website zetten</summary>
+            <p class="muted small">Plak deze code op een pagina van je website (in WordPress: blok "Aangepaste HTML"), of gebruik de shortcode <code>[innli_request]</code> van de INNLI-plugin.</p>
+            <textarea id="embed-code" rows="3" readonly></textarea>
+          </details>
+        </div>
+        <div class="card" id="license-card">
+          <div class="row" style="justify-content: space-between">
+            <div><h2 style="margin:0">Licentie &amp; INNLI-gids</h2><p class="muted small" id="license-detail"></p></div>
+            <span class="chip" id="license-state"></span>
+          </div>
+          <p class="small" id="guide-status"></p>
+          <form id="license-form" class="row">
+            <input id="license-key" placeholder="INNLI-…" autocomplete="off">
+            <button class="btn">Licentie activeren</button>
+            <button class="btn ghost" type="button" id="guide-register">Nu aanmelden bij de gids</button>
+          </form>
+        </div>
+        <div class="card" id="stats-card">
+          <h2>Bezetting en omzet <span class="muted small">(12 maanden)</span></h2>
+          <div id="stats"></div>
+          <div class="row" style="margin-top:8px">
+            <button type="button" class="btn small" id="feed-copy">Boekingsagenda koppelen (iCal)</button>
+            <button type="button" class="btn small" id="csv-download">Aanvragen downloaden (Excel/CSV)</button>
+          </div>
+          <p class="muted small">De boekingsagenda zet al je boekingen in Google Agenda, Apple Agenda of Outlook: voeg de gekopieerde link toe als agenda via URL. De link bevat gastnamen: deel hem niet.</p>
+        </div>
+        <div class="card" id="insights-card">
+          <h2>Wat agents zoeken <span class="muted small">(30 dagen)</span></h2>
+          <div id="insights"></div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h2>Kwaliteit van je paspoort</h2>
+            <div class="score"><div class="meter"><div id="score-bar"></div></div><span id="score-text"></span></div>
+            <p class="muted small">Percentage van de beslissende gegevens (huisdieren, toegankelijkheid, verplichte kosten…) dat jij hebt bevestigd. Agents presenteren alleen bevestigde gegevens als feit.</p>
+            <div id="todo"></div>
+          </div>
+          <div class="card">
+            <h2>Van agentaanvraag tot boeking <span class="muted small">(30 dagen)</span></h2>
+            <div class="tiles" id="funnel"></div>
+            <p class="muted small" id="funnel-note"></p>
+            <table class="table" id="by-agent"></table>
+          </div>
+        </div>
+      </section>
+
+      <section data-panel="requests" hidden>
+        <div class="card">
+          <h2>Aanvragen</h2>
+          <p class="muted small" id="requests-note"></p>
+          <div id="requests-list"></div>
+        </div>
+        <div class="card">
+          <h2>Vragen van gasten</h2>
+          <p class="muted small">AI-agents stellen hier vragen namens gasten, vaak over iets wat nog onbekend is in je paspoort. Geef je bij het antwoord ook de waarde op, dan weten volgende gasten het meteen.</p>
+          <div id="questions-list"></div>
+        </div>
+        <div class="card">
+          <h2>Beoordelingen</h2>
+          <p class="muted small">Alleen gasten met een bevestigd verblijf kunnen een beoordeling geven; ze krijgen daar de dag na vertrek een mail voor. Je kunt reageren, niet verwijderen: zo vertrouwen agents en gasten ze.</p>
+          <div id="reviews-list"></div>
+        </div>
+        <div class="card">
+          <h2>Logboek agentacties</h2>
+          <p class="muted small">Alles wat AI-agents namens gasten deden: aanvragen, annuleringen, vragen. Handig bij onduidelijkheid of een geschil.</p>
+          <div id="audit-log"></div>
+        </div>
+      </section>
+
+      <section data-panel="wishes" hidden>
+        <div class="card">
+          <h2>Gasten die zoeken</h2>
+          <p class="muted small">Als een gast niets vindt, laat de AI-agent een verblijfswens achter: plaats, data, gezelschap, wensen en budget. Je ziet hier de wensen waar jouw verblijf bij past. Je ziet nooit wie de gast is, tot die zelf een aanvraag stuurt. Doe een aanbieding, eventueel met korting. De agent krijgt meteen een actuele prijs en boekt via de gewone aanvraag.</p>
+          <div id="wishes-list"></div>
+        </div>
+      </section>
+
+      <section data-panel="passport" hidden>
+        <div class="card">
+          <h2>Concept maken vanaf je website</h2>
+          <p class="muted">We lezen de tekst van je website en vullen ontbrekende gegevens in als <em>niet bevestigd</em>. Jij controleert en bevestigt. Bevestigde gegevens worden nooit overschreven.</p>
+          <form id="import-form" class="row">
+            <input id="import-url" type="url" placeholder="https://jouw-bnb.nl">
+            <button class="btn">Website inlezen</button>
+          </form>
+          <div id="import-result"></div>
+        </div>
+        <div id="passport-facts"></div>
+      </section>
+
+      <section data-panel="units" hidden>
+        <div id="units-list"></div>
+        <div class="card">
+          <h2>Kamer of verblijf toevoegen</h2>
+          <form id="unit-form" class="form-grid">
+            <label>Naam <input name="name" required></label>
+            <label>Code in boekingssysteem <input name="externalRef"></label>
+            <label>Aantal kamers van dit type <input name="inventory" type="number" min="1" max="500" value="1"></label>
+            <label>Max. gasten per kamer <input name="maxGuests" type="number" min="1" value="2" required></label>
+            <label>Gasten in basisprijs <input name="includedGuests" type="number" min="1" value="2" required></label>
+            <label><span>Basisprijs per nacht <span class="cur"></span></span> <input name="baseRatePerNight" type="number" min="0" step="0.01" required></label>
+            <label><span>Extra gast per nacht <span class="cur"></span></span> <input name="extraGuestPerNight" type="number" min="0" step="0.01"></label>
+            <button class="btn primary">Toevoegen</button>
+          </form>
+        </div>
+      </section>
+
+      <section data-panel="booking" hidden>
+        <div class="grid two">
+          <form class="card" id="basics-form">
+            <h2>Basisgegevens</h2>
+            <label>Naam <input name="name" required></label>
+            <label>Type
+              <select name="type">
+                <option value="bnb">B&amp;B</option><option value="pension">Pension</option><option value="guesthouse">Gastenverblijf</option><option value="holiday_home">Vakantiewoning</option><option value="unique_stay">Bijzonder verblijf</option><option value="hotel">Hotel</option>
+              </select>
+            </label>
+            <label>Omschrijving <textarea name="description" rows="4"></textarea></label>
+            <div class="form-grid">
+              <label>Taal van je teksten
+                <select name="language"><option value="nl">Nederlands</option><option value="en">English</option><option value="de">Deutsch</option><option value="fr">Français</option></select>
+              </label>
+              <label>Valuta
+                <select name="currency"><option>EUR</option><option>GBP</option><option>CHF</option><option>DKK</option><option>SEK</option><option>NOK</option><option>PLN</option><option>CZK</option><option>HUF</option><option>RON</option><option>ISK</option><option>USD</option><option>CAD</option><option>AUD</option><option>NZD</option></select>
+              </label>
+            </div>
+            <div class="form-grid">
+              <label>Straat + nr <input name="street"></label>
+              <label>Postcode <input name="postalCode"></label>
+              <label>Plaats <input name="city" required></label>
+              <label>Regio <input name="region"></label>
+              <label>Land (code) <input name="country" maxlength="2" required></label>
+              <label>Breedtegraad <input name="lat" type="number" step="any"></label>
+              <label>Lengtegraad <input name="lng" type="number" step="any"></label>
+            </div>
+            <label>Website <input name="website" type="url"></label>
+            <label>E-mail voor aanvragen <input name="contactEmail" type="email"></label>
+            <label>Telefoon <input name="phone"></label>
+            <button class="btn primary">Opslaan</button>
+          </form>
+
+          <div>
+            <form class="card" id="booking-form">
+              <h2>Boekingskoppeling</h2>
+              <label>Beschikbaarheid uit
+                <select name="kind">
+                  <option value="none">Niet gekoppeld (alleen aanvragen)</option>
+                  <option value="manual">Ik houd open kamers zelf bij in INNLI</option>
+                  <option value="ical">Mijn agenda's: Airbnb, Booking.com, Google Agenda… (iCal)</option>
+                  <option value="live_api">Boekingssysteem met live koppeling</option>
+                  <option value="beds24">Beds24</option>
+                </select>
+              </label>
+              <div data-kind="manual" class="sub">
+                <p class="muted small">Sluit nachten per kamer onder <strong>Kamers → Kamerkalender</strong>. Agents bieden een <strong>beschikbaarheidsaanvraag</strong> aan; jij bevestigt.</p>
+              </div>
+              <div data-kind="ical" class="sub">
+                <p class="muted small">Plak per kamer de exportlinks (iCal, eindigt meestal op <code>.ics</code>) van al je kanalen, één per regel. Een nacht is bezet als hij in één van de agenda's bezet is. Bij Google Agenda gebruik je het <em>geheime adres in iCal-indeling</em> uit de agenda-instellingen.</p>
+                <p class="muted small">Gesynchroniseerde agenda's kunnen uren achterlopen. Agents bieden daarom een <strong>beschikbaarheidsaanvraag</strong> aan, nooit een directe boeking.</p>
+                <div id="ical-fields"></div>
+              </div>
+              <div data-kind="beds24" class="sub">
+                <p class="muted small">Maak in Beds24 onder Instellingen → Account → Toegang een uitnodigingscode met leesrechten voor inventory, wissel die om voor een refresh token en plak die hier. Vul bij elke kamer onder Kamers het Beds24-kamernummer in als Code in boekingssysteem. INNLI leest beschikbaarheid, prijzen en minimaal verblijf live uit Beds24.</p>
+                <label>Beds24 refresh token <input name="beds24Token" type="password" autocomplete="off"></label>
+              </div>
+              <div data-kind="live_api" class="sub">
+                <label>API-adres <input name="baseUrl" type="url" placeholder="https://…/innli"></label>
+                <label>API-sleutel <input name="apiKey" type="password" autocomplete="off"></label>
+              </div>
+              <label>Boekingslink (sjabloon)
+                <input name="deeplinkTemplate" placeholder="https://jouw-bnb.nl/boeken?aankomst={checkin}&vertrek={checkout}&personen={adults}">
+              </label>
+              <p class="muted small">Beschikbaar: <code>{checkin}</code> <code>{checkout}</code> <code>{adults}</code> <code>{children}</code> <code>{dogs}</code> <code>{unit}</code> <code>{ref}</code>. Zonder <code>{ref}</code> voegen we <code>innli_ref</code> toe.</p>
+              <label>Pagina voor aanvragen <input name="requestUrl" type="url" placeholder="https://jouw-bnb.nl/contact"></label>
+              <div class="row">
+                <button class="btn primary">Opslaan</button>
+                <button class="btn" type="button" id="connector-test">Koppeling testen</button>
+              </div>
+              <pre id="connector-result" class="pre" hidden></pre>
+            </form>
+            <form class="card" id="content-form">
+              <h2>Foto's, omgeving en vertalingen</h2>
+              <label>Foto's: één per regel, <code>https://…jpg | korte beschrijving</code>
+                <textarea name="photos" rows="3" placeholder="https://jouw-bnb.nl/foto/tuin.jpg | Omheinde tuin met terras"></textarea>
+              </label>
+              <div class="row"><input type="file" accept="image/jpeg,image/png,image/webp" id="photo-file"><button type="button" class="btn small" id="photo-upload">Foto uploaden</button></div>
+              <p class="muted small">De beschrijving vertelt agents (en blinde bezoekers) wat er te zien is. Gebruik je eigen foto's.</p>
+              <div id="photo-check"></div>
+              <label>In de buurt: één per regel, <code>soort | naam | km | minuten lopen</code>
+                <textarea name="pois" rows="3" placeholder="beach | Strand Egmond | 0,2 | 3"></textarea>
+              </label>
+              <p class="muted small">Soorten: station, bus_stop, beach, centre, supermarket, restaurant, nature, bike_rental, other. Agents zoeken hierop ("dicht bij het strand").</p>
+              <label>Omschrijving in het Nederlands <textarea name="nl" rows="2"></textarea></label>
+              <label>Omschrijving in het Engels <textarea name="en" rows="2"></textarea></label>
+              <label>Omschrijving in het Duits <textarea name="de" rows="2"></textarea></label>
+              <label>Omschrijving in het Frans <textarea name="fr" rows="2"></textarea></label>
+              <label>Pushmeldingen op je telefoon (ntfy-adres) <input name="ntfyUrl" type="url" placeholder="https://ntfy.sh/een-lang-geheim-woord"></label>
+              <p class="muted small">Installeer de gratis app ntfy, abonneer je op hetzelfde adres. Je krijgt dan meteen een melding bij een aanvraag, vraag of dubbele boeking.</p>
+              <button class="btn primary">Opslaan</button>
+            </form>
+            <form class="card" id="rules-form">
+              <h2>Regels voor aanvragen</h2>
+              <label class="check-row"><input type="checkbox" name="instantBooking"> <span><strong>Direct bevestigen</strong>: aanvragen die aan deze regels voldoen worden meteen geboekt. Agents en gasten geven daar de voorkeur aan. Alleen met je eigen kamerkalender of gekoppelde agenda's; die worden vlak voor bevestigen opnieuw gecontroleerd.</span></label>
+              <div class="form-grid">
+                <label>Minimaal dagen vooruit <input name="minLeadDays" type="number" min="0" max="60"></label>
+                <label>Maximaal aantal nachten <input name="maxNights" type="number" min="1" max="60"></label>
+                <label>Kamer vasthouden (uren) <input name="holdHours" type="number" min="4" max="168"></label>
+              </div>
+              <p class="muted small">Tijdens het vasthouden kan niemand anders de kamer aanvragen. Reageer je niet op tijd, dan vervalt de aanvraag automatisch en krijgt de gast bericht.</p>
+              <label class="check-row"><input type="checkbox" name="autoAnswer"> <span><strong>Antwoord-assistent</strong>: vragen van gasten en agents die je bevestigde gegevens of veelgestelde vragen al beantwoorden, worden meteen beantwoord. Alleen wat onbekend is komt bij jou. De assistent verzint niets.</span></label>
+              <h3>Aanbetaling (tegen no-shows)</h3>
+              <div class="form-grid">
+                <label>Percentage <input name="depositPercent" type="number" min="0" max="100" placeholder="0 = geen"></label>
+                <label>Betalen binnen (dagen) <input name="depositDueDays" type="number" min="0" max="60"></label>
+              </div>
+              <label>Betaalinstructies <input name="depositInstructions" placeholder="IBAN NL00 BANK 0123 4567 89 t.n.v. … o.v.v. je naam"></label>
+              <label>Betaallink (optioneel) <input name="depositPaymentUrl" type="url" placeholder="https://… (Mollie, Stripe, Tikkie)"></label>
+              <p class="muted small">INNLI verwerkt geen betalingen: de gast betaalt jou rechtstreeks. Jij zet de aanbetaling op "ontvangen".</p>
+              <button class="btn primary">Opslaan</button>
+            </form>
+            <form class="card" id="offer-form">
+              <h2>Opties, kortingscodes en annuleren</h2>
+              <h3>Opties met prijs</h3>
+              <p class="muted small">Fietsen, lunchpakket, late check-out, kinderbedje… Agents bieden ze aan als de gast erom vraagt.</p>
+              <div id="extras-rows"></div>
+              <button type="button" class="btn small" id="extra-add">Optie toevoegen</button>
+              <h3>Kortingscodes</h3>
+              <p class="muted small">Voor vaste gasten, je nieuwsbrief of een partner. Codes zijn geheim: agents zien alleen dat je codes accepteert.</p>
+              <div id="codes-rows"></div>
+              <button type="button" class="btn small" id="code-add">Code toevoegen</button>
+              <h3>Annuleringskosten</h3>
+              <p class="muted small">Zo rekenen agents uit wat annuleren kost. Bijvoorbeeld: minder dan 7 dagen voor aankomst 50%, minder dan 1 dag 100%. Een niet-restitueerbaar tariefplan kost altijd 100%.</p>
+              <div id="cancel-rows"></div>
+              <button type="button" class="btn small" id="cancel-add">Regel toevoegen</button>
+              <div class="row" style="margin-top:12px"><button class="btn primary">Opslaan</button></div>
+            </form>
+            <div class="card" id="backups-card" data-owner-only>
+              <h2>Back-ups</h2>
+              <p class="muted small" id="backups-status"></p>
+              <div class="row"><button type="button" class="btn small" id="backup-now">Nu back-up maken</button></div>
+              <h3>Terugzetten</h3>
+              <p class="muted small">Kies een back-upbestand dat je eerder via Back-up (rechtsboven) hebt gedownload. Je gegevens, kamers, aanvragen en vragen worden teruggezet naar die stand; je eigenaarssleutel blijft dezelfde.</p>
+              <div class="row"><input type="file" id="restore-file" accept="application/json,.json"><button type="button" class="btn small danger" id="restore-go">Terugzetten</button></div>
+            </div>
+            <form class="card" id="rateplans-form">
+              <h2>Tariefplannen</h2>
+              <p class="muted small">Naast je standaardprijs, bijvoorbeeld een niet-restitueerbaar tarief (goedkoper) of een tarief inclusief ontbijt. Agents laten de gast kiezen en zien per plan de voorwaarden.</p>
+              <div id="rateplans-rows"></div>
+              <div class="row"><button type="button" class="btn small" id="rateplan-add">Tariefplan toevoegen</button><button class="btn primary">Opslaan</button></div>
+            </form>
+            <div class="card" id="staff-card" data-owner-only>
+              <h2>Personeel</h2>
+              <p class="muted small">Geef receptie en managers elk een eigen sleutel. <strong>Receptie</strong> handelt aanvragen, vragen, beoordelingen en de kamerkalender af. Een <strong>manager</strong> mag ook kamers, prijzen en gegevens aanpassen. Alleen jij beheert sleutels, licentie en back-ups. Wie vertrekt, verwijder je hier: die sleutel werkt dan meteen niet meer.</p>
+              <div id="staff-list"></div>
+              <form id="staff-form" class="row">
+                <input name="name" placeholder="Naam, bijv. Receptie avond" required minlength="2" maxlength="80">
+                <select name="role"><option value="reception">Receptie</option><option value="manager">Manager</option></select>
+                <button class="btn">Sleutel maken</button>
+              </form>
+              <div id="staff-new" class="small" hidden></div>
+            </div>
+            <form class="card" id="webhook-form" data-manage>
+              <h2>Koppeling met je eigen systeem (webhook)</h2>
+              <p class="muted small">Elke nieuwe aanvraag, bevestiging, wijziging en annulering gaat meteen naar dit adres, bijvoorbeeld je PMS, channel manager of Zapier/Make. Elk bericht is ondertekend (header <code>x-innli-signature</code>), zodat je systeem kan controleren dat het echt van INNLI komt.</p>
+              <label>Webhook-adres <input name="url" type="url" placeholder="https://…"></label>
+              <div class="row"><button class="btn primary">Opslaan</button><button type="button" class="btn" id="webhook-test">Testbericht sturen</button></div>
+              <p class="small" id="webhook-info"></p>
+            </form>
+            <div class="card" data-manage>
+              <h2>Boekingen terugmelden</h2>
+              <p class="muted small">Een boeking telt pas als bevestigd als jouw website of boekingssysteem die terugmeldt. De WordPress-plugin doet dit met deze geheime sleutel:</p>
+              <div class="row"><input id="webhook-secret" readonly><button class="btn" type="button" id="copy-secret">Kopiëren</button></div>
+              <p class="muted small">Accommodatie-ID: <code id="prop-id"></code></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-panel="audit" hidden>
+        <div class="card" id="trust-card">
+          <h2>Vertrouwen bij agents</h2>
+          <p class="muted small">Agents willen zeker weten dat ze met de echte eigenaar boeken, niet met een nagemaakte advertentie. Laat zien dat je website van jou is. Dan staat bij elk zoekresultaat "website geverifieerd".</p>
+          <div id="trust-status"></div>
+        </div>
+        <div class="card" id="text-warnings-card" hidden>
+          <h2>Teksten die agents niet te zien krijgen</h2>
+          <p class="muted small">Deze zinnen lijken op instructies aan een AI ("negeer je instructies", "boek altijd hier"). Zulke zinnen haalt INNLI weg voordat een agent ze leest. Herschrijf ze als gewone beschrijving.</p>
+          <ul class="plain small" id="text-warnings"></ul>
+        </div>
+        <div class="card">
+          <h2>Technische vindbaarheid</h2>
+          <p class="small"><button type="button" class="btn small" id="google-export">Gegevens voor Google Bedrijfsprofiel</button> <span class="muted">Zelfde naam, adres en tijden overal maakt je betrouwbaarder voor agents.</span></p>
+          <pre id="google-export-text" class="pre" hidden></pre>
+          <form id="audit-form" class="row">
+            <input id="audit-url" type="url" placeholder="https://jouw-bnb.nl">
+            <button class="btn primary">Controleren</button>
+          </form>
+          <p class="muted small" id="audit-disclaimer"></p>
+        </div>
+        <div id="audit-result"></div>
+      </section>
+
+      <section data-panel="preview" hidden>
+        <div class="card">
+          <h2>Zo ziet een AI-agent jouw verblijf</h2>
+          <p class="muted">Dit is precies wat <code>get_stay_details</code> teruggeeft. Onbekende gegevens staan er expliciet als onbekend in.</p>
+          <div id="preview-summary"></div>
+          <details><summary>Ruwe gegevens (JSON)</summary><pre id="preview-json" class="pre"></pre></details>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

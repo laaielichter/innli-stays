@@ -1,0 +1,8 @@
+node_modules/
+data/
+*.log
+.env
+# Seller licence signing key: never commit
+licentie-prive-sleutel.pem
+*.pem
+dist/

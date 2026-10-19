@@ -1,0 +1,42 @@
+# Start:            docker compose up -d
+# Eerste setup:     docker compose logs innli  (toont de installatiecode voor de wizard in de browser)
+# Met tunnel:       docker compose --profile tunnel up -d   (TUNNEL_TOKEN in .env)
+# Bijwerken:        docker compose pull && docker compose up -d   (met INNLI_IMAGE)
+#                   docker compose up -d --build                (zonder: bouwt de nieuwe versie uit deze map)
+services:
+  innli:
+    # Een kant-en-klaar image (x86 en ARM) zet je in .env als INNLI_IMAGE, bijvoorbeeld
+    # ghcr.io/<eigenaar>/innli:<versie>. Zonder INNLI_IMAGE bouwt Docker het uit deze map.
+    image: ${INNLI_IMAGE:-innli:local}
+    build: .
+    restart: unless-stopped
+    # Only reachable from this machine; the tunnel (or a reverse proxy) makes it public.
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - innli-data:/app/data
+    environment:
+      INNLI_PUBLIC_URL: ${INNLI_PUBLIC_URL:-http://localhost:3000}
+      INNLI_ADMIN_KEY: ${INNLI_ADMIN_KEY:-}
+      INNLI_REQUIRE_AGENT_KEY: ${INNLI_REQUIRE_AGENT_KEY:-}
+      INNLI_ALLOW_PRIVATE_FETCH: ${INNLI_ALLOW_PRIVATE_FETCH:-}
+      INNLI_DEMO: ${INNLI_DEMO:-}
+      INNLI_GIDS_URL: ${INNLI_GIDS_URL:-}
+      INNLI_SMTP_URL: ${INNLI_SMTP_URL:-}
+      INNLI_MAIL_FROM: ${INNLI_MAIL_FROM:-}
+      INNLI_BEWAARTERMIJN_DAGEN: ${INNLI_BEWAARTERMIJN_DAGEN:-}
+
+  # Cloudflare Tunnel: makes INNLI reachable on https://<jouw-domein> without opening
+  # ports on your router. In Cloudflare, point the public hostname to http://innli:3000.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - innli
+
+volumes:
+  innli-data:

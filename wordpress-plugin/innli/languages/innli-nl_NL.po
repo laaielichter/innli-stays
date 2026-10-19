@@ -1,0 +1,123 @@
+# Dutch translation of the INNLI WordPress plugin.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: nl_NL\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Request availability"
+msgstr "Beschikbaarheid aanvragen"
+
+msgid "Connected to %1$s. Passport %2$d%% confirmed."
+msgstr "Verbonden met %1$s. Paspoort %2$d%% bevestigd."
+
+msgid "There is a robots.txt file in your WordPress folder. WordPress then does not use the crawler settings below; edit that file yourself."
+msgstr "Er staat een robots.txt-bestand in je WordPress-map. WordPress gebruikt dan niet de crawlerinstellingen hieronder; pas dat bestand zelf aan."
+
+msgid "Connection"
+msgstr "Koppeling"
+
+msgid "INNLI address"
+msgstr "INNLI-adres"
+
+msgid "Property ID"
+msgstr "Accommodatie-ID"
+
+msgid "Secret key for bookings"
+msgstr "Geheime sleutel voor boekingen"
+
+msgid "Found in the INNLI dashboard under \"Booking & details\"."
+msgstr "Te vinden in het INNLI-dashboard onder \"Boeking & gegevens\"."
+
+msgid "Data on your website"
+msgstr "Gegevens op je website"
+
+msgid "Structured data"
+msgstr "Gestructureerde gegevens"
+
+msgid "Add schema.org data to the home page (confirmed facts only)"
+msgstr "Voeg schema.org-gegevens toe op de homepage (alleen bevestigde feiten)"
+
+msgid "Put [innli_facts] on a visible page, so visitors see the same facts as search engines. Per room: [innli_facts unit=\"room-id\"]."
+msgstr "Zet [innli_facts] op een zichtbare pagina, zodat bezoekers dezelfde feiten zien als zoekmachines. Per kamer: [innli_facts unit=\"kamer-id\"]."
+
+msgid "AI crawlers"
+msgstr "AI-crawlers"
+
+msgid "Search"
+msgstr "Zoeken"
+
+msgid "Explicitly allow AI search crawlers (%s)"
+msgstr "Sta AI-zoekcrawlers expliciet toe (%s)"
+
+msgid "Model training"
+msgstr "Modeltraining"
+
+msgid "Block training crawlers (%s)"
+msgstr "Blokkeer trainingscrawlers (%s)"
+
+msgid "Does not affect your findability in ChatGPT, Claude or Google Search."
+msgstr "Heeft geen invloed op je vindbaarheid in ChatGPT, Claude of Google Zoeken."
+
+msgid "Reporting bookings back"
+msgstr "Boekingen terugmelden"
+
+msgid "URL parameter with booking number"
+msgstr "URL-parameter met boekingsnummer"
+
+msgid "Put [innli_conversion] on your confirmation page. Only bookings by guests who came through an AI agent are reported; no personal data is sent."
+msgstr "Zet [innli_conversion] op je bevestigingspagina. Alleen boekingen van gasten die via een AI-agent kwamen worden gemeld; er worden geen persoonsgegevens verstuurd."
+
+msgid "URL parameter with amount (optional)"
+msgstr "URL-parameter met bedrag (optioneel)"
+
+msgid "AI crawler visits (30 days)"
+msgstr "Bezoeken van AI-crawlers (30 dagen)"
+
+msgid "A crawler visit is not a guest and does not count as a request or booking."
+msgstr "Een crawlerbezoek is geen gast en telt niet mee als aanvraag of boeking."
+
+msgid "Crawler"
+msgstr "Crawler"
+
+msgid "Visits"
+msgstr "Bezoeken"
+
+msgid "No visits counted yet."
+msgstr "Nog geen bezoeken geteld."
+
+msgid "INNLI – AI agent access for your accommodation"
+msgstr "INNLI – AI-agent toegang voor je accommodatie"
+
+msgid "Connects your website to your INNLI accommodation passport: structured data from confirmed facts, a visible fact list, AI crawler settings and reporting of bookings made through AI agents."
+msgstr "Koppelt je website aan je INNLI-accommodatiepaspoort: gestructureerde gegevens uit bevestigde feiten, zichtbare feitenlijst, AI-crawlerinstellingen en terugmelding van boekingen via AI-agents."
+
+msgid "No connection to INNLI."
+msgstr "Geen verbinding met INNLI."
+
+msgid "Check the address (open it in your browser: it should show INNLI) and that your INNLI is reachable from the internet."
+msgstr "Controleer het adres (open het in je browser: je moet INNLI zien) en of je INNLI vanaf internet bereikbaar is."
+
+msgid "Fill in the secret key for bookings too, otherwise bookings made through AI agents are not reported back."
+msgstr "Vul ook de geheime sleutel voor boekingen in, anders worden boekingen via AI-agents niet teruggemeld."
+
+msgid "INNLI answered with HTTP %d."
+msgstr "INNLI antwoordde met HTTP %d."
+
+msgid "INNLI does not know this property ID, or the accommodation is not published (switch \"Visible to agents\" on in the INNLI dashboard)."
+msgstr "INNLI kent dit accommodatie-ID niet, of de accommodatie is niet gepubliceerd (zet \"Zichtbaar voor agents\" aan in het INNLI-dashboard)."
+
+msgid "INNLI is almost ready: <a href=\"%s\">fill in the address of your INNLI installation and your property ID</a>."
+msgstr "INNLI is bijna klaar: <a href=\"%s\">vul het adres van je INNLI-installatie en je accommodatie-ID in</a>."
+
+msgid "INNLI: fill in the INNLI address and property ID under Settings → INNLI to show the request form here."
+msgstr "INNLI: vul onder Instellingen → INNLI het INNLI-adres en het accommodatie-ID in, dan verschijnt hier het aanvraagformulier."
+
+msgid "Settings"
+msgstr "Instellingen"
+
+msgid "The address of your own INNLI installation."
+msgstr "Het adres van je eigen INNLI-installatie."
+
+msgid "Two steps to connect: fill in the address where your INNLI runs (for example https://innli.your-bnb.com, the same address as your INNLI dashboard without /dashboard) and your property ID. You find both in the INNLI dashboard under \"Booking & details\"."
+msgstr "In twee stappen verbonden: vul het adres in waar je INNLI draait (bijvoorbeeld https://innli.jouw-bnb.nl, hetzelfde adres als je INNLI-dashboard zonder /dashboard) en je accommodatie-ID. Het ID vind je in het INNLI-dashboard onder \"Boeking & gegevens\"."
