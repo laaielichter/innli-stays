@@ -12,7 +12,7 @@ INNLI is not a chatbot and not another hotel system. It has four parts:
 
 Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.
 
-**One-time purchase, not a subscription.** The B&B runs INNLI itself (Raspberry Pi, own PC or a server) and activates a licence. The seller only hosts the small **INNLI guide**: one address for agents that relays to all self-hosted B&Bs.
+**Free to use; a one-time key to be found.** The B&B runs INNLI itself (Raspberry Pi, own PC or a server), free of charge. A one-time licence key lists the property in the **INNLI guide**: one address for agents that relays to all self-hosted properties. No subscription. See [Licence](#licence).
 
 Nederlands: [README.md](README.md).
 
@@ -133,3 +133,13 @@ npm run pakket -- --concept  # download package (zip) in dist/
 - [agent-kit/](agent-kit/README.md): Claude plugin, MCP registry entry and what agents get in 2.0
 
 More documentation (in Dutch): [docs/](docs/).
+
+## Licence
+
+- **The program:** [Functional Source License 1.1](LICENSE) (FSL-1.1-ALv2).
+  - Free to use, modify and install, also commercially for your own property or for clients.
+  - Not allowed: building a competing product or service with it.
+  - Every version becomes Apache 2.0 two years after its release.
+- **The agent kit:** [MIT](agent-kit/LICENSE).
+- **The WordPress plugin:** GPL-2.0-or-later.
+- **A licence key** (one-time) lists your property in the INNLI guide; see [LICENTIESLEUTEL.md](LICENTIESLEUTEL.md).

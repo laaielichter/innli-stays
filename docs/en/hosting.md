@@ -2,7 +2,7 @@
 
 ## The most important point first
 
-INNLI is sold as a **one-off purchase**: the B&B runs the software itself. The seller only hosts the small **INNLI guide**, the single address agents use to find all self-hosted B&Bs.
+INNLI is free to use; a **one-time licence key** lists you in the INNLI guide. The B&B runs the software itself. The seller only hosts the small **INNLI guide**, the single address agents use to find all self-hosted B&Bs.
 
 AI agents must be able to reach the B&B's installation over the internet **24 hours a day**. If that computer is switched off, the accommodation cannot be found at that moment. Running it locally is perfectly fine, as long as the computer stays on and can be reached through a tunnel.
 

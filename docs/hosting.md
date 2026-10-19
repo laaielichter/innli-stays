@@ -2,7 +2,7 @@
 
 ## Eerst het belangrijkste
 
-INNLI wordt verkocht als **eenmalige koop**: de B&B draait de software zelf. De verkoper host alleen de kleine **INNLI-gids**, het ene adres waarmee agents alle zelf-gehoste B&B's vinden.
+INNLI is gratis te gebruiken; een **eenmalige licentiesleutel** zet je in de INNLI-gids. De B&B draait de software zelf. De verkoper host alleen de kleine **INNLI-gids**, het ene adres waarmee agents alle zelf-gehoste B&B's vinden.
 
 AI-agents moeten de installatie van de B&B **24 uur per dag** via internet kunnen bereiken. Staat die computer uit, dan is de accommodatie op dat moment onvindbaar. Lokaal draaien kan dus prima, zolang de computer aan blijft en via een tunnel bereikbaar is.
 

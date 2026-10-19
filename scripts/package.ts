@@ -26,7 +26,7 @@ if (wpVersion !== VERSION) problems.push(`WordPress-plugin (${wpVersion}) en src
 const tag = process.env.GITHUB_REF_TYPE === 'tag' ? process.env.GITHUB_REF_NAME : undefined;
 if (tag && tag !== `v${VERSION}`) problems.push(`tag ${tag} hoort v${VERSION} te zijn`);
 const releaseOnly: string[] = [];
-if (readFileSync(join(root, 'LICENSE'), 'utf8').includes('[VUL IN')) releaseOnly.push('LICENSE bevat nog [VUL IN …]: vul je naam en KvK-gegevens in');
+if (readFileSync(join(root, 'LICENTIESLEUTEL.md'), 'utf8').includes('[VUL IN')) releaseOnly.push('LICENTIESLEUTEL.md bevat nog [VUL IN …]: vul je naam en KvK-gegevens in');
 if (!VENDOR_PUBLIC_KEY) releaseOnly.push('geen publieke licentiesleutel: draai eerst `npm run licentie -- sleutelpaar` en commit src/licensing/publicKey.ts');
 if (concept) releaseOnly.forEach((p) => console.warn(`let op (concept): ${p}`));
 else problems.push(...releaseOnly);
@@ -41,7 +41,7 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(stage, { recursive: true });
 
 // What the buyer gets. Seller-only material (licence tool, sales and pilot notes, tests, bench) stays out.
-for (const entry of ['src', 'public', 'wordpress-plugin', 'agent-kit', 'docs', 'LICENSE', 'README.md', 'README.en.md', 'CHANGELOG.md', 'Dockerfile', 'docker-compose.yml', 'package-lock.json']) {
+for (const entry of ['src', 'public', 'wordpress-plugin', 'agent-kit', 'docs', 'LICENSE', 'LICENTIESLEUTEL.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'Dockerfile', 'docker-compose.yml', 'package-lock.json']) {
   cpSync(join(root, entry), join(stage, entry), { recursive: true });
 }
 cpSync(join(root, 'docs/installeren.md'), join(stage, 'INSTALLEREN.md'));

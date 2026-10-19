@@ -1,146 +1,105 @@
-LICENTIEVOORWAARDEN INNLI
+# Functional Source License, Version 1.1, ALv2 Future License
 
-Copyright (c) 2026 [VUL IN: naam / handelsnaam]. Alle rechten voorbehouden.
+## Abbreviation
 
-Leverancier: [VUL IN: handelsnaam, KvK-nummer, adres, e-mailadres]
+FSL-1.1-ALv2
 
-Deze software ("INNLI") wordt in licentie gegeven, niet verkocht. Door INNLI te
-installeren of te gebruiken ga je akkoord met deze voorwaarden.
+## Notice
 
-1. Proefversie
-   Je mag INNLI zonder licentiesleutel kosteloos installeren en gebruiken om het
-   te proberen. Zonder geldige licentiesleutel wordt een installatie niet in de
-   INNLI-gids opgenomen.
+Copyright 2026 INNLI
 
-2. Licentie na betaling
-   Na betaling ontvang je een licentiesleutel. Daarmee krijg je een niet-
-   exclusief, niet-overdraagbaar en eeuwigdurend recht om INNLI te gebruiken:
-   a. op één installatie;
-   b. voor het aantal accommodaties dat in de licentiesleutel staat;
-   c. voor alle versies die verschijnen tijdens de updateperiode uit de
-      licentiesleutel. Na afloop van de updateperiode mag je de laatste versie
-      uit die periode onbeperkt blijven gebruiken.
+## Terms and Conditions
 
-3. Wat niet mag
-   Zonder schriftelijke toestemming van de Leverancier mag je niet:
-   a. INNLI, of een aangepaste versie ervan, verkopen, verhuren, weggeven of op
-      een andere manier aan derden ter beschikking stellen;
-   b. INNLI als dienst aanbieden aan anderen (bijvoorbeeld als hosting of SaaS);
-   c. de licentiecontrole omzeilen, of een licentiesleutel delen of op meer
-      installaties gebruiken dan toegestaan;
-   d. een eigen gids of soortgelijke dienst bouwen op basis van INNLI.
-   Je mag INNLI wel aanpassen voor eigen gebruik binnen je licentie.
-   Webbouwers die INNLI voor klanten installeren, hebben per klant een eigen
-   licentie nodig. Ook kan het aantal accommodaties in de licentie daarop
-   worden afgestemd.
+### Licensor ("We")
 
-4. Onderdelen van derden
-   INNLI bevat open-sourceonderdelen van derden. Daarvoor gelden hun eigen
-   licenties, die zijn meegeleverd in THIRD_PARTY_NOTICES.txt en in de map
-   node_modules. De WordPress-plugin (map wordpress-plugin) valt onder
-   GPL-2.0-or-later, zoals voor WordPress-plugins gebruikelijk is.
+The party offering the Software under these Terms and Conditions.
 
-5. Jouw gegevens
-   INNLI draait op jouw eigen apparaat of server. Gegevens van jou en je gasten
-   blijven daar. Jij bent daarvoor verwerkingsverantwoordelijke in de zin van
-   de AVG. De Leverancier ontvangt geen gastgegevens. De INNLI-gids ontvangt
-   alleen gegevens die je openbaar maakt: naam, plaats, korte omschrijving en
-   het adres van je installatie. Zorg zelf voor back-ups.
+### The Software
 
-6. Garantie en aansprakelijkheid
-   INNLI wordt geleverd zoals het is. De Leverancier spant zich in om fouten
-   tijdens de updateperiode te herstellen, maar garandeert niet dat INNLI
-   foutloos of ononderbroken werkt. INNLI maakt geen boekingen in externe
-   systemen en garandeert geen vindbaarheid of positie in zoekmachines of
-   AI-assistenten. De aansprakelijkheid van de Leverancier is beperkt tot het
-   bedrag dat je voor de licentie hebt betaald. De Leverancier is niet
-   aansprakelijk voor indirecte schade, zoals gederfde omzet, gemiste of
-   dubbele boekingen of verlies van gegevens, behalve bij opzet of grove
-   schuld.
+The "Software" is each version of the software that we make available under
+these Terms and Conditions, as indicated by our inclusion of these Terms and
+Conditions with the Software.
 
-7. Zakelijk gebruik
-   De licentie is bedoeld voor ondernemers die INNLI voor hun bedrijf
-   gebruiken.
+### License Grant
 
-8. Beëindiging
-   Handel je in strijd met deze voorwaarden, dan vervalt je licentie en kan
-   de licentiesleutel in de INNLI-gids worden geweigerd. Betaalde bedragen
-   worden dan niet terugbetaald.
+Subject to your compliance with this License Grant and the Patents,
+Redistribution and Trademark clauses below, we hereby grant you the right to
+use, copy, modify, create derivative works, publicly perform, publicly display
+and redistribute the Software for any Permitted Purpose identified below.
 
-9. Toepasselijk recht
-   Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden
-   voorgelegd aan de bevoegde rechter in het arrondissement van de
-   Leverancier.
+### Permitted Purpose
 
-----------------------------------------------------------------------------
+A Permitted Purpose is any purpose other than a Competing Use. A Competing Use
+means making the Software available to others in a commercial product or
+service that:
 
-LICENCE TERMS INNLI (English translation; in case of differences the Dutch
-text above prevails)
+1. substitutes for the Software;
 
-Copyright (c) 2026 [VUL IN / FILL IN: name / trading name]. All rights reserved.
+2. substitutes for any other product or service we offer using the Software
+   that exists as of the date we make the Software available; or
 
-Supplier: [VUL IN / FILL IN: trading name, Chamber of Commerce (KvK) number,
-address, e-mail address]
+3. offers the same or substantially similar functionality as the Software.
 
-This software ("INNLI") is licensed, not sold. By installing or using INNLI
-you accept these terms.
+Permitted Purposes specifically include using the Software:
 
-1. Trial version
-   You may install and use INNLI free of charge without a licence key to try
-   it. Without a valid licence key an installation is not listed in the INNLI
-   guide.
+1. for your internal use and access;
 
-2. Licence after payment
-   After payment you receive a licence key. It gives you a non-exclusive,
-   non-transferable and perpetual right to use INNLI:
-   a. on one installation;
-   b. for the number of properties stated in the licence key;
-   c. for all versions released during the update period stated in the
-      licence key. After the update period you may keep using the last
-      version from that period without limit.
+2. for non-commercial education;
 
-3. What is not allowed
-   Without the Supplier's written permission you may not:
-   a. sell, rent out, give away or otherwise make INNLI, or a modified
-      version of it, available to third parties;
-   b. offer INNLI as a service to others (for example as hosting or SaaS);
-   c. circumvent the licence check, or share a licence key or use it on more
-      installations than allowed;
-   d. build your own guide or a similar service based on INNLI.
-   You may modify INNLI for your own use within your licence. Web designers
-   who install INNLI for clients need a separate licence per client.
+3. for non-commercial research; and
 
-4. Third-party components
-   INNLI contains open-source components of third parties. Their own licences
-   apply; they are included in THIRD_PARTY_NOTICES.txt and in the
-   node_modules folder. The WordPress plugin (wordpress-plugin folder) is
-   licensed under GPL-2.0-or-later, as is usual for WordPress plugins.
+4. in connection with professional services that you provide to a licensee
+   using the Software in accordance with these Terms and Conditions.
 
-5. Your data
-   INNLI runs on your own device or server. Your data and your guests' data
-   stay there. You are the controller of that data within the meaning of
-   the GDPR. The Supplier receives no guest data. The INNLI guide only
-   receives data you make public: name, place, short description and the
-   address of your installation. You are responsible for your own backups.
+### Patents
 
-6. Warranty and liability
-   INNLI is provided as is. The Supplier makes reasonable efforts to fix
-   errors during the update period, but does not guarantee that INNLI works
-   without errors or interruptions. INNLI does not make bookings in external
-   systems and does not guarantee findability or a position in search
-   engines or AI assistants. The Supplier's liability is limited to the
-   amount you paid for the licence. The Supplier is not liable for indirect
-   damage, such as lost revenue, missed or double bookings or loss of data,
-   except in case of intent or gross negligence.
+To the extent your use for a Permitted Purpose would necessarily infringe our
+patents, the license grant above includes a license under our patents. If you
+make a claim against any party that the Software infringes or contributes to
+the infringement of any patent, then your patent license to the Software ends
+immediately.
 
-7. Business use
-   The licence is intended for entrepreneurs who use INNLI for their
-   business.
+### Redistribution
 
-8. Termination
-   If you act in breach of these terms, your licence lapses and the licence
-   key may be refused in the INNLI guide. Amounts paid are not refunded.
+The Terms and Conditions apply to all copies, modifications and derivatives of
+the Software.
 
-9. Applicable law
-   These terms are governed by Dutch law. Disputes are submitted to the
-   competent court in the district of the Supplier.
+If you redistribute any copies, modifications or derivatives of the Software,
+you must include a copy of or a link to these Terms and Conditions and not
+remove any copyright notices provided in or with the Software.
+
+### Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING WITHOUT LIMITATION WARRANTIES OF FITNESS FOR A PARTICULAR
+PURPOSE, MERCHANTABILITY, TITLE OR NON-INFRINGEMENT.
+
+IN NO EVENT WILL WE HAVE ANY LIABILITY TO YOU ARISING OUT OF OR RELATED TO THE
+SOFTWARE, INCLUDING INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES,
+EVEN IF WE HAVE BEEN INFORMED OF THEIR POSSIBILITY IN ADVANCE.
+
+### Trademarks
+
+Except for displaying the License Details and identifying us as the origin of
+the Software, you have no right under these Terms and Conditions to use our
+trademarks, trade names, service marks or product names.
+
+## Grant of Future License
+
+We hereby irrevocably grant you an additional license to use the Software under
+the Apache License, Version 2.0 that is effective on the second anniversary of
+the date we make the Software available. On or after that date, you may use the
+Software under the Apache License, Version 2.0, in which case the following
+will apply:
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License.
+
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.

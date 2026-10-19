@@ -52,4 +52,4 @@ Maak vóór iedere update een back-up (map `data/`, of bij Docker het volume).
 
 ## Hulp
 
-Mail de leverancier; het adres staat in `LICENSE` en op je factuur. Vermeld je versie. Die staat in het dashboard onder *Overzicht → Licentie & INNLI-gids*, of op `http://localhost:3000/health`.
+Mail de leverancier; het adres staat in `LICENTIESLEUTEL.md` en op je factuur. Vermeld je versie. Die staat in het dashboard onder *Overzicht → Licentie & INNLI-gids*, of op `http://localhost:3000/health`.

@@ -52,4 +52,4 @@ Make a backup before every update (the `data/` folder, or the volume if you use 
 
 ## Help
 
-E-mail the supplier; the address is in `LICENSE` and on your invoice. Include your version number. You can find it in the dashboard under *Overview → Licence & INNLI guide*, or at `http://localhost:3000/health`.
+E-mail the supplier; the address is in `LICENTIESLEUTEL.md` and on your invoice. Include your version number. You can find it in the dashboard under *Overview → Licence & INNLI guide*, or at `http://localhost:3000/health`.
