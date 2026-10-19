@@ -1,5 +1,5 @@
 node_modules/
-data/
+/data/
 *.log
 .env
 # Seller licence signing key: never commit
