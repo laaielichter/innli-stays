@@ -1,9 +1,44 @@
 {
   "name": "innli",
   "version": "2.0.0",
-  "private": true,
-  "description": "AI-native booking infrastructure for B&Bs and independent stays",
+  "description": "Self-hosted MCP + REST server that lets AI agents search, quote and request bookings at B&Bs and small hotels, from facts the owner confirmed. Unknown stays unknown.",
+  "mcpName": "io.github.laaielichter/innli",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agents",
+    "travel",
+    "hospitality",
+    "bed-and-breakfast",
+    "hotel-booking",
+    "direct-booking",
+    "self-hosted",
+    "booking-engine",
+    "claude"
+  ],
+  "homepage": "https://github.com/laaielichter/innli-stays#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laaielichter/innli-stays.git"
+  },
+  "bugs": {
+    "url": "https://github.com/laaielichter/innli-stays/issues"
+  },
+  "license": "AGPL-3.0-only",
   "type": "module",
+  "bin": {
+    "innli": "build/main.js",
+    "innli-admin": "build/cli.js",
+    "innli-mcp": "build/mcp/stdio.js"
+  },
+  "files": [
+    "build",
+    "public",
+    "agent-kit",
+    "CHANGELOG.md",
+    "README.en.md"
+  ],
   "engines": {
     "node": ">=22.18"
   },
@@ -23,7 +58,10 @@
     "pakket": "node scripts/package.ts",
     "demo:intl": "INNLI_DEMO=intl INNLI_LANG=en node src/main.ts",
     "measure": "node scripts/measure.ts",
-    "research:injection": "node research/injection-eval.ts"
+    "research:injection": "node research/injection-eval.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "smoke:npm": "node scripts/smoke-npm.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
@@ -36,6 +74,5 @@
     "@types/node": "^26.6.4",
     "@types/nodemailer": "^8.0.2",
     "typescript": "^7.0.2"
-  },
-  "license": "AGPL-3.0-only"
+  }
 }

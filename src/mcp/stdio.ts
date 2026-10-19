@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Runs the INNLI MCP server over stdio against the local data file, e.g. for
  * Claude Desktop or MCP Inspector during development:
