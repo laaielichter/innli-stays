@@ -17,6 +17,9 @@ export interface Listing {
   lastSeenAt: string;
 }
 
+/** Stays per installation in an open guide, so one installation cannot flood it. */
+export const OPEN_MAX_PROPERTIES = 100;
+
 /** Installations that stop checking in disappear from the guide. */
 export const LISTING_TTL_MS = 3 * 86_400_000;
 
@@ -61,11 +64,18 @@ export class Guide {
   private path?: string;
   private fetcher: Fetcher;
   private requireHttps: boolean;
+  private requireLicense: boolean;
 
-  constructor(opts: { path?: string; fetcher: Fetcher; requireHttps: boolean }) {
+  /**
+   * requireLicense: only installations with a licence key are listed. Without it
+   * (the public, donation-funded guide) every installation that proves it runs
+   * at its address is listed, up to OPEN_MAX_PROPERTIES stays.
+   */
+  constructor(opts: { path?: string; fetcher: Fetcher; requireHttps: boolean; requireLicense?: boolean }) {
     this.path = opts.path;
     this.fetcher = opts.fetcher;
     this.requireHttps = opts.requireHttps;
+    this.requireLicense = opts.requireLicense ?? true;
     this.listings = this.path && existsSync(this.path) ? JSON.parse(readFileSync(this.path, 'utf8')) : [];
   }
 
@@ -101,7 +111,7 @@ export class Guide {
     // Judge the licence against the installation's own version, not the guide's: buyers whose
     // update period ended keep their listing as long as they run a version it covered.
     const status = verifyLicense(req.license, { releaseDate: req.releaseDate ?? '0000-00-00' });
-    if (status.state === 'none' || status.state === 'invalid' || status.state === 'updates_expired') {
+    if (status.state === 'invalid' || (this.requireLicense && (status.state === 'none' || status.state === 'updates_expired'))) {
       throw new GuideError(status.state === 'none' ? 'Licentie vereist voor opname in de gids' : `Licentie niet geldig: ${'reason' in status ? status.reason : ''}`, 403);
     }
     const license = status.state === 'licensed' ? status.license : undefined;
@@ -126,7 +136,7 @@ export class Guide {
     const limit = license ? roomLimit(license) : Infinity;
     const overRoomLimit = req.properties.filter((p) => (p.rooms ?? 1) > limit).map((p) => p.name);
     const fitting = req.properties.filter((p) => (p.rooms ?? 1) <= limit);
-    const properties = license ? fitting.slice(0, license.maxProperties) : fitting;
+    const properties = fitting.slice(0, license ? license.maxProperties : OPEN_MAX_PROPERTIES);
     const now = new Date().toISOString();
     const existing = this.listings.find((l) => l.instanceId === req.instanceId);
     const listing: Listing = {

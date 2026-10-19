@@ -2,7 +2,7 @@
 
 ## The most important point first
 
-INNLI is free to use; a **one-time licence key** lists you in the INNLI guide. The B&B runs the software itself. The seller only hosts the small **INNLI guide**, the single address agents use to find all self-hosted B&Bs.
+INNLI is free and open source. The B&B runs the software itself. Next to that runs one small **INNLI guide**: the single address agents use to find all self-hosted B&Bs.
 
 AI agents must be able to reach the B&B's installation over the internet **24 hours a day**. If that computer is switched off, the accommodation cannot be found at that moment. Running it locally is perfectly fine, as long as the computer stays on and can be reached through a tunnel.
 
@@ -20,7 +20,7 @@ You need a fixed address: agents and guests must see an address they can trust (
 
 ### Advice if you have no starting capital
 
-- **Your guide:** on option A or B. It is small (a list of installations, no guest data), so it costs €0 plus your domain name. Only move to option C once there are enough sales.
+- **Your guide:** on option A or B. It is small (a list of installations, no guest data), so it costs €0 plus your domain name. Only move to option C once there are many installations.
 - **The B&B:** a Raspberry Pi or old PC that is always on (option A) is the cheapest for most B&Bs. Anyone who does not want that can choose option B or C at their own expense. You could offer paid installation help.
 
 ## Installation
@@ -34,7 +34,7 @@ npm install --omit=dev
 npm start            # shows an installation code; open http://localhost:3000/dashboard/ and follow the wizard
 ```
 
-Activate the licence: in the dashboard (Overview → *Licence & INNLI guide*) or with `npm run innli -- license <key>`. Set `INNLI_GIDS_URL` to the address of the guide, and the installation registers itself automatically (at start-up and every 12 hours).
+Set `INNLI_GIDS_URL` to the address of the guide, and the installation registers itself automatically (at start-up and every 12 hours). No licence key is needed.
 
 ### With Docker (recommended on a server or Raspberry Pi)
 

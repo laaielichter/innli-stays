@@ -57,8 +57,10 @@ export function buildRegistration(store: Store, publicUrl: string): Registration
  * are shared; the guide asks this installation for everything else live.
  */
 export async function registerWithGuide(store: Store, guideUrl: string, publicUrl: string, fetcher: Fetcher = fetch): Promise<{ ok: boolean; message: string }> {
-  const license = describeLicense(verifyLicense(store.getSettings().license));
-  if (!license.canListInGuide) {
+  // Without a key the guide decides (the public guide is open); a broken key is never sent.
+  const status = verifyLicense(store.getSettings().license);
+  if (status.state === 'invalid') {
+    const license = describeLicense(status);
     store.updateSettings({ directory: { lastError: license.title.toLowerCase() } });
     return { ok: false, message: license.detail };
   }

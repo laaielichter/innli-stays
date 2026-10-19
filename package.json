@@ -36,5 +36,5 @@
     "@types/nodemailer": "^8.0.2",
     "typescript": "^7.0.2"
   },
-  "license": "FSL-1.1-ALv2"
+  "license": "MIT"
 }

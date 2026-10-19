@@ -12,7 +12,7 @@ INNLI is not a chatbot and not another hotel system. It has four parts:
 
 Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.
 
-**Free to use; a one-time key to be found.** The B&B runs INNLI itself (Raspberry Pi, own PC or a server), free of charge. A one-time licence key lists the property in the **INNLI guide**: one address for agents that relays to all self-hosted properties. No subscription. See [Licence](#licence).
+**Free and open source (MIT).** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. No subscription, no licence fees. The project runs on donations: see [Support INNLI](#support-innli).
 
 Nederlands: [README.md](README.md).
 
@@ -35,7 +35,7 @@ Nederlands: [README.md](README.md).
 | **New in 2.0: agents and stays find each other** ([docs/en/agents-2.0.md](docs/en/agents-2.0.md)) | Ten problems from research, solved:<br>• *stay wishes*: agents leave an anonymous wish, and hosts answer with an offer from the dashboard, optionally with a discount;<br>• a *core profile* and brief answers: ~49% less context per turn and ~70% smaller answers;<br>• `nextActions` with prefilled arguments and `freshness` on every answer;<br>• typed errors with `retryable` and `hint`, plus RateLimit headers;<br>• consent with a hash over the terms;<br>• website verification (automatic with the WordPress plugin), a trust block and a signed passport;<br>• a guard against hidden instructions in text;<br>• a time budget for search;<br>• an agent card, MCP server card, `llms.txt` and a Claude plugin ([agent-kit](agent-kit/README.md)). |
 | **New in 1.1** | Paid options (bikes, packed lunch, late check-out), private discount codes, arrival weekdays and a one-night supplement, calculated cancellation costs, alternatives when full, honest scarcity ("2 rooms left"), reviews per aspect, house rules and sustainability as facts, searching for "a long weekend" and a price per night, photo upload with checks for vague descriptions, a booking calendar (iCal), CSV export, occupancy and revenue per channel, automatic backups and restore, a Beds24 connection, OAuth 2.1 for agent platforms and signed status callbacks. See [CHANGELOG.md](CHANGELOG.md). |
 | **Answer assistant** | Answers guest questions straight away in four languages, only from the owner's confirmed details and FAQ; no language model, nothing made up. What is unknown goes to the owner, with a draft of what is already known. Also as *Ask us* on the stay page. |
-| **Licences and guide** | Offline-verifiable Ed25519 licence keys, valid forever for the versions released during the update period. The INNLI guide checks every installation server-side. |
+| **Guide (and optional keys)** | The INNLI guide lists every installation for free, after checking it really runs at its address. Anyone running their own guide with `GIDS_LICENTIE_VEREIST=1` can issue offline-verifiable Ed25519 keys, for example for a closed network of stays. |
 
 ## Agent tools
 
@@ -94,7 +94,7 @@ Then ask, for example: *"Find a quiet farm stay in Tuscany for three nights in M
 | `INNLI_REQUIRE_AGENT_KEY` | – | `1` = only agents with a key may use the MCP connection |
 | `INNLI_DEMO` | – | `1` = Dutch sample data; `intl` = European sample data |
 | `INNLI_ALLOW_PRIVATE_FETCH` | – | `1` = a booking system or calendar on the local network may be called |
-| `INNLI_GIDS_URL` | – | Address of the INNLI guide; with a valid licence the installation registers there |
+| `INNLI_GIDS_URL` | – | Address of the INNLI guide; the installation registers there (at start-up and every 12 hours) |
 | `INNLI_SMTP_URL` / `INNLI_MAIL_FROM` | – | E-mail through the owner's own mailbox |
 | `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Days after the stay before guest data is deleted (minimum 30) |
 | `INNLI_BACKUP_DIR` | – | Folder outside the data folder for a daily automatic backup (USB disk, NAS, synced folder) |
@@ -134,12 +134,13 @@ npm run pakket -- --concept  # download package (zip) in dist/
 
 More documentation (in Dutch): [docs/](docs/).
 
+## Support INNLI
+
+INNLI is free and stays free. Does it help your stay, or are you building an agent with it? Support the project:
+- **Donate:** with the *Sponsor* button at the top of the GitHub page (once it is switched on).
+- **Star it** on GitHub, so others find INNLI.
+- **Contribute:** report bugs, translate, or build a connection to a booking system.
+
 ## Licence
 
-- **The program:** [Functional Source License 1.1](LICENSE) (FSL-1.1-ALv2).
-  - Free to use, modify and install, also commercially for your own property or for clients.
-  - Not allowed: building a competing product or service with it.
-  - Every version becomes Apache 2.0 two years after its release.
-- **The agent kit:** [MIT](agent-kit/LICENSE).
-- **The WordPress plugin:** GPL-2.0-or-later.
-- **A licence key** (one-time) lists your property in the INNLI guide; see [LICENTIESLEUTEL.md](LICENTIESLEUTEL.md).
+[MIT](LICENSE): use, modify, share and sell, also commercially. The WordPress plugin is GPL-2.0-or-later, as usual for WordPress.

@@ -32,14 +32,13 @@ Gegevens staan in Docker in het volume `innli-data` en niet in een map. Een back
 
 ## C. Laten installeren
 
-Heb je een webbouwer? Stuur deze pagina en de zip door. Je eigenaarssleutel en licentiesleutel deel je alleen met iemand die je vertrouwt.
+Heb je een webbouwer? Stuur deze pagina en de zip door. Je eigenaarssleutel deel je alleen met iemand die je vertrouwt.
 
 ## Daarna
 
-1. **Licentie activeren:** in het dashboard onder *Overzicht → Licentie & INNLI-gids*. Plak de sleutel die je per mail kreeg (die begint met `INNLI-`).
-2. **Online zetten:** agents kunnen je alleen bereiken als INNLI 24/7 online is. Kijk in `docs/hosting.md` voor de goedkoopste manier. Een Cloudflare Tunnel is gratis en je hoeft geen poorten open te zetten.
-3. **Instellen:** volg de stappen *Aan de slag* in het dashboard, of lees `docs/handleiding.md`.
-4. **WordPress (optioneel):** ga in WordPress naar *Plugins → Nieuwe plugin → Plugin uploaden* en kies `innli-wordpress-<versie>.zip`. Activeer de plugin en vul onder *Instellingen → INNLI* het adres van je INNLI in (zonder `/dashboard`), plus het accommodatie-ID en de geheime sleutel uit *Boeking & gegevens*. De pagina laat meteen zien of de verbinding werkt.
+1. **Online zetten:** agents kunnen je alleen bereiken als INNLI 24/7 online is. Kijk in `docs/hosting.md` voor de goedkoopste manier. Een Cloudflare Tunnel is gratis en je hoeft geen poorten open te zetten.
+2. **Instellen:** volg de stappen *Aan de slag* in het dashboard, of lees `docs/handleiding.md`.
+3. **WordPress (optioneel):** ga in WordPress naar *Plugins → Nieuwe plugin → Plugin uploaden* en kies `innli-wordpress-<versie>.zip`. Activeer de plugin en vul onder *Instellingen → INNLI* het adres van je INNLI in (zonder `/dashboard`), plus het accommodatie-ID en de geheime sleutel uit *Boeking & gegevens*. De pagina laat meteen zien of de verbinding werkt.
 
 ## Bijwerken naar een nieuwe versie
 
@@ -52,4 +51,4 @@ Maak vóór iedere update een back-up (map `data/`, of bij Docker het volume).
 
 ## Hulp
 
-Mail de leverancier; het adres staat in `LICENTIESLEUTEL.md` en op je factuur. Vermeld je versie. Die staat in het dashboard onder *Overzicht → Licentie & INNLI-gids*, of op `http://localhost:3000/health`.
+Open een issue op GitHub (tabblad *Issues*). Vermeld je versie. Die staat in het dashboard onder *Overzicht → Licentie & INNLI-gids*, of op `http://localhost:3000/health`.

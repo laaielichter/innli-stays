@@ -1,17 +1,16 @@
 /**
- * Builds the files a buyer downloads:
+ * Builds the release downloads:
  *   dist/innli-<versie>.zip            ready to run: `npm start`, no `npm install` needed
  *   dist/innli-wordpress-<versie>.zip  upload in WordPress → Plugins → Nieuwe plugin
  *   dist/SHA256SUMS.txt
  *
- *   npm run pakket               release build: refuses while LICENSE or the licence key is not filled in
- *   npm run pakket -- --concept  test build, only warns
+ *   npm run pakket               release build: refuses when versions or the tag do not match
+ *   npm run pakket -- --concept  test build
  */
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { VENDOR_PUBLIC_KEY } from '../src/licensing/publicKey.ts';
 import { VERSION } from '../src/version.ts';
 
 const root = join(import.meta.dirname, '..');
@@ -25,12 +24,7 @@ if (pkg.version !== VERSION) problems.push(`package.json (${pkg.version}) en src
 if (wpVersion !== VERSION) problems.push(`WordPress-plugin (${wpVersion}) en src/version.ts (${VERSION}) verschillen`);
 const tag = process.env.GITHUB_REF_TYPE === 'tag' ? process.env.GITHUB_REF_NAME : undefined;
 if (tag && tag !== `v${VERSION}`) problems.push(`tag ${tag} hoort v${VERSION} te zijn`);
-const releaseOnly: string[] = [];
-if (readFileSync(join(root, 'LICENTIESLEUTEL.md'), 'utf8').includes('[VUL IN')) releaseOnly.push('LICENTIESLEUTEL.md bevat nog [VUL IN …]: vul je naam en KvK-gegevens in');
-if (!VENDOR_PUBLIC_KEY) releaseOnly.push('geen publieke licentiesleutel: draai eerst `npm run licentie -- sleutelpaar` en commit src/licensing/publicKey.ts');
-if (concept) releaseOnly.forEach((p) => console.warn(`let op (concept): ${p}`));
-else problems.push(...releaseOnly);
-if (problems.length) {
+if (problems.length && !concept) {
   console.error(`Pakket niet gemaakt:\n- ${problems.join('\n- ')}`);
   process.exit(1);
 }
@@ -40,8 +34,8 @@ const stage = join(dist, name);
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(stage, { recursive: true });
 
-// What the buyer gets. Seller-only material (licence tool, sales and pilot notes, tests, bench) stays out.
-for (const entry of ['src', 'public', 'wordpress-plugin', 'agent-kit', 'docs', 'LICENSE', 'LICENTIESLEUTEL.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'Dockerfile', 'docker-compose.yml', 'package-lock.json']) {
+// What a user downloads. Developer material (licence tool, tests, bench) stays out.
+for (const entry of ['src', 'public', 'wordpress-plugin', 'agent-kit', 'docs', 'LICENSE', 'README.md', 'README.en.md', 'CHANGELOG.md', 'Dockerfile', 'docker-compose.yml', 'package-lock.json']) {
   cpSync(join(root, entry), join(stage, entry), { recursive: true });
 }
 cpSync(join(root, 'docs/installeren.md'), join(stage, 'INSTALLEREN.md'));

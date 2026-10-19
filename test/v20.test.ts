@@ -295,3 +295,25 @@ describe('2.0: stay wishes through the INNLI guide', () => {
     assert.equal(res.structuredContent.error.code, 'NOT_FOUND');
   });
 });
+
+describe('2.0: the open guide lists installations without a licence key', () => {
+  it('lists an installation that proves it runs at its address', async () => {
+    const guide = new Guide({ fetcher: fetch, requireHttps: false, requireLicense: false });
+    const server = createServer(createGuideApp(guide));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const guideUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const instance = await startTestServer();
+    try {
+      const r = await registerWithGuide(instance.store, guideUrl, instance.url);
+      assert.equal(r.ok, true, r.message);
+      assert.equal(guide.active()[0].licenseId, undefined);
+      assert.equal(guide.active()[0].properties.length, 3);
+      // A broken key is still refused, open guide or not.
+      instance.store.updateSettings({ license: 'INNLI-kapot.kapot' });
+      assert.equal((await registerWithGuide(instance.store, guideUrl, instance.url)).ok, false);
+    } finally {
+      await instance.close();
+      await new Promise((r) => server.close(r));
+    }
+  });
+});

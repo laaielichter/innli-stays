@@ -2,7 +2,7 @@
 
 ## Eerst het belangrijkste
 
-INNLI is gratis te gebruiken; een **eenmalige licentiesleutel** zet je in de INNLI-gids. De B&B draait de software zelf. De verkoper host alleen de kleine **INNLI-gids**, het ene adres waarmee agents alle zelf-gehoste B&B's vinden.
+INNLI is gratis en open source. De B&B draait de software zelf. Daarnaast draait er één kleine **INNLI-gids**: het ene adres waarmee agents alle zelf-gehoste B&B's vinden.
 
 AI-agents moeten de installatie van de B&B **24 uur per dag** via internet kunnen bereiken. Staat die computer uit, dan is de accommodatie op dat moment onvindbaar. Lokaal draaien kan dus prima, zolang de computer aan blijft en via een tunnel bereikbaar is.
 
@@ -20,7 +20,7 @@ Een vast adres is nodig: agents en gasten moeten een betrouwbaar adres zien (bij
 
 ### Advies zonder startkapitaal
 
-- **Jouw gids:** op optie A of B. Hij is klein (een lijst installaties, geen gastgegevens) en kost dus €0 plus je domeinnaam. Pas naar optie C als er genoeg verkopen zijn.
+- **Jouw gids:** op optie A of B. Hij is klein (een lijst installaties, geen gastgegevens) en kost dus €0 plus je domeinnaam. Pas naar optie C als er veel installaties zijn.
 - **De B&B:** een Raspberry Pi of oude pc die altijd aan staat (optie A) is voor de meeste B&B's het goedkoopst. Wie dat niet wil, neemt optie B of C op eigen rekening. Bied eventueel betaalde installatiehulp aan.
 
 ## Installatie
@@ -34,7 +34,7 @@ npm install --omit=dev
 npm start            # toont een installatiecode; open http://localhost:3000/dashboard/ en volg de wizard
 ```
 
-Licentie activeren: in het dashboard (Overzicht → *Licentie & INNLI-gids*) of `npm run innli -- licentie <sleutel>`. Zet `INNLI_GIDS_URL` op het adres van de gids, dan meldt de installatie zich automatisch aan (bij start en elke 12 uur).
+Zet `INNLI_GIDS_URL` op het adres van de gids, dan meldt de installatie zich automatisch aan (bij start en elke 12 uur). Een licentiesleutel is niet nodig.
 
 ### Met Docker (aanbevolen op een server of Raspberry Pi)
 

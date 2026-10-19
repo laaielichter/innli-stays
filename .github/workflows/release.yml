@@ -21,7 +21,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run lint:php
-      # Stops here if LICENSE or the licence key is not filled in, or the tag does not match the version.
+      # Stops here if the tag does not match the version.
       - run: npm run pakket
       - name: GitHub-release maken
         env:

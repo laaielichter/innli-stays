@@ -101,16 +101,9 @@ Een bericht ziet er zo uit:
 
 **Afleveren:** INNLI wacht maximaal 10 seconden op antwoord. Bij een fout probeert INNLI het na 5 seconden en na 1 minuut opnieuw. De laatste aflevering of fout staat in het dashboard. Een kapotte webhook houdt nooit een boeking tegen. Met de knop *Testbericht sturen* controleer je de koppeling.
 
-## Licentie
+## Grote hotels in de gids
 
-De gewone pakketten dekken tot 20 kamers per accommodatie: genoeg voor elke B&B of pension. Voor hotels zijn er twee pakketten:
-
-| Pakket | Prijs | Hotels | Kamers | Updates | Verlengen |
-|---|---:|---:|---:|---|---:|
-| **Hotel** | € 699 | 1 | tot 150 | 1 jaar | € 149 / jaar |
-| **Hotelgroep** | € 1.499 | tot 5 | onbeperkt | 1 jaar | € 349 / jaar |
-
-Ook zonder licentie werkt alles lokaal. De licentie bepaalt alleen wat er in de INNLI-gids komt. Heeft een accommodatie meer kamers dan de licentie dekt, dan meldt het dashboard bij het aanmelden welke niet is opgenomen en waarom.
+De openbare INNLI-gids neemt elk verblijf gratis op, ook hotels met honderden kamers.
 
 ## Snelheid
 

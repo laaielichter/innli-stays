@@ -101,16 +101,9 @@ A message looks like this:
 
 **Delivery:** INNLI waits up to 10 seconds for an answer. On an error it retries after 5 seconds and after 1 minute. The last delivery or error is shown in the dashboard. A broken webhook never blocks a booking. Use *Send test message* to check the connection.
 
-## Licence
+## Large hotels in the guide
 
-The regular packages cover up to 20 rooms per property: enough for any B&B or guesthouse. Hotels have two packages:
-
-| Package | Price | Hotels | Rooms | Updates | Renewal |
-|---|---:|---:|---:|---|---:|
-| **Hotel** | €699 | 1 | up to 150 | 1 year | €149 / year |
-| **Hotel group** | €1,499 | up to 5 | no limit | 1 year | €349 / year |
-
-Everything also works locally without a licence. The licence only decides what is listed in the INNLI guide. If a property has more rooms than the licence covers, the dashboard says which property was not listed, and why, when you register with the guide.
+The public INNLI guide lists every stay for free, including hotels with hundreds of rooms.
 
 ## Speed
 

@@ -32,14 +32,13 @@ With Docker, your data is stored in the volume `innli-data`, not in a folder. Ho
 
 ## C. Have someone install it
 
-Do you have a web developer? Send them this page and the zip. Only share your owner key and licence key with someone you trust.
+Do you have a web developer? Send them this page and the zip. Only share your owner key with someone you trust.
 
 ## Next steps
 
-1. **Activate your licence:** in the dashboard under *Overview → Licence & INNLI guide*. Paste the key you received by e-mail (it starts with `INNLI-`).
-2. **Put it online:** agents can only reach you if INNLI is online 24/7. See [hosting.md](hosting.md) for the cheapest way. A Cloudflare Tunnel is free and you do not need to open any ports.
-3. **Set it up:** follow the *Getting started* steps in the dashboard, or read [owner-guide.md](owner-guide.md).
-4. **WordPress (optional):** in WordPress, go to *Plugins → Add New Plugin → Upload Plugin* and choose `innli-wordpress-<version>.zip`. Activate it and, under *Settings → INNLI*, fill in the address of your INNLI (without `/dashboard`), plus the property ID and secret key from *Booking & details*. The page shows straight away whether the connection works.
+1. **Put it online:** agents can only reach you if INNLI is online 24/7. See [hosting.md](hosting.md) for the cheapest way. A Cloudflare Tunnel is free and you do not need to open any ports.
+2. **Set it up:** follow the *Getting started* steps in the dashboard, or read [owner-guide.md](owner-guide.md).
+3. **WordPress (optional):** in WordPress, go to *Plugins → Add New Plugin → Upload Plugin* and choose `innli-wordpress-<version>.zip`. Activate it and, under *Settings → INNLI*, fill in the address of your INNLI (without `/dashboard`), plus the property ID and secret key from *Booking & details*. The page shows straight away whether the connection works.
 
 ## Updating to a new version
 
@@ -52,4 +51,4 @@ Make a backup before every update (the `data/` folder, or the volume if you use 
 
 ## Help
 
-E-mail the supplier; the address is in `LICENTIESLEUTEL.md` and on your invoice. Include your version number. You can find it in the dashboard under *Overview → Licence & INNLI guide*, or at `http://localhost:3000/health`.
+Open an issue on GitHub (the *Issues* tab). Include your version number. You can find it in the dashboard under *Overview → Licence & INNLI guide*, or at `http://localhost:3000/health`.

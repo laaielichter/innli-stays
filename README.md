@@ -10,7 +10,7 @@ INNLI is geen chatbot en geen nieuw hotelsysteem. Het is een **accommodatiepaspo
 
 Vindbaar zijn, door een agent begrepen worden en daadwerkelijk geboekt kunnen worden zijn drie verschillende dingen. INNLI ondersteunt de hele route.
 
-**Gratis te gebruiken, betaald gevonden worden.** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server), gratis. Met een eenmalige licentiesleutel komt de accommodatie in de **INNLI-gids**: één adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. Geen abonnement. Zie [Licentie](#licentie).
+**Gratis en open source (MIT).** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server). De **INNLI-gids** is één gratis adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. Geen abonnement, geen licentiekosten. Het project leeft van donaties: zie [Steun INNLI](#steun-innli).
 
 ## Wat er in deze versie zit
 
@@ -41,8 +41,8 @@ Vindbaar zijn, door een agent begrepen worden en daadwerkelijk geboekt kunnen wo
 | **Valuta** | Per accommodatie: EUR, GBP, CHF, DKK, SEK, NOK, PLN, CZK, HUF, RON, ISK, USD, CAD, AUD of NZD, standaard die van het land. INNLI rekent nooit om; een budget wordt alleen binnen één valuta vergeleken. |
 | **Snel** | Append-only opslag met indexen, en parallelle live controles. Gemeten tot 10.000× sneller schrijven en 9× sneller zoeken bij live boekingssystemen; zie [docs/prestaties.md](docs/prestaties.md) en `npm run bench`. |
 | **Installatiewizard** | Eerste start in de browser met een eenmalige installatiecode uit de console; stappenlijst *Aan de slag*; back-up downloaden. |
-| **Licentiesleutels** (`src/licensing`, `tools/license.ts`) | Het programma is gratis (FSL). Een eenmalige, offline te controleren licentiesleutel (Ed25519) zet de accommodatie in de INNLI-gids, voor altijd voor versies uit de updateperiode. Zonder sleutel werkt alles, alleen zonder vermelding in de gids. |
-| **INNLI-gids** (`src/directory`) | Eén MCP-adres voor agentpartners. Zelf-gehoste installaties melden zich aan (licentie en eigendom van het adres worden gecontroleerd); vragen worden live doorgestuurd. De gids bewaart geen prijzen, agenda's of gastgegevens. |
+| **Licentiesleutels (optioneel)** (`src/licensing`, `tools/license.ts`) | Niet nodig: de openbare gids is open. Wie zelf een gids draait met `GIDS_LICENTIE_VEREIST=1`, kan offline te controleren sleutels (Ed25519) uitgeven, bijvoorbeeld voor een besloten netwerk van verblijven. |
+| **INNLI-gids** (`src/directory`) | Eén MCP-adres voor agentpartners. Zelf-gehoste installaties melden zich gratis aan (de gids controleert dat ze echt op hun adres draaien); vragen worden live doorgestuurd. De gids bewaart geen prijzen, agenda's of gastgegevens. |
 | **Demo-boekingssysteem** (`src/demo`) | Een nep-boekingssysteem dat het live-contract implementeert, iCal-feeds en demo-websites serveert, en boekingen terugmeldt. Drie fictieve accommodaties tonen bevestigde, onbevestigde en onbekende gegevens. |
 
 ## Snel starten
@@ -107,7 +107,7 @@ npm run bench       # prestaties meten (300 accommodaties, 200.000 gebeurtenisse
 | `INNLI_REQUIRE_AGENT_KEY` | – | `1` = alleen agents met sleutel mogen de MCP-koppeling gebruiken |
 | `INNLI_DEMO` | – | `1` = Nederlandse demodata, `intl` = zeven Europese voorbeeldaccommodaties (`npm run demo:intl`); met demo-boekingssysteem, staat ook verzoeken naar lokale adressen toe |
 | `INNLI_ALLOW_PRIVATE_FETCH` | – | `1` = boekingssysteem of agenda op het eigen netwerk mag worden aangesproken |
-| `INNLI_GIDS_URL` | – | Adres van de INNLI-gids; met een geldige licentie meldt de installatie zich daar aan |
+| `INNLI_GIDS_URL` | – | Adres van de INNLI-gids; de installatie meldt zich daar aan (bij start en elke 12 uur) |
 | `INNLI_SMTP_URL` | – | E-mail voor aanvragen, bijv. `smtps://info%40mijnbnb.nl:wachtwoord@mail.provider.nl:465` |
 | `INNLI_MAIL_FROM` | SMTP-gebruiker | Afzender van e-mails |
 | `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Na hoeveel dagen na het verblijf gastgegevens worden gewist (min. 30) |
@@ -160,12 +160,13 @@ curl -X POST localhost:3000/api/admin/agents -H "authorization: Bearer $INNLI_AD
 - Publicatie in ChatGPT/Claude-appdirectories: een werkende MCP-server is niet hetzelfde als een goedgekeurde, gepubliceerde koppeling.
 - Productie-opslag op een database: de bestandsopslag (JSON + JSONL met indexen) is gemeten met 300 accommodaties en 200.000 gebeurtenissen, en heeft een smalle interface om naar Postgres te verhuizen.
 
+## Steun INNLI
+
+INNLI is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent mee? Steun het project:
+- **Doneren:** via de knop *Sponsor* bovenaan de GitHub-pagina (zodra die aan staat).
+- **Een ster geven** op GitHub, zodat anderen INNLI vinden.
+- **Bijdragen:** meld fouten, vertaal, of bouw een koppeling met een boekingssysteem.
+
 ## Licentie
 
-- **Het programma:** [Functional Source License 1.1](LICENSE) (FSL-1.1-ALv2).
-  - Gratis te gebruiken, aan te passen en te installeren, ook commercieel voor je eigen accommodatie of voor klanten.
-  - Niet toegestaan: een concurrerend product of een concurrerende dienst ermee bouwen.
-  - Elke versie wordt twee jaar na verschijnen Apache 2.0.
-- **De agent-kit:** [MIT](agent-kit/LICENSE). Agentbouwers mogen alles meenemen.
-- **De WordPress-plugin:** GPL-2.0-or-later.
-- **Een licentiesleutel** (eenmalig) zet je accommodatie in de INNLI-gids; zie [LICENTIESLEUTEL.md](LICENTIESLEUTEL.md).
+[MIT](LICENSE): gebruiken, aanpassen, delen en verkopen mag, ook commercieel. De WordPress-plugin valt onder GPL-2.0-or-later, zoals gebruikelijk voor WordPress.

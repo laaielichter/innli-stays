@@ -42,6 +42,11 @@ Agents en accommodaties vinden elkaar. We zochten uit waar het tussen AI-agents 
 - `/.well-known/agent-card.json`, `/.well-known/mcp.json` en `/llms.txt`, op elke installatie en op de gids.
 - `agent-kit/` met een Claude-plugin (skill `find-stay`) en `server.json` voor het MCP-register.
 
+### Open source
+- INNLI is nu open source onder de [MIT-licentie](LICENSE). De WordPress-plugin blijft GPL.
+- De openbare INNLI-gids neemt elke installatie gratis op. Een licentiesleutel is niet meer nodig.
+- Wie een eigen gids draait, kan met `GIDS_LICENTIE_VEREIST=1` nog steeds alleen installaties met een sleutel opnemen.
+
 ### Let op bij overstappen van 1.x
 - Er zijn 19 tools in plaats van 16.
 - Foutresultaten hebben nu ook `structuredContent.error`.
