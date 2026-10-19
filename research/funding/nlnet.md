@@ -14,7 +14,7 @@ The public GitHub repository `innli-stays`.
 
 AI agents are starting to search and book travel for people. Small independent accommodations risk becoming invisible to them, or reachable only through large platforms that own the data and the customer relationship and charge 15–22% commission.
 
-INNLI is MIT-licensed software that an accommodation hosts itself. It combines:
+INNLI is AGPL-3.0 software (agent kit MIT) that an accommodation hosts itself. It combines:
 - an accommodation passport whose facts the owner confirms (confirmed, unconfirmed or unknown, never guessed);
 - one open connection for any agent (MCP and REST/OpenAPI) to search, quote and, with the guest's explicit consent, request a booking;
 - a small federated guide that lets agents reach all self-hosted installations through one address, while every installation answers live and keeps its own data.

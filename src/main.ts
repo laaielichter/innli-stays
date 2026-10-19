@@ -36,7 +36,7 @@ if (store.listProperties().length === 0) {
 
 const mailer = createMailer(config.smtpUrl, config.mailFrom);
 const backups = config.backupDir ? { dir: config.backupDir, run: () => backupNow(store, config.dataFile, config.backupDir!, { keep: config.backupKeep }) } : undefined;
-const app = createApp({ store, catalog, fetcher, adminKey: config.adminKey, requireAgentKey: config.requireAgentKey, demo: config.demo, publicUrl: config.publicUrl, guideUrl: config.guideUrl, mailer, setupCode, mediaDir: join(dataDir, 'media'), backups });
+const app = createApp({ store, catalog, fetcher, adminKey: config.adminKey, requireAgentKey: config.requireAgentKey, demo: config.demo, publicUrl: config.publicUrl, guideUrl: config.guideUrl, sourceUrl: config.sourceUrl, mailer, setupCode, mediaDir: join(dataDir, 'media'), backups });
 
 // Daily backup to a second place (INNLI_BACKUP_DIR), shortly after start and then every day.
 if (backups) {

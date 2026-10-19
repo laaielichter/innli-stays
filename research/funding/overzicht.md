@@ -4,7 +4,7 @@ Gecontroleerd op 19 oktober 2026. Fondsen veranderen vaak: controleer de offici�
 
 ## Nu
 
-INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe financiering, en de licentie blijft MIT. Onderstaande fondsen en verdienmodellen zijn opties voor later, geen lopende aanvragen.
+INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe financiering, en de licentie is AGPL-3.0. Onderstaande fondsen en verdienmodellen zijn opties voor later, geen lopende aanvragen.
 
 ## Fondsen
 
@@ -25,11 +25,11 @@ INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe fin
 ## Later verdienen
 
 INNLI is en blijft open source. Dat is een vaste keuze, geen tussenfase:
-- **Licentie:** alle code blijft MIT. Er komt geen gesloten "pro"-versie en er gaan geen functies achter een betaalmuur.
+- **Licentie:** de kern is AGPL-3.0 en blijft altijd open. Wie INNLI gesloten in een eigen product wil bouwen, koopt een commerciële licentie ([COMMERCIAL.md](../../COMMERCIAL.md)). Een B&B of hotel mist zonder betalen niets.
 - **Standaarden:** het paspoort, de toestemmings-hash en de uitwisseling van verblijfswensen worden open specificaties die iedereen mag implementeren.
 - **Gegevens:** die blijven bij de eigenaar. Iedereen kan een eigen installatie of een eigen gids draaien.
 
-Verdienen komt later, en alleen met diensten rond de open software:
+Verdienen komt later, met de commerciële licentie en met diensten rond de open software:
 
 - **Gehoste installatie** voor wie geen Raspberry Pi of server wil, voor een vast bedrag per maand. De software blijft gratis zelf te draaien.
 - **Installatie en ondersteuning** voor accommodaties en hotels.

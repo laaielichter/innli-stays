@@ -50,7 +50,7 @@ Agents en accommodaties vinden elkaar. We zochten uit waar het tussen AI-agents 
   - getallen en links in geknipte teksten raakten verminkt ("8.00" werd "8. 00").
 
 ### Open source
-- INNLI is nu open source onder de [MIT-licentie](LICENSE). De WordPress-plugin blijft GPL.
+- INNLI is nu open source onder de [GNU AGPL-3.0](LICENSE), met een [commerciële licentie](COMMERCIAL.md) voor wie INNLI gesloten wil inbouwen. De agent-kit is MIT, de WordPress-plugin blijft GPL. Bijdragen vallen onder de [CLA](CLA.md).
 - De openbare INNLI-gids neemt elke installatie gratis op. Een licentiesleutel is niet meer nodig.
 - Wie een eigen gids draait, kan met `GIDS_LICENTIE_VEREIST=1` nog steeds alleen installaties met een sleutel opnemen.
 

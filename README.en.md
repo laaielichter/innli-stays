@@ -12,7 +12,7 @@ INNLI is not a chatbot and not another hotel system. It has four parts:
 
 Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.
 
-**Free and open source (MIT).** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. No subscription, no licence fees. The project runs on donations: see [Support INNLI](#support-innli).
+**Free and open source (AGPL-3.0).** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. No subscription, no licence fees. The project runs on donations: see [Support INNLI](#support-innli).
 
 Nederlands: [README.md](README.md).
 
@@ -95,6 +95,7 @@ Then ask, for example: *"Find a quiet farm stay in Tuscany for three nights in M
 | `INNLI_DEMO` | – | `1` = Dutch sample data; `intl` = European sample data |
 | `INNLI_ALLOW_PRIVATE_FETCH` | – | `1` = a booking system or calendar on the local network may be called |
 | `INNLI_GIDS_URL` | – | Address of the INNLI guide; the installation registers there (at start-up and every 12 hours) |
+| `INNLI_SOURCE_URL` | – | Where the source of this version is (AGPL). If you modified INNLI and run it online, link to your public code here; it appears in `/health` and `/.well-known/innli.json` |
 | `INNLI_SMTP_URL` / `INNLI_MAIL_FROM` | – | E-mail through the owner's own mailbox |
 | `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Days after the stay before guest data is deleted (minimum 30) |
 | `INNLI_BACKUP_DIR` | – | Folder outside the data folder for a daily automatic backup (USB disk, NAS, synced folder) |
@@ -147,4 +148,8 @@ INNLI is free and stays free. Does it help your stay, or are you building an age
 
 ## Licence
 
-[MIT](LICENSE): use, modify, share and sell, also commercially. The WordPress plugin is GPL-2.0-or-later, as usual for WordPress.
+- **The program:** [GNU AGPL-3.0](LICENSE). Free to use and modify, also for your own business. If you offer a modified version over a network, you share that version's source code.
+- **A commercial licence** is available for building INNLI into your own product without sharing your code. See [COMMERCIAL.md](COMMERCIAL.md).
+- **The agent kit:** [MIT](agent-kit/LICENSE), so agents connect without conditions.
+- **The WordPress plugin:** GPL-2.0-or-later.
+- **Contributions** fall under the [contributor agreement](CLA.md).

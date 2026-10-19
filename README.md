@@ -10,7 +10,7 @@ INNLI is geen chatbot en geen nieuw hotelsysteem. Het is een **accommodatiepaspo
 
 Vindbaar zijn, door een agent begrepen worden en daadwerkelijk geboekt kunnen worden zijn drie verschillende dingen. INNLI ondersteunt de hele route.
 
-**Gratis en open source (MIT).** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server). De **INNLI-gids** is één gratis adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. Geen abonnement, geen licentiekosten. Het project leeft van donaties: zie [Steun INNLI](#steun-innli).
+**Gratis en open source (AGPL-3.0).** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server). De **INNLI-gids** is één gratis adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. Geen abonnement, geen licentiekosten. Het project leeft van donaties: zie [Steun INNLI](#steun-innli).
 
 ## Wat er in deze versie zit
 
@@ -108,6 +108,7 @@ npm run bench       # prestaties meten (300 accommodaties, 200.000 gebeurtenisse
 | `INNLI_DEMO` | – | `1` = Nederlandse demodata, `intl` = zeven Europese voorbeeldaccommodaties (`npm run demo:intl`); met demo-boekingssysteem, staat ook verzoeken naar lokale adressen toe |
 | `INNLI_ALLOW_PRIVATE_FETCH` | – | `1` = boekingssysteem of agenda op het eigen netwerk mag worden aangesproken |
 | `INNLI_GIDS_URL` | – | Adres van de INNLI-gids; de installatie meldt zich daar aan (bij start en elke 12 uur) |
+| `INNLI_SOURCE_URL` | – | Waar de broncode van deze versie staat (AGPL). Heb je INNLI aangepast en draait die online, zet hier dan de link naar jouw openbare code; die staat in `/health` en `/.well-known/innli.json` |
 | `INNLI_SMTP_URL` | – | E-mail voor aanvragen, bijv. `smtps://info%40mijnbnb.nl:wachtwoord@mail.provider.nl:465` |
 | `INNLI_MAIL_FROM` | SMTP-gebruiker | Afzender van e-mails |
 | `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Na hoeveel dagen na het verblijf gastgegevens worden gewist (min. 30) |
@@ -173,4 +174,8 @@ INNLI is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent me
 
 ## Licentie
 
-[MIT](LICENSE): gebruiken, aanpassen, delen en verkopen mag, ook commercieel. De WordPress-plugin valt onder GPL-2.0-or-later, zoals gebruikelijk voor WordPress.
+- **Het programma:** [GNU AGPL-3.0](LICENSE). Gratis te gebruiken en aan te passen, ook voor je eigen bedrijf. Bied je een aangepaste versie aan via internet, dan deel je de broncode van die versie.
+- **Een commerciële licentie** is er voor wie INNLI in een eigen product wil bouwen zonder de eigen code te delen. Zie [COMMERCIAL.md](COMMERCIAL.md).
+- **De agent-kit:** [MIT](agent-kit/LICENSE), zodat agents zonder voorwaarden koppelen.
+- **De WordPress-plugin:** GPL-2.0-or-later.
+- **Bijdragen** vallen onder de [bijdragersovereenkomst](CLA.md).

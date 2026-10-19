@@ -15,6 +15,8 @@ export interface Config {
   allowPrivateFetch: boolean;
   /** INNLI guide to announce published stays to; empty = not listed. */
   guideUrl?: string;
+  /** Where users find the source of the version that runs here (AGPL-3.0, section 13). */
+  sourceUrl?: string;
   /** SMTP URL for request e-mails, e.g. smtps://user:pass@mail.example.nl:465 */
   smtpUrl?: string;
   mailFrom?: string;
@@ -38,6 +40,7 @@ export function loadConfig(env = process.env): Config {
     requireAgentKey: env.INNLI_REQUIRE_AGENT_KEY === '1',
     allowPrivateFetch: env.INNLI_ALLOW_PRIVATE_FETCH === '1' || env.INNLI_DEMO === '1' || env.INNLI_DEMO === 'intl',
     guideUrl: env.INNLI_GIDS_URL || undefined,
+    sourceUrl: env.INNLI_SOURCE_URL || undefined,
     smtpUrl: env.INNLI_SMTP_URL || undefined,
     mailFrom: env.INNLI_MAIL_FROM || undefined,
     retentionDays: Math.max(30, Number(env.INNLI_BEWAARTERMIJN_DAGEN ?? 180) || 180),

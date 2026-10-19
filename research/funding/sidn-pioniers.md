@@ -12,7 +12,7 @@ INNLI: kleine accommodaties vindbaar en boekbaar voor AI-agents, zonder tussenpe
 
 ## Samenvatting (± 100 woorden)
 
-AI-agents gaan namens reizigers zoeken en boeken. Kleine B&B's en pensions dreigen daarbij onzichtbaar te worden, of alleen bereikbaar via grote platforms met 15–22% commissie. INNLI is open-sourcesoftware (MIT) die een accommodatie zelf host:
+AI-agents gaan namens reizigers zoeken en boeken. Kleine B&B's en pensions dreigen daarbij onzichtbaar te worden, of alleen bereikbaar via grote platforms met 15–22% commissie. INNLI is open-sourcesoftware (AGPL-3.0) die een accommodatie zelf host:
 - een paspoort met gegevens die de eigenaar zelf bevestigt;
 - één open koppeling (MCP en REST) waarmee elke agent kan zoeken, prijzen opvragen en met toestemming van de gast een aanvraag doen;
 - een gratis gids die alle installaties vindbaar maakt.
@@ -49,7 +49,7 @@ Met dit project gaan we van werkende software naar bewezen in de praktijk:
 
 ## Kennisdeling
 
-- Alle code staat onder MIT.
+- Alle code staat onder de AGPL-3.0, de agent-kit onder MIT.
 - Alle datasets en meetscripts staan in de openbare repo (`research/`).
 - Een openbaar eindverslag met de resultaten, ook als die tegenvallen.
 - Een handleiding voor accommodaties in het Nederlands en Engels.

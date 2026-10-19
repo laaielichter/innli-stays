@@ -22,10 +22,10 @@ Node.js 22.18 of nieuwer. Er is geen build-stap: Node draait de TypeScript direc
 
 ## Open source, ook in de toekomst
 
-INNLI blijft MIT. Bijdragen worden nooit later onder een gesloten licentie gebracht, en er komt geen betaalde versie met functies die hier ontbreken.
+De kern van INNLI is AGPL-3.0 en blijft open: alles staat hier, voor iedereen. Grote partijen die INNLI gesloten willen inbouwen, kunnen een commerciële licentie nemen ([COMMERCIAL.md](COMMERCIAL.md)). Daarmee blijft het project betaalbaar en onafhankelijk.
 
 ## Afspraken
 
 - Houd onbekende gegevens onbekend: INNLI verzint nooit iets voor een agent.
 - Schrijf een test bij elke wijziging (`test/`), en zorg dat `npm test` en `npm run typecheck` slagen.
-- Door een pull request te sturen, geef je je bijdrage onder de [MIT-licentie](LICENSE).
+- Door een pull request te sturen, ga je akkoord met de [bijdragersovereenkomst](CLA.md). Daarmee kan je bijdrage zowel onder de AGPL als onder de commerciële licentie gebruikt worden.

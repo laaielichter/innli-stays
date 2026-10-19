@@ -1,6 +1,6 @@
 # INNLI agent kit
 
-Everything an agent platform or developer needs to connect an agent to INNLI. The kit is MIT-licensed ([LICENSE](LICENSE)): copy it, change it and ship it with your agent.
+Everything an agent platform or developer needs to connect an agent to INNLI. The kit is MIT-licensed ([LICENSE](LICENSE)), unlike the AGPL core: copy it, change it and ship it with your agent.
 
 | What | Where |
 |---|---|

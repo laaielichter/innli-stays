@@ -6,7 +6,7 @@ authors:
   - name: "The INNLI authors"
 version: 2.0.0
 date-released: "2026-10-19"
-license: MIT
+license: AGPL-3.0-only
 keywords:
   - AI agents
   - Model Context Protocol

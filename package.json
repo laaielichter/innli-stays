@@ -37,5 +37,5 @@
     "@types/nodemailer": "^8.0.2",
     "typescript": "^7.0.2"
   },
-  "license": "MIT"
+  "license": "AGPL-3.0-only"
 }

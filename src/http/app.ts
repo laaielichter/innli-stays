@@ -56,8 +56,10 @@ export interface AppOptions {
   requireAgentKey?: boolean;
   /** Public base URL, used for calendar export links. */
   publicUrl: string;
-  /** INNLI guide this installation announces itself to (one-time-purchase model). */
+  /** INNLI guide this installation announces itself to. */
   guideUrl?: string;
+  /** Source of the running version (AGPL-3.0, section 13); a modified installation points to its own public code. */
+  sourceUrl?: string;
   /** Whether agents without a key may act for guests (requests, questions). Default true. */
   anonymousActions?: boolean;
   /** Notifications for booking requests; without it requests only show in the dashboard. */
@@ -168,7 +170,7 @@ export function createApp(opts: AppOptions) {
   const startedAt = Date.now();
   app.get('/health', (_req, res) => {
     const props = store.listProperties();
-    res.json({ ok: true, version: VERSION, uptimeSeconds: Math.round((Date.now() - startedAt) / 1000), properties: props.length, published: props.filter((p) => p.published).length });
+    res.json({ ok: true, version: VERSION, license: 'AGPL-3.0-only', sourceCode: opts.sourceUrl, uptimeSeconds: Math.round((Date.now() - startedAt) / 1000), properties: props.length, published: props.filter((p) => p.published).length });
   });
 
   /** Who is calling: an agent key, a name relayed by the INNLI guide, or anonymous. Null = refused (response sent). */
@@ -386,7 +388,7 @@ export function createApp(opts: AppOptions) {
 
   /** Lets the INNLI guide verify that this installation really runs at this address. */
   app.get('/.well-known/innli.json', (_req, res) => {
-    res.json(wellKnown(store));
+    res.json({ ...wellKnown(store), license: 'AGPL-3.0-only', sourceCode: opts.sourceUrl });
   });
 
   // Discovery: where agent platforms and crawlers look for an agent-ready service.
