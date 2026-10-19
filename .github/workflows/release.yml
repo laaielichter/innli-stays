@@ -1,6 +1,7 @@
 # Nieuwe versie uitbrengen:  git tag v2.0.0 && git push origin v2.0.0
 # Maakt een GitHub-release met de zips (programma + WordPress-plugin) en een
-# Docker-image voor x86 en ARM (Raspberry Pi) op ghcr.io/<eigenaar>/innli.
+# Docker-image voor x86 en ARM (Raspberry Pi) op ghcr.io/<eigenaar>/innli,
+# en publiceert het npm-pakket innli.
 name: Release
 on:
   push:
@@ -27,6 +28,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt --title "INNLI ${GITHUB_REF_NAME#v}" --generate-notes
+
+  npm:
+    needs: zip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing (OIDC) needs npm 11.5 or newer.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      # With trusted publishing set up on npmjs.com no token is needed.
+      # The NPM_TOKEN secret is only for the very first publish, before the package exists on npm.
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker:
     needs: zip
