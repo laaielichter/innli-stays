@@ -83,6 +83,21 @@ const LABELS: Record<string, Tr> = {
   'vehicle.winterReady': { en: 'Winter-ready', de: 'Wintertauglich', fr: 'Équipé pour l’hiver' },
   'vehicle.bikeRack': { en: 'Bike rack', de: 'Fahrradträger', fr: 'Porte-vélos' },
   'vehicle.awning': { en: 'Awning', de: 'Markise', fr: 'Store' },
+  'rental.maxDriverAge': { en: 'Maximum driver age', de: 'Höchstalter des Fahrers', fr: 'Âge maximum du conducteur' },
+  'rental.foreignLicencesAccepted': { en: 'Licences from outside your region accepted', de: 'Führerscheine von außerhalb der Region akzeptiert', fr: 'Permis hors région acceptés' },
+  'rental.idpRequired': { en: 'International driving permit needed with a foreign licence', de: 'Internationaler Führerschein bei ausländischem Führerschein nötig', fr: 'Permis international requis avec un permis étranger' },
+  'rental.creditCardRequired': { en: 'Deposit only by credit card in the driver\'s name', de: 'Kaution nur per Kreditkarte auf den Namen des Fahrers', fr: 'Caution uniquement par carte de crédit au nom du conducteur' },
+  'rental.liabilityIncluded': { en: 'Third-party liability insurance included', de: 'Haftpflichtversicherung inbegriffen', fr: 'Assurance responsabilité civile incluse' },
+  'rental.rentalUseInsured': { en: 'Your insurer covers renting out to others', de: 'Ihr Versicherer deckt die Vermietung an Dritte', fr: 'Votre assureur couvre la location à des tiers' },
+  'rental.insuranceCountries': { en: 'Countries where the insurance is valid', de: 'Länder, in denen die Versicherung gilt', fr: 'Pays où l\'assurance est valable' },
+  'rental.roadsideAssistance': { en: 'Roadside assistance included', de: 'Pannenhilfe inbegriffen', fr: 'Assistance dépannage incluse' },
+  'rental.emergencyPhone': { en: 'Phone number for breakdown or damage', de: 'Telefonnummer bei Panne oder Schaden', fr: 'Numéro en cas de panne ou de dommage' },
+  'rental.termsUrl': { en: 'Link to your rental terms', de: 'Link zu Ihren Mietbedingungen', fr: 'Lien vers vos conditions de location' },
+  'rental.idCheckAtPickup': { en: 'Licence and identity checked at pick-up', de: 'Führerschein und Ausweis bei Abholung geprüft', fr: 'Permis et identité vérifiés à la prise en charge' },
+  'rental.handoverReport': { en: 'Damage report at pick-up and return', de: 'Schadensprotokoll bei Abholung und Rückgabe', fr: 'État des lieux au départ et au retour' },
+  'rental.pricesIncludeVat': { en: 'Prices include VAT', de: 'Preise inklusive MwSt.', fr: 'Prix TVA incluse' },
+  'vehicle.maxMassKg': { en: 'Maximum authorised mass', de: 'Zulässige Gesamtmasse', fr: 'Masse maximale autorisée' },
+  'vehicle.inspectionValidUntil': { en: 'Roadworthiness inspection valid until', de: 'Hauptuntersuchung gültig bis', fr: 'Contrôle technique valable jusqu\'au' },
 };
 
 const CATEGORIES: Record<string, Tr> = {
@@ -101,10 +116,19 @@ const CATEGORIES: Record<string, Tr> = {
   Bed: { en: 'Bed', de: 'Bett', fr: 'Lit' },
   Verhuur: { en: 'Rental terms', de: 'Mietbedingungen', fr: 'Conditions de location' },
   Voertuig: { en: 'Vehicle', de: 'Fahrzeug', fr: 'Véhicule' },
+  'Verzekering en regels': { en: 'Insurance and rules', de: 'Versicherung und Regeln', fr: 'Assurance et règles' },
 };
 
 const HINTS_EN: Record<string, string> = {
   'rental.securityDeposit': 'The amount a guest gets back after returning the vehicle undamaged. Enter 0 if you ask none.',
+  'rental.maxDriverAge': 'Leave unknown if you have no maximum.',
+  'rental.foreignLicencesAccepted': 'Within Europe (EU, EEA, Switzerland, UK) a licence from another country does not count as foreign.',
+  'rental.creditCardRequired': 'Many renters arrive without a credit card. Say it up front.',
+  'rental.rentalUseInsured': 'An ordinary motorhome policy usually does not cover renting out. Ask your insurer to confirm it in writing.',
+  'rental.insuranceCountries': 'Country codes, for example NL, BE, DE, FR.',
+  'rental.termsUrl': 'The full terms the renter signs. Agents pass this link on.',
+  'vehicle.maxMassKg': 'On the registration document. It decides which licence is needed.',
+  'vehicle.inspectionValidUntil': 'A date such as 2027-05-31. A rental that ends later is not accepted.',
   'rental.kmIncludedPerDay': 'Leave empty when kilometres are unlimited.',
   'vehicle.licenceCategory': 'B for vehicles up to 3,500 kg; C1 up to 7,500 kg. Agents check this against the driver.',
   'vehicle.beltedSeats': 'Only seats with a seat belt count: this is the most people who may travel.',

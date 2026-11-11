@@ -67,6 +67,8 @@ export interface QuoteOptions {
   discountCode?: string;
   /** Camper rental: who will drive. */
   driver?: Driver;
+  /** Camper rental: countries the guest plans to drive in. */
+  destinations?: string[];
 }
 
 /** Agent identity used by the owner dashboard: sees unpublished stays and is not counted in analytics. */
@@ -642,6 +644,7 @@ export class Catalog {
     this.checkCodeUses(property, opts.discountCode);
     const quote = buildQuote({ id: `q_${randomUUID()}`, property, unit, checkin, checkout, nights, guests, breakfast, availability, rooms: opts.rooms, ratePlanId: opts.ratePlanId, extras: opts.extras, discountCode: opts.discountCode });
     if (opts.driver && isCamperRental(property)) quote.driver = opts.driver;
+    if (opts.destinations?.length && isCamperRental(property)) quote.destinations = opts.destinations.map((d) => d.toUpperCase());
     // A short hold while the agent asks the guest for consent, so a busy property cannot sell the room meanwhile.
     if (opts.hold && availability.status === 'available' && quote.bookingMode === 'availability_request') {
       quote.hold = { until: new Date(Date.now() + QUOTE_HOLD_MINUTES * 60_000).toISOString() };

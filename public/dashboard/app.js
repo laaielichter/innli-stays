@@ -140,7 +140,27 @@ function showTab(tab) {
 
 // ------------------------------------------------------------------ Render
 
+const READY_CHIP = { done: ['In orde', 'confirmed'], open: ['Nog bevestigen', 'unconfirmed'], problem: ['Niet in orde', 'fail'] };
+async function renderRentalReady() {
+  const card = $('#rental-ready');
+  if (state.property.type !== 'camper_rental' || state.me?.role === 'reception') { card.hidden = true; return; }
+  const r = await api('/rental-readiness').catch(() => null);
+  if (!r) { card.hidden = true; return; }
+  card.hidden = false;
+  $('#rental-ready-intro').textContent = r.ready
+    ? T('Alles wat nodig is om zichtbaar te zijn voor agents heb je bevestigd.')
+    : T('Bevestig de verplichte punten in je paspoort. Pas daarna kun je zichtbaar worden voor agents.');
+  // What is in order needs no attention: show only what is still open.
+  const open = r.items.filter((i) => i.state !== 'done');
+  $('#rental-ready-items').replaceChildren(h('p', { class: 'small' }, T('{0} van {1} punten in orde.', r.items.length - open.length, r.items.length)), ...open.map((i) => h('div', { class: 'row', style: 'align-items:flex-start;gap:10px;margin:8px 0' },
+    h('span', { class: `chip ${READY_CHIP[i.state][1]}` }, READY_CHIP[i.state][0]),
+    h('div', {}, h('strong', {}, `${i.what}${i.required ? ' *' : ''}`), h('div', { class: 'muted small' }, i.why)),
+  )));
+  $('#rental-ready-note').textContent = `* ${T('verplicht')}. ${r.disclaimer}`;
+}
+
 function renderAll() {
+  renderRentalReady();
   const p = state.property;
   $('#prop-name').textContent = p.name;
   $('#published').checked = p.published;
@@ -653,7 +673,7 @@ let drawCancel = () => {};
 
 function renderOffer() {
   const p = state.property;
-  extrasDraft = (p.extras || []).map((x) => ({ ...x }));
+  extrasDraft = (p.extras || []).map((x) => ({ ...x, insDeductible: x.insurance?.deductible, insDeposit: x.insurance?.securityDeposit }));
   codesDraft = (p.discountCodes || []).map((x) => ({ ...x }));
   cancelDraft = (p.cancellationRules || []).map((x) => ({ ...x }));
   drawExtras = listEditor($('#extras-rows'), extrasDraft, [
@@ -662,6 +682,10 @@ function renderOffer() {
     { key: 'per', label: 'Prijs geldt', options: PER_OPTIONS() },
     { key: 'max', label: 'Maximaal aantal', type: 'number', placeholder: '1' },
     { key: 'description', label: 'Toelichting (optioneel)' },
+    ...(p.type === 'camper_rental' ? [
+      { key: 'insDeductible', label: 'Verzekeringspakket: eigen risico (leeg = geen verzekering)', type: 'number' },
+      { key: 'insDeposit', label: 'Verzekeringspakket: borg (optioneel)', type: 'number' },
+    ] : []),
   ], 'Nog geen opties.');
   drawCodes = listEditor($('#codes-rows'), codesDraft, [
     { key: 'code', label: 'Code', placeholder: 'bijv. WELKOMTERUG' },
@@ -693,6 +717,7 @@ $('#offer-form').addEventListener('submit', guard(async (e) => {
     const out = { id, name, price: Number(x.price), per: x.per || 'stay' };
     if (Number(x.max) > 1) out.max = Number(x.max);
     if (String(x.description || '').trim()) out.description = String(x.description).trim();
+    if (x.insDeductible !== undefined && x.insDeductible !== '') out.insurance = { ...(x.insurance || {}), deductible: Number(x.insDeductible), securityDeposit: x.insDeposit === undefined || x.insDeposit === '' ? undefined : Number(x.insDeposit) };
     return out;
   });
   const discountCodes = codesDraft.map((c) => {
@@ -984,7 +1009,8 @@ $('#copy-secret').addEventListener('click', guard(async () => {
 }));
 
 $('#published').addEventListener('change', guard(async (e) => {
-  const { property } = await api('/property', { method: 'PATCH', body: { published: e.target.checked } });
+  let property;
+  try { ({ property } = await api('/property', { method: 'PATCH', body: { published: e.target.checked } })); } catch (err) { e.target.checked = state.property.published; renderRentalReady(); throw err; }
   state.property = property;
   renderAll();
   renderChecklist();

@@ -17,8 +17,9 @@ import { canonical } from '../security/signing.ts';
 function rentalConsent(property: Property, quote: Quote) {
   const unit = property.units.find((u) => u.id === quote.unitId);
   if (!unit || !isCamperRental(property)) return undefined;
-  const { kilometres, securityDeposit, insurance, driverRules, abroad, fuelPolicy } = rentalTerms(property, unit, quote);
-  return { kilometres, securityDeposit, insurance, driverRules, abroad, fuelPolicy, driver: quote.driver ?? null };
+  const { kilometres, securityDeposit, depositByCreditCardOnly, insurance, driverRules, abroad, fuelPolicy, termsUrl } = rentalTerms(property, unit, quote);
+  const { options: _offered, ...cover } = insurance;
+  return { kilometres, securityDeposit, depositByCreditCardOnly, insurance: cover, driverRules, abroad, fuelPolicy, termsUrl, driver: quote.driver ?? null, destinations: quote.destinations ?? [] };
 }
 
 export function consentTerms(property: Property, quote: Quote) {

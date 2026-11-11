@@ -20,7 +20,7 @@ Guest question (dogs, breakfast, parking, stairs …)? answer_question first: in
 Groups too large for one room get a 2–3 room combination; book it with request_booking({ quoteIds }).
 Hotels: a room type can have several identical rooms (roomsOfThisType, roomsLeft); pass rooms to get_quote. Rate plans (e.g. non-refundable) are in ratePlanOptions; pass ratePlanId. get_quote({ hold: true }) holds the rooms 15 minutes while the guest decides.
 Paid options (bikes, packed lunch, late check-out, cot) are in get_stay_details.extras: add them to get_quote only when the guest wants them. A guest with a discount code: pass discountCode. Quotes list cancellationCosts per date; check_status gives the cost of cancelling now.
-Camper rental (motorhomes, campervans) is searched separately: search_stays({ kind: "camper" }). Nights are rental days. Ask the guest who drives and pass driver (age, licenceCategory, licenceYears) to get_quote: quote.rental says whether that driver may rent the vehicle, and gives kilometres, deposit (not in the total), insurance and pick-up. Without an eligible driver request_booking is refused.
+Camper rental (motorhomes, campervans) is searched separately: search_stays({ kind: "camper" }). Nights are rental days. Ask the guest who drives and pass driver (age, licenceCategory, licenceYears) to get_quote: quote.rental says whether that driver may rent the vehicle, and gives kilometres, deposit (not in the total), insurance and pick-up. Insurance packages that lower the deductible are in rental.insurance.options: add one to extras only when the guest wants it. Guest wants to drive abroad? Pass destinations (country codes): rental.trip says whether the vehicle may go there and is insured there. rental.jurisdiction is a rule of thumb for that country, never legal advice. Without an eligible driver, or for a country the vehicle may not go to, request_booking is refused.
 Guest wants other dates or another room? modify_request (a confirmed booking stays valid until the change is confirmed). Data looks wrong? report_data_issue.
 
 Honesty rules:
@@ -100,8 +100,10 @@ const availabilityInput = { propertyId: z.string(), checkin: date, checkout: dat
 const driver = z
   .object({
     age: z.number().int().min(16).max(99),
-    licenceCategory: z.string().max(4).optional().describe('Driving licence category the driver holds, e.g. B, C1 or C'),
+    licenceCategory: z.string().max(20).optional().describe('Driving licence category the driver holds: B, C1 or C in Europe; elsewhere "regular" for an ordinary car licence'),
     licenceYears: z.number().int().min(0).max(80).optional().describe('Years the driver has held that licence'),
+    licenceCountry: z.string().length(2).optional().describe('Country that issued the licence (two letters, e.g. NL, US)'),
+    hasInternationalPermit: z.boolean().optional().describe('The driver also has an international driving permit'),
   })
   .optional()
   .describe('Camper rental only: the main driver. The answer says under rental.driver whether this driver may rent this vehicle. Ask the guest; never guess.');
@@ -118,6 +120,7 @@ const quoteInput = {
   extras: extrasInput,
   discountCode: z.string().max(40).optional().describe('A discount code the guest has from the host (acceptsDiscountCodes in get_stay_details). Never guess codes.'),
   driver,
+  destinations: z.array(z.string().length(2)).max(15).optional().describe('Camper rental only: countries the guest plans to drive in (two letters each). rental.trip then says whether the vehicle may go there and is insured there.'),
   detail,
 };
 const prepareInput = { quoteId: z.string().describe('quoteId from get_quote or search_stays') };
@@ -441,7 +444,7 @@ export function toolHandlers(ctx: ToolContext): ToolHandlers {
     check_availability: (args: ToolArgs<'check_availability'>) => catalog.checkAvailability(args.propertyId, args.checkin, args.checkout, args.guests ?? defaultGuests, agentClient, { rooms: args.rooms }),
     get_quote: (args: ToolArgs<'get_quote'>) => {
       if (args.hold) actions?.reserveQuoteHold(agent, args.rooms ?? 1);
-      return catalog.quote(args.propertyId, args.unitId, args.checkin, args.checkout, args.guests ?? defaultGuests, args.breakfast ?? false, agentClient, { rooms: args.rooms, ratePlanId: args.ratePlanId, hold: args.hold, extras: args.extras, discountCode: args.discountCode, driver: args.driver });
+      return catalog.quote(args.propertyId, args.unitId, args.checkin, args.checkout, args.guests ?? defaultGuests, args.breakfast ?? false, agentClient, { rooms: args.rooms, ratePlanId: args.ratePlanId, hold: args.hold, extras: args.extras, discountCode: args.discountCode, driver: args.driver, destinations: args.destinations });
     },
     prepare_booking: (args: ToolArgs<'prepare_booking'>) => catalog.prepareBooking(args.quoteId, agentClient),
     find_available_dates: (args: ToolArgs<'find_available_dates'>) => catalog.findAvailableDates(args.propertyId, { ...args, guests: args.guests ?? defaultGuests }, agentClient),
