@@ -117,6 +117,7 @@ npm run bench       # prestaties meten (300 accommodaties, 200.000 gebeurtenisse
 | `INNLI_BACKUP_DIR` | – | Map buiten de datamap voor een dagelijkse automatische back-up (USB-schijf, NAS, gesynchroniseerde map) |
 | `INNLI_BACKUP_KEEP` | `14` | Aantal dagelijkse back-ups dat bewaard blijft |
 | `INNLI_UCP_VERSION` | `2026-08-25` | Versie in het UCP-profiel en de antwoorden; de standaard voor verblijven is een concept |
+| `INNLI_TRUST_PROXY` | `1` | Aantal reverse proxy's of tunnels ervoor waarvan de `X-Forwarded-*`-headers worden vertrouwd. Zet op `0` als de installatie rechtstreeks vanaf internet bereikbaar is; anders kan een beller zich als een ander adres voordoen |
 
 Beheer via de commandoregel: `npm run innli -- lijst`, `npm run innli -- nieuwe-sleutel <id>`, `npm run innli -- agent "Naam"`, `npm run innli -- licentie <sleutel>` (Engels: `list`, `new-key`, `agent`, `license`). Stop de server eerst; die houdt zijn gegevens in het geheugen.
 

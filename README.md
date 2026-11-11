@@ -117,6 +117,7 @@ Then ask, for example: *"Find a quiet farm stay in Tuscany for three nights in M
 | `INNLI_BACKUP_DIR` | – | Folder outside the data folder for a daily automatic backup (USB disk, NAS, synced folder) |
 | `INNLI_BACKUP_KEEP` | `14` | Number of daily backups kept |
 | `INNLI_UCP_VERSION` | `2026-08-25` | Version named in the UCP profile and responses; the lodging capability is a draft |
+| `INNLI_TRUST_PROXY` | `1` | Reverse proxies or tunnels in front whose `X-Forwarded-*` headers are trusted. Set `0` when the installation is reachable directly from the internet, or callers can pretend to be another address |
 
 Command line: `npm run innli -- list`, `npm run innli -- new-key <id>`, `npm run innli -- agent "Name"`, `npm run innli -- license <key>`. Stop the server first.
 

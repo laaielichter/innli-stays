@@ -31,6 +31,7 @@ export type AgentCaller = AgentContext;
 /** Open (unanswered) requests one holder may have per property. */
 /** Short quote holds (15 minutes) one caller may have at the same time. */
 export const MAX_QUOTE_HOLDS = { anonymous: 3, identified: 60 };
+// Counted per room: three rooms held in one quote are three holds.
 const QUOTE_HOLD_MS = 15 * 60_000;
 
 export const MAX_OPEN_HOLDS = { anonymous: 2, identified: 25, perGuest: 3 };
@@ -80,9 +81,10 @@ export class AgentActions {
    * requests are limited per holder and per guest address; an agent that
    * proved who it is gets room to work for many guests at once.
    */
-  private holdGuard(property: Property, agent: AgentContext, email: string, rooms: number): string {
+  private holdGuard(property: Property, agent: AgentContext, email: string, rooms: number, replacing?: BookingRequest): string {
     const holder = holderId(agent);
-    const open = this.store.requestsFor(property.id).filter((r) => r.status === 'new' && (!r.holdUntil || Date.parse(r.holdUntil) > Date.now()));
+    // A change and the request it replaces count as one.
+    const open = this.store.requestsFor(property.id).filter((r) => r.id !== replacing?.id && r.status === 'new' && (!r.holdUntil || Date.parse(r.holdUntil) > Date.now()));
     const identified = (agent.identity ?? 'anonymous') !== 'anonymous';
     const max = identified ? MAX_OPEN_HOLDS.identified : MAX_OPEN_HOLDS.anonymous;
     const groups = (list: BookingRequest[]) => new Set(list.map((r) => r.groupId ?? r.id)).size;
@@ -185,13 +187,15 @@ export class AgentActions {
       message: args.message,
     });
     // A retried call is the same request, not another hold.
-    const replay = args.idempotencyKey ? this.store.findRequestByIdempotencyKey(property.id, agent.name, args.idempotencyKey) : undefined;
+    // Keys are scoped to the caller: anonymous agents share a name, and one must never get another's request back.
+    const idempotencyKey = args.idempotencyKey ? `${holderId(agent)}:${args.idempotencyKey}`.slice(0, 120) : undefined;
+    const replay = idempotencyKey ? this.store.findRequestByIdempotencyKey(property.id, agent.name, idempotencyKey) : undefined;
     const holder = replay ? undefined : this.holdGuard(property, agent, args.guest.email, (quotes as Quote[]).reduce((n, q) => n + (q.rooms ?? 1), 0));
     let members: BookingRequest[];
     try {
       members = quotes.length === 1
-        ? [await this.requests.create(property, raw(first), { agentClient: agent.name, idempotencyKey: args.idempotencyKey, language: args.guestLanguage, approved: args.consentHash ? approved : undefined })]
-        : await this.requests.createGroup(property, quotes.map((q) => raw(q!)), { agentClient: agent.name, idempotencyKey: args.idempotencyKey, language: args.guestLanguage, approved: args.consentHash ? approved : undefined });
+        ? [await this.requests.create(property, raw(first), { agentClient: agent.name, idempotencyKey, language: args.guestLanguage, approved: args.consentHash ? approved : undefined })]
+        : await this.requests.createGroup(property, quotes.map((q) => raw(q!)), { agentClient: agent.name, idempotencyKey, language: args.guestLanguage, approved: args.consentHash ? approved : undefined });
     } catch (err) {
       if (err instanceof RequestError) throw new CatalogError(err.message, { code: err.code });
       if (err instanceof z.ZodError) throw new CatalogError('Invalid guest details: provide a full name and a valid e-mail address.');
@@ -250,9 +254,9 @@ export class AgentActions {
     waitlist: WaitlistService,
   ) {
     if (args.guestConsent !== true) throw new CatalogError('Only add the guest when they agreed to be e-mailed about this stay (guestConsent: true).', { code: 'CONSENT_REQUIRED' });
-    this.guard(agent, 'waitlist');
     const property = this.store.getProperty(args.propertyId);
     if (!property || !property.published) throw new CatalogError('Accommodation not found.', { code: 'NOT_FOUND' });
+    this.guard(agent, 'waitlist', property);
     const entry = waitlist.join(property, { ...args, guests: args.guests ?? {}, language: args.guestLanguage }, agent.name);
     this.audit(property, agent, 'join_waitlist', { waitlistId: entry.id });
     return {
@@ -266,7 +270,7 @@ export class AgentActions {
     const property = this.store.getProperty(args.propertyId);
     if (!property || !property.published) throw new CatalogError('Accommodation not found.', { code: 'NOT_FOUND' });
     if (args.replyEmail && args.guestConsent !== true) throw new CatalogError('Only pass replyEmail when the guest agreed to share it with the host (guestConsent: true).', { code: 'CONSENT_REQUIRED' });
-    this.guard(agent, 'question');
+    this.guard(agent, 'question', property);
     try {
       const q = await this.questions.ask(property, { ...args, language: args.guestLanguage }, agent.name);
       this.audit(property, agent, 'ask_host', { questionId: q.id, factKey: q.factKey, answeredBy: q.answeredBy });
@@ -330,11 +334,11 @@ export class AgentActions {
     agent: AgentContext,
   ) {
     if (args.guestConsent !== true) throw new CatalogError('Only change a booking when the guest explicitly asked for it (set guestConsent: true).', { code: 'CONSENT_REQUIRED' });
-    this.guard(agent, 'modify');
     const old = this.store.getRequestByToken(args.statusToken);
     if (!old) throw new CatalogError('Unknown status token.', { code: 'NOT_FOUND' });
     const property = this.store.getProperty(old.propertyId);
     if (!property) throw new CatalogError('Accommodation not found.', { code: 'NOT_FOUND' });
+    this.guard(agent, 'modify', property);
     if (old.groupId) throw new CatalogError('Group requests cannot be changed in one step: cancel_request and send a new group request.');
     if (old.status !== 'new' && old.status !== 'accepted') throw new CatalogError(`This request is ${old.status}; send a new request instead.`, { code: 'CONFLICT' });
     if (old.status === 'accepted' && old.checkin <= new Date().toISOString().slice(0, 10)) throw new CatalogError('The stay has already started; contact the host directly.', { code: 'CONFLICT' });
@@ -358,9 +362,14 @@ export class AgentActions {
       phone: old.guest.phone,
       message: args.message ?? old.guest.message,
     };
+    // A change holds rooms like any request: the same limits apply, and the holder is recorded.
+    const holder = this.holdGuard(property, agent, old.guest.email, raw.rooms, old);
     let created: BookingRequest;
     try {
       created = await this.requests.create(property, raw, { agentClient: agent.name, language: old.language, replaces: old });
+      created.holder = holder;
+      if (created.consent) Object.assign(created.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
+      this.store.saveRequest(created);
     } catch (err) {
       if (err instanceof RequestError) throw new CatalogError(err.message, { code: err.code });
       if (err instanceof z.ZodError) throw new CatalogError('Invalid change: check dates, room and party.');
@@ -384,7 +393,7 @@ export class AgentActions {
   async reportDataIssue(args: { propertyId: string; description: string; factKey?: string; unitId?: string }, agent: AgentContext) {
     const property = this.store.getProperty(args.propertyId);
     if (!property || !property.published) throw new CatalogError('Accommodation not found.', { code: 'NOT_FOUND' });
-    this.guard(agent, 'issue');
+    this.guard(agent, 'issue', property);
     try {
       const q = await this.questions.ask(property, { question: args.description, factKey: args.factKey, unitId: args.unitId, kind: 'issue', language: 'en' }, agent.name);
       this.audit(property, agent, 'report_data_issue', { questionId: q.id, factKey: q.factKey });

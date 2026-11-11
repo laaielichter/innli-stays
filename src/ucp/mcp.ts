@@ -89,7 +89,7 @@ export function createUcpMcpServer(ucp: UcpLodging, caller: AgentContext, public
   };
   const tools: Record<keyof typeof UCP_TOOLS, (args: Args, agent: AgentContext) => Promise<unknown> | unknown> = {
     create_booking_session: (args, agent) => ucp.create(args.booking, agent, args.meta['ucp-agent'].profile, args.meta['idempotency-key']),
-    get_booking_session: (args) => ucp.get(need(args.id)),
+    get_booking_session: (args, agent) => ucp.get(need(args.id), agent),
     update_booking_session: (args, agent) => ucp.update(need(args.id), args.booking, agent),
     complete_booking_session: (args, agent) => ucp.complete(need(args.id), { payment: args.booking?.payment ?? args.payment }, agent),
     cancel_booking_session: (args, agent) => ucp.cancel(need(args.id), args.booking, agent),

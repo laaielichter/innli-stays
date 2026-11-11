@@ -29,7 +29,7 @@ const CLOCK_SKEW_SECONDS = 60;
 
 export type BotAuthResult =
   | { status: 'none' }
-  | { status: 'verified'; agent: string; origin: string; keyId: string; /** Names of the signed components, lower case. */ covered: string[] }
+  | { status: 'verified'; agent: string; origin: string; keyId: string; /** Names of the signed components, lower case. */ covered: string[]; /** Signed with a nonce (single use). */ nonce: boolean; validitySeconds: number }
   | { status: 'invalid'; reason: string };
 
 export interface SignedRequest {
@@ -40,6 +40,8 @@ export interface SignedRequest {
   /** Host names this server answers to (the Host header, the public URL). The signer used one of them. */
   authorities: string[];
   headers: Record<string, string | string[] | undefined>;
+  /** The raw request body, when there is one: a signed Content-Digest is compared with it. */
+  body?: Buffer;
 }
 
 interface Member {
@@ -220,15 +222,26 @@ export class BotAuthVerifier {
       return base !== null && verify(null, Buffer.from(base), key, signature);
     });
     if (!ok) return fail('bad_signature');
+    // A signed digest that does not match the body means the body was swapped.
+    if (names.includes('content-digest') && req.body !== undefined) {
+      const digest = headerValue(req.headers, 'content-digest') ?? '';
+      const expected = /sha-256=:([A-Za-z0-9+/=]+):/.exec(digest)?.[1];
+      if (!expected || expected !== createHash('sha256').update(req.body).digest('base64')) return fail('content_digest_mismatch');
+    }
 
     // A nonce makes a captured request useless a second time.
     if (nonce) {
       const id = `${keyid}:${nonce}`;
       if ((this.nonces.get(id) ?? 0) >= nowSeconds) return fail('replayed_nonce');
       this.nonces.set(id, expiresAt);
-      if (this.nonces.size > 20_000) for (const [k, until] of this.nonces) if (until < nowSeconds) this.nonces.delete(k);
+      if (this.nonces.size > 20_000) {
+        for (const [k, until] of this.nonces) if (until < nowSeconds) this.nonces.delete(k);
+        // Still full: drop the oldest. The map must never grow without bound.
+        for (const k of this.nonces.keys()) if (this.nonces.size > 15_000) this.nonces.delete(k);
+          else break;
+      }
     }
-    return { status: 'verified', agent: new URL(origin).host, origin, keyId: keyid, covered: names };
+    return { status: 'verified', agent: new URL(origin).host, origin, keyId: keyid, covered: names, nonce: Boolean(nonce), validitySeconds: expiresAt - createdAt };
   }
 
   private async directory(origin: string, mayFetch?: () => boolean): Promise<CachedDirectory> {
@@ -285,7 +298,7 @@ export function signRequest(key: KeyObject, agentOrigin: string, target: string,
   const created = Math.floor((opts.now ?? Date.now()) / 1000);
   const out: Record<string, string> = { ...opts.headers, 'signature-agent': `"${agentOrigin.replace(/\/$/, '')}"` };
   if (opts.body !== undefined) out['content-digest'] = `sha-256=:${createHash('sha256').update(opts.body).digest('base64')}:`;
-  const derived: [string, string][] = [['@method', (opts.method ?? 'POST').toUpperCase()], ['@authority', url.host.toLowerCase()]];
+  const derived: [string, string][] = [['@method', (opts.method ?? 'POST').toUpperCase()], ['@authority', url.host.toLowerCase()], ['@path', url.pathname || '/']];
   const fields = Object.keys(out).sort().map((name): [string, string] => [name.toLowerCase(), out[name].trim()]);
   const all = [...derived, ...fields];
   const params = `(${all.map(([n]) => `"${n}"`).join(' ')});created=${created};expires=${created + 300};keyid="${keyId}";alg="ed25519";nonce="${randomBytes(12).toString('base64url')}";tag="${BOT_AUTH_TAG}"`;

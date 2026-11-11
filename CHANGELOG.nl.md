@@ -44,6 +44,15 @@ Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies
 ### Annuleren
 - Elke offerte heeft **`cancellation`**: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar alleen een tekst heeft.
 
+### Aangescherpt na een onafhankelijke review
+- Een handtekening telt alleen voor het eigen openbare adres van de installatie (`INNLI_PUBLIC_URL`), nooit voor een hostnaam die de beller meestuurt. Een ondertekende `Content-Digest` wordt met de inhoud vergeleken.
+- Verzoeken die de gids doorgeeft moeten eenmalig zijn (nonce), hooguit vijf minuten geldig, en ondertekend met methode en pad.
+- `modify_request` telt als vasthouden en legt de houder vast; `ask_host`, `join_waitlist` en `report_data_issue` volgen ook de regel *Alleen herkenbare agents*.
+- Idempotentiesleutels gelden per beller, zodat twee anonieme agents nooit elkaars aanvraag terugkrijgen.
+- UCP: een sessie van een herkenbare beller is alleen voor die beller zichtbaar; een mislukte wijziging laat de sessie en het vasthouden ongemoeid; totalen per verblijf tellen exact op, ook met korting; kamers met verschillende tariefplannen krijgen elk hun eigen annuleringsvoorwaarden.
+- Kort vasthouden telt per kamer.
+- Nieuw: `INNLI_TRUST_PROXY` (standaard `1`). Zet op `0` als de installatie rechtstreeks vanaf internet bereikbaar is. Voor een gids: `GIDS_TRUST_PROXY`.
+
 ### Let op bij overstappen van 2.0
 - `LIMIT_REACHED` geeft via REST nu status 429 in plaats van 400.
 - Een anonieme agent kan per accommodatie nog 2 aanvragen tegelijk open hebben. Platforms die voor veel gasten werken: onderteken je verzoeken of gebruik een sleutel.

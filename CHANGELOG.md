@@ -42,6 +42,15 @@ Knowing which agent is calling, holding rooms without abuse, and booking session
 ### Cancelling
 - Every quote has **`cancellation`**: `refundability`, `freeUntil` and what cancelling costs today. `unknown` if the owner only has a text.
 
+### Hardened after an independent review
+- A signature only counts for this installation's own public host (`INNLI_PUBLIC_URL`), never for a host name the caller sends. A signed `Content-Digest` is compared with the body.
+- Requests relayed by the guide must be single use (nonce), valid for at most five minutes, and signed with method and path.
+- `modify_request` counts as a hold and records its holder; `ask_host`, `join_waitlist` and `report_data_issue` follow the *identified agents only* rule too.
+- Idempotency keys are scoped to the caller, so two anonymous agents never get each other's request.
+- UCP: a session opened by an identified caller is only visible to that caller; a failed update leaves the session and its holds untouched; per-stay totals add up exactly, also with discounts; rooms on different rate plans get their own cancellation terms.
+- Short holds are counted per room.
+- New: `INNLI_TRUST_PROXY` (default `1`). Set it to `0` when the installation is reachable directly from the internet. For a guide: `GIDS_TRUST_PROXY`.
+
 ### Note when moving from 2.0
 - `LIMIT_REACHED` now gives status 429 over REST instead of 400.
 - An anonymous agent can have only 2 requests open at a time per property. Platforms that work for many guests: sign your requests or use a key.
