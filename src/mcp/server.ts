@@ -410,8 +410,10 @@ export function toolHandlers(ctx: ToolContext): ToolHandlers {
       ),
     get_stay_details: (args: ToolArgs<'get_stay_details'>) => catalog.details(args.propertyId, agentClient, args.language),
     check_availability: (args: ToolArgs<'check_availability'>) => catalog.checkAvailability(args.propertyId, args.checkin, args.checkout, args.guests ?? defaultGuests, agentClient, { rooms: args.rooms }),
-    get_quote: (args: ToolArgs<'get_quote'>) =>
-      catalog.quote(args.propertyId, args.unitId, args.checkin, args.checkout, args.guests ?? defaultGuests, args.breakfast ?? false, agentClient, { rooms: args.rooms, ratePlanId: args.ratePlanId, hold: args.hold, extras: args.extras, discountCode: args.discountCode }),
+    get_quote: (args: ToolArgs<'get_quote'>) => {
+      if (args.hold) actions?.reserveQuoteHold(agent);
+      return catalog.quote(args.propertyId, args.unitId, args.checkin, args.checkout, args.guests ?? defaultGuests, args.breakfast ?? false, agentClient, { rooms: args.rooms, ratePlanId: args.ratePlanId, hold: args.hold, extras: args.extras, discountCode: args.discountCode });
+    },
     prepare_booking: (args: ToolArgs<'prepare_booking'>) => catalog.prepareBooking(args.quoteId, agentClient),
     find_available_dates: (args: ToolArgs<'find_available_dates'>) => catalog.findAvailableDates(args.propertyId, { ...args, guests: args.guests ?? defaultGuests }, agentClient),
     get_availability_calendar: (args: ToolArgs<'get_availability_calendar'>) => catalog.availabilityCalendar(args.propertyId, args.month, agentClient, args.unitId),

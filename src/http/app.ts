@@ -18,7 +18,7 @@ import { completeness, FACT_CATALOG, FactValidationError, getFactDefinition, own
 import { LANGUAGES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
 import { demoEngine } from '../demo/engine.ts';
 import { registerWithGuide, wellKnown } from '../directory/register.ts';
-import { GUIDE_AGENT_HEADER } from '../directory/types.ts';
+import { GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER } from '../directory/types.ts';
 import { describeLicense, verifyLicense } from '../licensing/license.ts';
 import { RELEASE_DATE, VERSION } from '../version.ts';
 import { createMailer, type Mailer } from '../requests/mailer.ts';
@@ -164,6 +164,13 @@ export function createApp(opts: AppOptions) {
   const verifiedLimit = rateWindow(600);
   // Looking up an unknown key directory costs an outbound request: keep that scarce per address.
   const directoryLimit = rateLimiter(6);
+  const guideOrigin = (() => {
+    try {
+      return opts.guideUrl ? new URL(opts.guideUrl).origin : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
   const botAuth = new BotAuthVerifier(opts.fetcher, { allowHttp: opts.insecureAgentDirectories ?? Boolean(opts.demo) });
   const auditLimit = rateLimiter(10);
 
@@ -198,11 +205,17 @@ export function createApp(opts: AppOptions) {
       { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [...new Set([String(req.headers.host ?? ''), req.hostname, new URL(opts.publicUrl).host].filter(Boolean))], headers: req.headers },
       { mayFetch: () => directoryLimit(ip) },
     );
-    const verified = signed.status === 'verified' ? signed.agent : undefined;
-    res.set('x-innli-agent-identity', signed.status === 'verified' ? `verified; agent="${signed.agent}"` : signed.status === 'invalid' ? `invalid; reason="${signed.reason}"` : agent ? 'key' : 'anonymous');
+    // The guide this installation is listed in relays for many agents. Its signature proves the request is the
+    // guide's; what it says about the agent behind it (name, verified domain, a caller id) is signed with it.
+    const fromGuide = signed.status === 'verified' && guideOrigin === signed.origin && [GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER].every((h) => signed.covered.includes(h));
+    const relayedDomain = fromGuide ? String(req.headers[GUIDE_IDENTITY_HEADER] ?? '').toLowerCase() : '';
+    const relay = fromGuide ? { holder: String(req.headers[GUIDE_HOLDER_HEADER] ?? '').replace(/[^\w:.-]/g, '').slice(0, 64) || 'unknown', domain: /^[a-z0-9.-]+(:\d+)?$/.test(relayedDomain) && relayedDomain !== 'anonymous' ? relayedDomain : undefined } : undefined;
+    const verified = relay ? relay.domain : signed.status === 'verified' ? signed.agent : undefined;
+    res.set('x-innli-agent-identity', verified ? `verified; agent="${verified}"${relay ? '; via="guide"' : ''}` : relay ? 'anonymous; via="guide"' : signed.status === 'invalid' ? `invalid; reason="${signed.reason}"` : agent ? 'key' : 'anonymous');
     // IETF RateLimit headers on every agent response, so a polite agent can pace itself before it hits the limit.
     // A verified platform has its own, larger budget: its users share a few addresses and must not block each other.
-    const rate = verified ? verifiedLimit(`wba:${verified}`) : mcpLimit(agent ? `key:${agent.id}` : ip);
+    const bucket = agent ? `key:${agent.id}` : verified ? `wba:${verified}` : relay ? `guide:${relay.holder}` : `ip:${ip}`;
+    const rate = verified ? verifiedLimit(bucket) : mcpLimit(agent || relay ? bucket : ip);
     res.set('ratelimit-policy', `${rate.limit};w=60`).set('ratelimit', `limit=${rate.limit}, remaining=${rate.remaining}, reset=${rate.resetSeconds}`);
     res.set('ratelimit-limit', String(rate.limit)).set('ratelimit-remaining', String(rate.remaining)).set('ratelimit-reset', String(rate.resetSeconds));
     if (!rate.allowed) {
@@ -220,11 +233,12 @@ export function createApp(opts: AppOptions) {
     // Requests relayed by the INNLI guide carry the agent's name, for the owner's statistics.
     const relayed = String(req.headers[GUIDE_AGENT_HEADER] ?? '').replace(/[^\p{L}\p{N} .\-_()]/gu, '').slice(0, 80);
     return {
-      name: agent?.name ?? verified ?? (relayed || 'anoniem'),
+      // A relayed name says so ("X via INNLI-gids"); a platform calling directly is named by its domain.
+      name: agent?.name ?? (relayed || verified || 'anoniem'),
       canAct: agent ? (agent.scopes ?? ['read', 'act']).includes('act') : opts.anonymousActions !== false,
       identity: agent ? 'key' : verified ? 'verified' : 'anonymous',
       verifiedDomain: verified,
-      bucket: agent ? `key:${agent.id}` : verified ? `wba:${verified}` : `ip:${ip}`,
+      bucket,
     };
   };
 
@@ -281,7 +295,10 @@ export function createApp(opts: AppOptions) {
       res.status(404).json({ error: `Unknown tool: ${name}`, ...errorBody(`Unknown tool: ${name}`, { code: 'NOT_FOUND', hint: 'See /api/agent/v1/openapi.json for the tools.' }) });
       return;
     }
-    const parsed = z.object(def.inputSchema as z.ZodRawShape).safeParse(req.body ?? {});
+    // The header also becomes the stored idempotency key of a booking request, so a retry is safe even after a restart.
+    const headerKey = String(req.headers['idempotency-key'] ?? '').trim().slice(0, 80);
+    const input = name === 'request_booking' && headerKey && req.body && typeof req.body === 'object' && !(req.body as { idempotencyKey?: string }).idempotencyKey ? { ...req.body, idempotencyKey: headerKey } : req.body;
+    const parsed = z.object(def.inputSchema as z.ZodRawShape).safeParse(input ?? {});
     if (!parsed.success) {
       const message = parsed.error.issues.map((i) => `${i.path.join('.') || 'input'}: ${i.message}`).join('; ');
       res.status(400).json({ error: message, ...errorBody(message, { code: 'INVALID_INPUT' }) });

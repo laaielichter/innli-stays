@@ -29,6 +29,10 @@ export interface AgentContext {
 export type AgentCaller = AgentContext;
 
 /** Open (unanswered) requests one holder may have per property. */
+/** Short quote holds (15 minutes) one caller may have at the same time. */
+export const MAX_QUOTE_HOLDS = { anonymous: 3, identified: 60 };
+const QUOTE_HOLD_MS = 15 * 60_000;
+
 export const MAX_OPEN_HOLDS = { anonymous: 2, identified: 25, perGuest: 3 };
 
 /** A stable, non-reversible id for whoever holds the nights; an address is never stored as such. */
@@ -48,6 +52,7 @@ export class AgentActions {
   private catalog: Catalog;
   private publicUrl: string;
   private limit = rateLimiter(10);
+  private quoteHolds = new Map<string, number[]>();
 
   constructor(store: Store, requests: RequestService, questions: QuestionService, catalog: Catalog, publicUrl: string) {
     this.store = store;
@@ -97,6 +102,25 @@ export class AgentActions {
       }
     }
     return holder;
+  }
+
+  /**
+   * Short holds (get_quote with hold, a UCP booking session) keep rooms off the
+   * market for a quarter of an hour without any guest details. They are counted
+   * per caller too: a few at a time for an anonymous address, many for an
+   * identified agent.
+   */
+  reserveQuoteHold(agent: AgentContext, holds = 1): void {
+    const holder = holderId(agent);
+    const now = Date.now();
+    const active = (this.quoteHolds.get(holder) ?? []).filter((until) => until > now);
+    const max = (agent.identity ?? 'anonymous') === 'anonymous' ? MAX_QUOTE_HOLDS.anonymous : MAX_QUOTE_HOLDS.identified;
+    if (active.length + holds > max) {
+      throw new CatalogError(`This agent already holds ${active.length} room selection${active.length === 1 ? '' : 's'} for guests who are still deciding (at most ${max} at once). Finish or let one expire first.`, { code: 'LIMIT_REACHED', retryable: true, retryAfterSeconds: Math.max(1, Math.ceil((Math.min(...active, now + QUOTE_HOLD_MS) - now) / 1000)), nextTools: ['request_booking'], hint: 'Quote without hold: true, or wait until an earlier hold expires. Agents that prove who they are (Web Bot Auth or OAuth) may hold more.' });
+    }
+    for (let i = 0; i < holds; i++) active.push(now + QUOTE_HOLD_MS);
+    this.quoteHolds.set(holder, active);
+    if (this.quoteHolds.size > 20_000) for (const [k, v] of this.quoteHolds) if (v.every((until) => until <= now)) this.quoteHolds.delete(k);
   }
 
   private audit(property: Property, agent: AgentContext, action: string, meta: Record<string, unknown>): void {

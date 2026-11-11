@@ -38,6 +38,9 @@ claude --plugin-dir ./agent-kit/claude-plugin
 - **`cancellation`** on every quote: `refundability`, `freeUntil`, and the cost of cancelling today.
 - **Signed callbacks, the standard way.** Status callbacks carry `Content-Digest`, `Signature-Input` and `Signature` (RFC 9421) next to the signature in the body.
 
+- **Through the INNLI guide too.** The guide verifies your signature and passes it on, signed, to each installation: you stay verified and your limits are your own.
+- **Conformance check.** `npx innli-conformance https://stay.example` runs 13 read-only checks against any installation.
+
 Details: [docs/en/agents-2.1.md](../docs/en/agents-2.1.md).
 
 ## What agents get in 2.0

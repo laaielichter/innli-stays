@@ -39,6 +39,7 @@ An agent that "requests" every room keeps real guests out for as long as the hol
 - An anonymous agent cannot hold more than half of a property's rooms at once.
 - Anonymous agents are counted per address, not together.
 - The dashboard shows per agent how many quotes and requests became bookings, and how many expired or were cancelled (`GET /api/owner/agents`).
+- Short holds are counted as well: `get_quote({ hold: true })` and UCP booking sessions keep rooms for 15 minutes without any guest details. An anonymous address may have 3 at once, an identified agent 60.
 - Addresses are stored only as a hash.
 
 ### 3. No booking protocol a property can serve itself
@@ -62,15 +63,26 @@ A timeout does not tell an agent whether the booking went through.
 **INNLI 2.1** accepts an `Idempotency-Key` header on REST tool calls and UCP operations:
 - same key and same body: the first answer, with `Idempotent-Replayed: true`;
 - same key and another body: `409`;
-- answers are kept for 24 hours. Server errors and rate limits are not stored, so they can be retried.
+- answers are kept for 24 hours. Server errors and rate limits are not stored, so they can be retried;
+- for `request_booking` the header is also stored with the request, so a retry is safe after a restart too.
 
 ### 5. Cancellation terms an agent has to parse
 **INNLI 2.1** adds `cancellation` to every quote: `refundability`, `freeUntil`, and the cost of cancelling today. `unknown` when the host has no structured rules.
 
+### Through the INNLI guide
+The guide relays requests for many agents from one address. Without care, every agent behind it would share one limit at each installation.
+- The guide verifies Web Bot Auth signatures itself and signs every request it relays with its own key (published at its `/.well-known/http-message-signatures-directory`).
+- The signature covers what the guide says about the caller: its name, the domain the guide verified, and a hashed caller id.
+- An installation trusts this only from the guide it is listed in (`INNLI_GIDS_URL`). From anyone else these headers mean nothing.
+- So a verified platform stays verified through the guide, and limits count per caller.
+- Running your own guide: set `GIDS_PUBLIC_URL` to its public address.
+
+## Check an installation yourself
+`npx innli-conformance https://stay.example` runs 13 read-only checks: discovery documents, key directory, MCP profiles, typed errors, signature checking, idempotency, the signed passport and the UCP profile. Nothing is booked. Exit code 1 when a check fails.
+
 ## What 2.1 deliberately does not do
 - **Card payments by agents (ACP payment tokens, AP2 mandates).** They need a payment provider or a credential provider. INNLI moves no money: the guest pays the property. The session and the signed record are shaped so that a payment handler can be added later.
 - **UCP over MCP, and signed UCP responses.** REST only for now.
-- **Identity through the INNLI guide.** The guide relays requests; a signature is checked by the installation the agent calls directly.
 - **The newest MCP revision.** INNLI follows the official SDK.
 
 ## Sources

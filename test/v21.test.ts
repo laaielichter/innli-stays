@@ -4,9 +4,15 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, before, describe, it } from 'node:test';
 import { jwkThumbprint, parseDictionary, parseSignatureInput, signatureBase } from '../src/agent/botAuth.ts';
-import { MAX_OPEN_HOLDS } from '../src/requests/agentActions.ts';
+import { MAX_OPEN_HOLDS, MAX_QUOTE_HOLDS } from '../src/requests/agentActions.ts';
+import { report, runConformance } from '../src/conformance.ts';
 import { verifyRecord } from '../src/security/signing.ts';
 import { addDays } from '../src/domain/dates.ts';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { createGuideApp } from '../src/directory/app.ts';
+import { Guide } from '../src/directory/guide.ts';
+import { registerWithGuide } from '../src/directory/register.ts';
 import { appLocals, freeWindow, ownerKey, startTestServer, type TestServer } from './helpers.ts';
 
 type Json = Record<string, any>;
@@ -184,6 +190,31 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       }
     });
 
+    it('limits short quote holds per caller, also through UCP sessions', async () => {
+      const fresh = await startTestServer({ hotel: true });
+      try {
+        const post = async (path: string, body: Json, headers: Record<string, string> = {}) => {
+          const res = await fetch(`${fresh.url}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+          return { status: res.status, body: (await res.json()) as Json };
+        };
+        const checkin = addDays(new Date().toISOString().slice(0, 10), 45);
+        const quote = { propertyId: 'prop_spaarne', unitId: 'standaard', checkin, checkout: addDays(checkin, 1), hold: true };
+        for (let i = 0; i < MAX_QUOTE_HOLDS.anonymous; i++) assert.ok((await post('/api/agent/v1/tools/get_quote', quote)).body.holdUntil);
+        const refused = await post('/api/agent/v1/tools/get_quote', quote);
+        assert.equal(refused.status, 429);
+        assert.equal(refused.body.code, 'LIMIT_REACHED');
+        assert.ok(refused.body.retryAfterSeconds > 0);
+        assert.ok((await post('/api/agent/v1/tools/get_quote', { ...quote, hold: false })).body.quoteId, 'quoting without a hold is never limited');
+        const session = await post('/ucp/v1/booking-sessions', { property: { id: 'prop_spaarne' }, stays: [{ accommodation_type: { id: 'standaard' }, occupancy: { adults: 2 }, stay_dates: { start_date: checkin, end_date: addDays(checkin, 1) } }] }, { 'ucp-agent': 'profile="https://platform.example/profile"' });
+        assert.equal(session.status, 429);
+        assert.equal(session.body.code, 'hold_limit_reached');
+        const key = { authorization: `Bearer ${fresh.creds.agentKey}` };
+        assert.ok((await post('/api/agent/v1/tools/get_quote', quote, key)).body.holdUntil, 'an identified agent has its own, larger budget');
+      } finally {
+        await fresh.close();
+      }
+    });
+
     it('limits open requests per guest address', async () => {
       const statuses: number[] = [];
       for (let i = 0; i < MAX_OPEN_HOLDS.perGuest + 1; i++) {
@@ -228,6 +259,7 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.equal(other.status, 409);
       assert.equal(other.body.code, 'idempotency_key_reused');
       assert.equal(server.store.requestsFor('prop_spaarne').filter((r) => r.guest.email === 'retry@example.com').length, 1);
+      assert.equal(server.store.requestsFor('prop_spaarne').find((r) => r.guest.email === 'retry@example.com')!.idempotencyKey, 'key-1', 'stored with the request, so it survives a restart');
     });
   });
 
@@ -392,4 +424,91 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.equal(await left(), held + 2);
     });
   });
+
+  describe('identity through the INNLI guide', () => {
+    let guideServer: Server;
+    let guideUrl: string;
+    let instance: TestServer;
+    const mcp = async (headers: Record<string, string>) => {
+      const client = new Client({ name: 'agent', version: '1' });
+      // Sign every request afresh, as a platform would.
+      const signing: typeof fetch = (input, init) => fetch(input, { ...init, headers: { ...Object.fromEntries(new Headers(init?.headers)), ...(headers.sign ? platform.signed(`${guideUrl}/mcp`) : headers) } });
+      await client.connect(new StreamableHTTPClientTransport(new URL(`${guideUrl}/mcp`), { fetch: signing }));
+      return client;
+    };
+    const call = async (client: Client, name: string, args: Json) => ((await client.callTool({ name, arguments: args })) as Json).structuredContent as Json;
+
+    before(async () => {
+      const guide = new Guide({ fetcher: fetch, requireHttps: false, requireLicense: false });
+      guideServer = createServer(createGuideApp(guide, { insecureAgentDirectories: true }));
+      await new Promise<void>((r) => guideServer.listen(0, '127.0.0.1', r));
+      guideUrl = `http://127.0.0.1:${(guideServer.address() as AddressInfo).port}`;
+      instance = await startTestServer({ hotel: true, guideUrl });
+      assert.equal((await registerWithGuide(instance.store, guideUrl, instance.url)).ok, true);
+    });
+    after(async () => {
+      await instance.close();
+      await new Promise((r) => guideServer.close(r));
+    });
+
+    it('the guide signs what it relays, and a verified platform stays verified at the installation', async () => {
+      const keys = (await (await fetch(`${guideUrl}/.well-known/http-message-signatures-directory`)).json()) as Json;
+      assert.equal(keys.keys[0].crv, 'Ed25519');
+      const client = await mcp({ sign: '1' });
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const found = await call(client, 'search_stays', { area: 'Haarlem', checkin: addDays(today, 30), checkout: addDays(today, 31) });
+        const offer = found.results[0].offer;
+        const booked = await call(client, 'request_booking', { quoteId: offer.quoteId, guest, guestConsent: true });
+        assert.equal(booked.booked, true);
+        assert.equal(booked.signedRecord.consent.agentIdentity, 'verified');
+        assert.equal(booked.signedRecord.consent.agentDomain, platform.host);
+        assert.match(booked.signedRecord.consent.agentClient, /via INNLI-gids$/);
+      } finally {
+        await client.close();
+      }
+    });
+
+    it('an anonymous agent through the guide stays anonymous, counted per caller', async () => {
+      const client = await mcp({ 'x-agent-name': 'Reisbot' });
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const found = await call(client, 'search_stays', { area: 'Haarlem', checkin: addDays(today, 33), checkout: addDays(today, 34) });
+        const booked = await call(client, 'request_booking', { quoteId: found.results[0].offer.quoteId, guest, guestConsent: true });
+        assert.equal(booked.signedRecord.consent.agentIdentity, 'anonymous');
+        assert.equal(booked.signedRecord.consent.agentClient, 'Reisbot via INNLI-gids');
+        const stored = instance.store.getRequest(booked.requestId)!;
+        assert.match(String(stored.holder), /^h_/);
+      } finally {
+        await client.close();
+      }
+    });
+
+    it('relay headers count only when the guide signed them', async () => {
+      const direct = (headers: Record<string, string>) => fetch(`${instance.url}/api/agent/v1/tools/search_stays`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: '{"area":"Haarlem"}' });
+      const spoof = { 'x-innli-agent': 'Trusted', 'x-innli-relay-identity': 'bigplatform.example', 'x-innli-relay-holder': 'abc' };
+      assert.equal((await direct(spoof)).headers.get('x-innli-agent-identity'), 'anonymous');
+      // Another signer than the guide is itself, whatever it claims to relay.
+      const own = await direct({ ...spoof, ...platform.signed(`${instance.url}/api/agent/v1/tools/search_stays`) });
+      assert.equal(own.headers.get('x-innli-agent-identity'), `verified; agent="${platform.host}"`);
+    });
+  });
+
+  describe('conformance check', () => {
+    it('an installation passes every check, and a plain web server does not', async () => {
+      const fresh = await startTestServer({ hotel: true });
+      try {
+        const checks = await runConformance(fresh.url);
+        assert.deepEqual(checks.filter((c) => !c.ok), [], report(checks));
+        assert.ok(checks.length >= 12);
+        assert.match(report(checks), /All \d+ checks passed/);
+        assert.equal(fresh.store.requestsFor('prop_spaarne').length, 0, 'the check never books');
+      } finally {
+        await fresh.close();
+      }
+      const failing = await runConformance(platform.origin);
+      assert.ok(failing.filter((c) => !c.ok).length >= 8);
+    });
+  });
 });
+

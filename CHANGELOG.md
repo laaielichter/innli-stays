@@ -12,10 +12,16 @@ Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies
 - Nieuwe regel voor eigenaren: **Alleen herkenbare agents**. Anonieme agents kunnen dan zoeken en prijzen opvragen, maar niet aanvragen (`AGENT_IDENTITY_REQUIRED`).
 - INNLI zet zijn eigen sleutels op `/.well-known/http-message-signatures-directory` en ondertekent statusberichten ook met RFC 9421.
 
+### Via de INNLI-gids
+- De gids controleert handtekeningen van agents en **ondertekent elk verzoek dat hij doorgeeft**, met de naam, het bewezen domein en een gehasht kenmerk van de beller.
+- Een installatie vertrouwt dat alleen van haar eigen gids (`INNLI_GIDS_URL`). Een bewezen platform blijft zo bewezen, en limieten tellen per beller in plaats van voor de hele gids.
+- Nieuw voor wie een gids draait: `GIDS_PUBLIC_URL`. De sleutel van de gids staat naast het gegevensbestand (`gids.signing-key.pem`).
+
 ### Vasthouden zonder misbruik
 - **Limiet op open aanvragen** per houder en per accommodatie: 2 voor een anoniem adres, 25 voor een herkenbare agent, 3 per e-mailadres van een gast (`LIMIT_REACHED`).
 - Een anonieme agent kan niet meer dan de helft van de kamers tegelijk vasthouden.
 - Anonieme agents worden **per adres** geteld. Voorheen deelden ze één limiet en kon één beller de rest blokkeren.
+- **Kort vasthouden** (`get_quote` met `hold`, UCP-sessies) telt ook per beller: 3 tegelijk voor een anoniem adres, 60 voor een herkenbare agent.
 - Nieuw in het dashboard: **Agents en hun gedrag**. Per agent zie je prijsopvragen, aanvragen, boekingen en wat verviel of werd geannuleerd.
 
 ### Boekingssessies volgens UCP (concept)
@@ -25,7 +31,10 @@ Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies
 - De standaard is een concept: `INNLI_UCP_VERSION` stelt de versie in.
 
 ### Betrouwbaar opnieuw proberen
-- **`Idempotency-Key`-header** bij REST-tools en UCP: een herhaald verzoek krijgt het eerste antwoord (`Idempotent-Replayed: true`); dezelfde sleutel met andere inhoud geeft `409`.
+- **`Idempotency-Key`-header** bij REST-tools en UCP: een herhaald verzoek krijgt het eerste antwoord (`Idempotent-Replayed: true`); dezelfde sleutel met andere inhoud geeft `409`. Bij `request_booking` wordt de sleutel ook bij de aanvraag bewaard.
+
+### Zelf controleren
+- **`npx innli-conformance <adres>`** (of `npm run conformance -- <adres>`): 13 controles die alleen lezen en niets boeken. Bedoeld voor agentplatforms, eigenaren en iedereen die een installatie wil toetsen.
 
 ### Annuleren
 - Elke offerte heeft **`cancellation`**: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar alleen een tekst heeft.

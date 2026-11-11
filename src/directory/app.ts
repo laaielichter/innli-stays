@@ -5,14 +5,20 @@ import { rateLimiter } from '../http/safeFetch.ts';
 import { GuideError, type Guide } from './guide.ts';
 import { createGuideMcpServer } from './proxy.ts';
 import { parseProfile } from '../mcp/server.ts';
+import { createHash } from 'node:crypto';
+import type { Fetcher } from '../connectors/availability.ts';
+import { BotAuthVerifier, DIRECTORY_PATH, DIRECTORY_TYPE, jwksOf } from '../agent/botAuth.ts';
 import { agentCard, llmsTxt, mcpServerCard, type StayLink } from '../agent/discovery.ts';
 
-export function createGuideApp(guide: Guide) {
+export function createGuideApp(guide: Guide, opts: { fetcher?: Fetcher; insecureAgentDirectories?: boolean } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
   app.use(express.json({ limit: '512kb' }));
   const mcpLimit = rateLimiter(120);
+  const verifiedLimit = rateLimiter(600);
+  const directoryLimit = rateLimiter(6);
+  const botAuth = new BotAuthVerifier(opts.fetcher ?? fetch, { allowHttp: opts.insecureAgentDirectories ?? false });
   const registerLimit = rateLimiter(10);
 
   app.get('/health', (_req, res) => {
@@ -21,7 +27,11 @@ export function createGuideApp(guide: Guide) {
 
   // Discovery documents for the guide: one MCP connection for all listed stays.
   const guideStays = (): StayLink[] => guide.active().flatMap((l) => l.properties.map((p) => ({ name: p.name, url: `${l.instanceUrl}/verblijf/${encodeURIComponent(p.id)}`, place: [p.city, p.country].join(', '), type: p.type })));
-  const origin = (req: Request) => `${req.protocol}://${req.get('host')}`;
+  const origin = (req: Request) => guide.publicUrl ?? `${req.protocol}://${req.get('host')}`;
+  // The guide's own keys: installations verify relayed requests against them.
+  app.get(DIRECTORY_PATH, (_req, res) => {
+    res.set('cache-control', 'public, max-age=3600').type(DIRECTORY_TYPE).send(JSON.stringify(jwksOf(guide.signingKey())));
+  });
   app.get('/.well-known/agent-card.json', (req, res) => {
     res.set('cache-control', 'public, max-age=3600').json(agentCard(guideStays(), origin(req), { guide: true }));
   });
@@ -47,12 +57,22 @@ export function createGuideApp(guide: Guide) {
   });
 
   app.post('/mcp', async (req, res) => {
-    if (!mcpLimit(req.ip ?? 'unknown')) {
+    const ip = req.ip ?? 'unknown';
+    // A platform that signs its requests (Web Bot Auth) is recognised here too, and the guide passes that on.
+    const signed = await botAuth.verify(
+      { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [...new Set([String(req.headers.host ?? ''), req.hostname, guide.publicUrl ? new URL(guide.publicUrl).host : ''].filter(Boolean))], headers: req.headers },
+      { mayFetch: () => directoryLimit(ip) },
+    );
+    const verified = signed.status === 'verified' ? signed.agent : undefined;
+    res.set('x-innli-agent-identity', verified ? `verified; agent="${verified}"` : signed.status === 'invalid' ? `invalid; reason="${signed.reason}"` : 'anonymous');
+    if (!(verified ? verifiedLimit(`wba:${verified}`) : mcpLimit(ip))) {
       res.status(429).set('retry-after', '60').json({ error: 'Too many requests', code: 'RATE_LIMITED', retryable: true, retryAfterSeconds: 60 });
       return;
     }
-    const agentName = String(req.headers['x-agent-name'] ?? 'agent').slice(0, 60);
-    const server = createGuideMcpServer(guide, agentName, parseProfile(req.query.profile ?? req.headers['x-innli-profile']));
+    const name = verified ?? String(req.headers['x-agent-name'] ?? 'agent').replace(/[^\p{L}\p{N} .\-_()]/gu, '').slice(0, 60);
+    // Installations limit open requests per caller; they get a hash, never the address itself.
+    const holder = createHash('sha256').update(verified ? `wba:${verified}` : `ip:${ip}`).digest('hex').slice(0, 24);
+    const server = createGuideMcpServer(guide, { name: name || 'agent', verifiedDomain: verified, holder }, parseProfile(req.query.profile ?? req.headers['x-innli-profile']), origin(req));
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     res.on('close', () => {
       void transport.close();

@@ -29,7 +29,7 @@ const CLOCK_SKEW_SECONDS = 60;
 
 export type BotAuthResult =
   | { status: 'none' }
-  | { status: 'verified'; agent: string; origin: string; keyId: string }
+  | { status: 'verified'; agent: string; origin: string; keyId: string; /** Names of the signed components, lower case. */ covered: string[] }
   | { status: 'invalid'; reason: string };
 
 export interface SignedRequest {
@@ -228,7 +228,7 @@ export class BotAuthVerifier {
       this.nonces.set(id, expiresAt);
       if (this.nonces.size > 20_000) for (const [k, until] of this.nonces) if (until < nowSeconds) this.nonces.delete(k);
     }
-    return { status: 'verified', agent: new URL(origin).host, origin, keyId: keyid };
+    return { status: 'verified', agent: new URL(origin).host, origin, keyId: keyid, covered: names };
   }
 
   private async directory(origin: string, mayFetch?: () => boolean): Promise<CachedDirectory> {
@@ -270,29 +270,36 @@ function installationKey(store: Store): KeyObject {
 }
 
 /** This installation's own key directory: the same Ed25519 key that signs records, as a JWKS. */
-export function keyDirectory(store: Store): { keys: (JsonWebKey & { kid: string; use: string; alg: string })[] } {
-  const jwk = createPublicKey(installationKey(store)).export({ format: 'jwk' });
-  return { keys: [{ kty: jwk.kty, crv: jwk.crv, x: jwk.x, kid: jwkThumbprint(jwk), use: 'sig', alg: 'EdDSA' }] };
+export function keyDirectory(store: Store) {
+  return jwksOf(installationKey(store));
 }
 
 /**
- * Headers that sign an outbound message (a status callback, a webhook) the
- * standard way, so the receiver can verify it with any RFC 9421 library:
- * the body through Content-Digest, and who sent it through Signature-Agent.
+ * Headers that sign an outbound request the standard way (RFC 9421), so the
+ * receiver can verify it with any library: who sent it (Signature-Agent), the
+ * body through Content-Digest when there is one, and any extra headers named.
  */
-export function signOutbound(store: Store, publicUrl: string, target: string, body: string, opts: { now?: number; method?: string } = {}): Record<string, string> {
-  const key = installationKey(store);
+export function signRequest(key: KeyObject, agentOrigin: string, target: string, opts: { now?: number; method?: string; body?: string; headers?: Record<string, string> } = {}): Record<string, string> {
   const keyId = jwkThumbprint(createPublicKey(key).export({ format: 'jwk' }));
   const url = new URL(target);
   const created = Math.floor((opts.now ?? Date.now()) / 1000);
-  const agent = `"${publicUrl.replace(/\/$/, '')}"`;
-  const digest = `sha-256=:${createHash('sha256').update(body).digest('base64')}:`;
-  const params = `("@method" "@authority" "content-digest" "signature-agent");created=${created};expires=${created + 300};keyid="${keyId}";alg="ed25519";nonce="${randomBytes(12).toString('base64url')}";tag="${BOT_AUTH_TAG}"`;
-  const base = [`"@method": ${(opts.method ?? 'POST').toUpperCase()}`, `"@authority": ${url.host.toLowerCase()}`, `"content-digest": ${digest}`, `"signature-agent": ${agent}`, `"@signature-params": ${params}`].join('\n');
-  return {
-    'content-digest': digest,
-    'signature-agent': agent,
-    'signature-input': `sig1=${params}`,
-    signature: `sig1=:${sign(null, Buffer.from(base), key).toString('base64')}:`,
-  };
+  const out: Record<string, string> = { ...opts.headers, 'signature-agent': `"${agentOrigin.replace(/\/$/, '')}"` };
+  if (opts.body !== undefined) out['content-digest'] = `sha-256=:${createHash('sha256').update(opts.body).digest('base64')}:`;
+  const derived: [string, string][] = [['@method', (opts.method ?? 'POST').toUpperCase()], ['@authority', url.host.toLowerCase()]];
+  const fields = Object.keys(out).sort().map((name): [string, string] => [name.toLowerCase(), out[name].trim()]);
+  const all = [...derived, ...fields];
+  const params = `(${all.map(([n]) => `"${n}"`).join(' ')});created=${created};expires=${created + 300};keyid="${keyId}";alg="ed25519";nonce="${randomBytes(12).toString('base64url')}";tag="${BOT_AUTH_TAG}"`;
+  const base = [...all.map(([n, v]) => `"${n}": ${v}`), `"@signature-params": ${params}`].join('\n');
+  return { ...out, 'signature-input': `sig1=${params}`, signature: `sig1=:${sign(null, Buffer.from(base), key).toString('base64')}:` };
+}
+
+/** A JWKS with one Ed25519 public key, as served from the key directory. */
+export function jwksOf(key: KeyObject) {
+  const jwk = createPublicKey(key).export({ format: 'jwk' });
+  return { keys: [{ kty: jwk.kty, crv: jwk.crv, x: jwk.x, kid: jwkThumbprint(jwk), use: 'sig', alg: 'EdDSA' }] };
+}
+
+/** Signs a status callback or webhook with this installation's key. */
+export function signOutbound(store: Store, publicUrl: string, target: string, body: string, opts: { now?: number; method?: string } = {}): Record<string, string> {
+  return signRequest(installationKey(store), publicUrl, target, { ...opts, body });
 }

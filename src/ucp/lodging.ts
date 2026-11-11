@@ -140,7 +140,7 @@ export class UcpLodging {
       createdAt: new Date().toISOString(),
       expiresAt: new Date().toISOString(),
     };
-    await this.price(property, session);
+    await this.price(property, session, agent);
     this.store.saveBookingSession(session);
     return this.render(session);
   }
@@ -162,7 +162,7 @@ export class UcpLodging {
     if (!same || Date.parse(session.expiresAt) < Date.now()) {
       this.release(session);
       Object.assign(session, { checkin: input.checkin, checkout: input.checkout });
-      await this.price(property, session);
+      await this.price(property, session, agent);
     }
     this.store.saveBookingSession(session);
     return this.render(session);
@@ -293,7 +293,7 @@ export class UcpLodging {
   // ---------------------------------------------------------------- Pricing and holds
 
   /** Quotes every room type once (identical rooms together) and holds the rooms while the buyer decides. */
-  private async price(property: Property, session: BookingSessionRecord): Promise<void> {
+  private async price(property: Property, session: BookingSessionRecord, agent?: AgentContext): Promise<void> {
     const groups = new Map<string, UcpStayInput[]>();
     for (const s of session.stays) groups.set(stayGroup(s), [...(groups.get(stayGroup(s)) ?? []), s]);
     if (groups.size > 3) throw new UcpOutcome('too_many_room_types', 'At most three different room types per booking session.', 'recoverable');
@@ -307,6 +307,8 @@ export class UcpLodging {
         const over = unit && members.find((s) => s.occupancy.adults + s.occupancy.children > unit.maxGuests);
         if (over) throw new UcpOutcome('occupancy_exceeded_capacity', `${unit.name} sleeps at most ${unit.maxGuests}; stay "${over.id}" has ${over.occupancy.adults + over.occupancy.children} guests. Add a room or choose a larger one.`, 'recoverable');
         const party = members.reduce((g, s) => ({ adults: g.adults + s.occupancy.adults, children: g.children + s.occupancy.children, dogs: g.dogs + s.occupancy.dogs }), { adults: 0, children: 0, dogs: 0 });
+        // A session holds rooms without any guest details: counted per caller, like any short hold.
+        if (agent) this.actions.reserveQuoteHold(agent);
         const q = await this.catalog.quote(property.id, first.unitId, session.checkin, session.checkout, party, false, session.agentClient, { rooms: members.length, ratePlanId: first.ratePlanId === 'standard' ? undefined : first.ratePlanId, hold: true });
         quotes.push({ quoteId: q.quoteId, stayIds: members.map((m) => m.id) });
       }
@@ -316,6 +318,7 @@ export class UcpLodging {
       if (err instanceof DateRangeError) throw new UcpOutcome('invalid_stay_dates', err.message, 'recoverable');
       if (err instanceof AgentError) {
         if (err.code === 'UNAVAILABLE') throw new UcpOutcome('inventory_exhausted', err.message);
+        if (err.code === 'LIMIT_REACHED') throw new UcpProtocolError(429, 'hold_limit_reached', `${err.message} ${err.hint ?? ''}`.trim());
         if (err.code === 'NOT_FOUND') throw new UcpOutcome('accommodation_type_not_found', err.message, 'recoverable');
         throw new UcpOutcome(/guest|gast|person/i.test(err.message) ? 'occupancy_exceeded_capacity' : 'invalid_request', err.message, 'recoverable');
       }

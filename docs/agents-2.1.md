@@ -39,6 +39,7 @@ Een agent die elke kamer "aanvraagt", houdt echte gasten buiten zolang de kamer 
 - Een anonieme agent kan niet meer dan de helft van de kamers tegelijk vasthouden.
 - Anonieme agents worden per adres geteld, niet samen.
 - Het dashboard toont per agent hoeveel prijsopvragen en aanvragen een boeking werden, en hoeveel er vervielen of werden geannuleerd (`GET /api/owner/agents`).
+- Kort vasthouden telt ook mee: `get_quote({ hold: true })` en UCP-sessies houden kamers 15 minuten vast zonder gegevens van een gast. Een anoniem adres mag er 3 tegelijk hebben, een herkenbare agent 60.
 - Adressen worden alleen als hash bewaard.
 
 ### 3. Geen boekingsprotocol dat een accommodatie zelf kan aanbieden
@@ -62,15 +63,26 @@ Na een time-out weet een agent niet of de boeking is gelukt.
 **INNLI 2.1** accepteert een `Idempotency-Key`-header bij REST-tools en UCP:
 - dezelfde sleutel en dezelfde inhoud: het eerste antwoord, met `Idempotent-Replayed: true`;
 - dezelfde sleutel en andere inhoud: `409`;
-- antwoorden blijven 24 uur bewaard. Serverfouten en limieten worden niet bewaard, zodat opnieuw proberen kan.
+- antwoorden blijven 24 uur bewaard. Serverfouten en limieten worden niet bewaard, zodat opnieuw proberen kan;
+- bij `request_booking` wordt de header ook bij de aanvraag bewaard, zodat opnieuw proberen ook na een herstart veilig is.
 
 ### 5. Annuleringsvoorwaarden die een agent moet ontleden
 **INNLI 2.1** voegt aan elke offerte `cancellation` toe: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar geen regels in cijfers heeft.
 
+### Via de INNLI-gids
+De gids geeft verzoeken van veel agents door vanaf één adres. Zonder maatregel zou elke agent erachter bij elke installatie één limiet delen.
+- De gids controleert zelf handtekeningen van Web Bot Auth en ondertekent elk verzoek dat hij doorgeeft met zijn eigen sleutel (te vinden op zijn `/.well-known/http-message-signatures-directory`).
+- De handtekening dekt wat de gids over de beller zegt: de naam, het domein dat de gids controleerde, en een gehasht kenmerk van de beller.
+- Een installatie vertrouwt dit alleen van de gids waarin ze is opgenomen (`INNLI_GIDS_URL`). Van ieder ander betekenen deze headers niets.
+- Een bewezen platform blijft dus bewezen via de gids, en limieten tellen per beller.
+- Draai je een eigen gids, zet dan `GIDS_PUBLIC_URL` op het openbare adres.
+
+## Zelf een installatie controleren
+`npx innli-conformance https://verblijf.example` doet 13 controles die alleen lezen: vindbaarheidsdocumenten, sleutelmap, MCP-profielen, getypeerde fouten, controle van handtekeningen, idempotentie, het ondertekende paspoort en het UCP-profiel. Er wordt niets geboekt. Afsluitcode 1 als een controle faalt.
+
 ## Wat 2.1 bewust niet doet
 - **Betalen met een kaart door agents (betaaltokens van ACP, mandaten van AP2).** Daar is een betaalprovider of een uitgever van bewijzen voor nodig. INNLI verwerkt geen geld: de gast betaalt de accommodatie. De sessie en het dossier zijn zo opgezet dat er later een betaalhandler bij kan.
 - **UCP via MCP, en ondertekende UCP-antwoorden.** Voorlopig alleen REST.
-- **Identiteit via de INNLI-gids.** De gids geeft verzoeken door; een handtekening wordt gecontroleerd door de installatie die de agent rechtstreeks aanroept.
 - **De nieuwste MCP-revisie.** INNLI volgt de officiële SDK.
 
 ## Bronnen

@@ -1,3 +1,4 @@
+import type { KeyObject } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -6,7 +7,8 @@ import { nextActions } from '../agent/shape.ts';
 import { CORE_INSTRUCTIONS, CORE_TOOLS, INSTRUCTIONS, ok, toolError, TOOLS, type ToolProfile } from '../mcp/server.ts';
 import { VERSION } from '../version.ts';
 import type { Guide, Listing } from './guide.ts';
-import { GUIDE_AGENT_HEADER } from './types.ts';
+import { signRequest } from '../agent/botAuth.ts';
+import { GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER, type GuideCaller } from './types.ts';
 
 const MAX_FANOUT = 15;
 const CALL_TIMEOUT_MS = 10_000;
@@ -27,11 +29,17 @@ const remoteFailure = (err: unknown) =>
   err instanceof RemoteError ? toolError(err.message, err.details) : toolError(`Accommodatie niet bereikbaar (${(err as Error).message})`, { code: 'UPSTREAM_ERROR' });
 
 /** Calls one tool on a self-hosted installation over MCP. */
-async function callInstance(listing: Listing, tool: string, args: Json, agentName: string): Promise<Json> {
+async function callInstance(listing: Listing, tool: string, args: Json, caller: Relay): Promise<Json> {
   const client = new Client({ name: 'innli-gids', version: VERSION });
-  const transport = new StreamableHTTPClientTransport(new URL(`${listing.instanceUrl}/mcp`), {
-    requestInit: { headers: { [GUIDE_AGENT_HEADER]: `${agentName} via INNLI-gids` } },
-  });
+  const url = `${listing.instanceUrl}/mcp`;
+  const relayed = { [GUIDE_AGENT_HEADER]: `${caller.name} via INNLI-gids`, [GUIDE_IDENTITY_HEADER]: caller.verifiedDomain ?? 'anonymous', [GUIDE_HOLDER_HEADER]: caller.holder };
+  // Every request to an installation is signed afresh by the guide (RFC 9421), relayed headers included.
+  const signedFetch: typeof fetch = (input, init) => {
+    const headers = new Headers(init?.headers);
+    for (const [k, v] of Object.entries(signRequest(caller.key, caller.guideUrl, url, { method: init?.method ?? 'GET', headers: relayed }))) headers.set(k, v);
+    return fetch(input, { ...init, headers });
+  };
+  const transport = new StreamableHTTPClientTransport(new URL(url), { fetch: signedFetch });
   try {
     await client.connect(transport);
     const res = (await client.callTool({ name: tool, arguments: args }, undefined, { timeout: CALL_TIMEOUT_MS })) as {
@@ -106,7 +114,12 @@ function listedOnly(l: Listing, offers: Json[]): Json[] {
  * need only one connection; every call is answered live by the installation
  * that owns the stay.
  */
-export function createGuideMcpServer(guide: Guide, agentName: string, profile: ToolProfile = 'full'): McpServer {
+/** The caller, plus what the guide signs relayed requests with. */
+type Relay = GuideCaller & { key: KeyObject; guideUrl: string };
+
+export function createGuideMcpServer(guide: Guide, who: GuideCaller | string, profile: ToolProfile = 'full', guideUrl = guide.publicUrl ?? 'http://localhost'): McpServer {
+  const caller: GuideCaller = typeof who === 'string' ? { name: who, holder: `name:${who}` } : who;
+  const agentName: Relay = { ...caller, key: guide.signingKey(), guideUrl };
   const server = new McpServer({ name: 'innli-gids', version: VERSION }, { instructions: profile === 'core' ? CORE_INSTRUCTIONS : INSTRUCTIONS });
   // The core profile offers only the core tools (see mcp/server.ts); installations answer briefly on their own.
   if (profile === 'core') {
