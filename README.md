@@ -158,6 +158,8 @@ npm run pakket -- --concept  # download package (zip) in dist/
 - [docs/performance.md](docs/performance.md): measured performance
 - [docs/research-booking-problems.md](docs/research-booking-problems.md): what goes wrong when AI agents book, with sources
 
+- [SECURITY.md](SECURITY.md): reporting a vulnerability, what INNLI protects, and running it safely
+
 In Dutch: [README.nl.md](README.nl.md) and [docs/nl/](docs/nl/).
 
 ## Research

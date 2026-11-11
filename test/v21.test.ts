@@ -120,6 +120,22 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.equal(elsewhere.headers.get('x-innli-agent-identity'), 'invalid; reason="bad_signature"');
     });
 
+    it('the signer from the agent kit is recognised', async () => {
+      const kit = (await import('../agent-kit/examples/web-bot-auth.mjs' as string)) as { newKey(): { privateKeyPem: string; jwks: Json }; createSigner(o: Json): { sign(url: string, method?: string): Record<string, string> } };
+      const { privateKeyPem, jwks } = kit.newKey();
+      const directory: Server = createServer((_req, res) => res.end(JSON.stringify(jwks)));
+      await new Promise<void>((r) => directory.listen(0, '127.0.0.1', r));
+      try {
+        const origin = `http://127.0.0.1:${(directory.address() as AddressInfo).port}`;
+        const signer = kit.createSigner({ origin, privateKeyPem });
+        const url = `${server.url}/api/agent/v1/tools/search_stays`;
+        const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...signer.sign(url) }, body: '{"area":"Egmond"}' });
+        assert.equal(res.headers.get('x-innli-agent-identity'), `verified; agent="${new URL(origin).host}"`);
+      } finally {
+        await new Promise((r) => directory.close(r));
+      }
+    });
+
     it('publishes its own keys in the standard directory', async () => {
       const res = await fetch(`${server.url}/.well-known/http-message-signatures-directory`);
       assert.match(String(res.headers.get('content-type')), /http-message-signatures-directory\+json/);

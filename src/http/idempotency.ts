@@ -35,8 +35,10 @@ export function idempotency() {
       return;
     }
     const now = Date.now();
-    // Keys are scoped to the caller, so one platform cannot read another's answer by guessing a key.
-    const caller = createHash('sha256').update(`${req.headers.authorization ?? ''}|${req.headers['signature-agent'] ?? ''}|${req.ip ?? ''}`).digest('hex').slice(0, 24);
+    // Keys are scoped to the identified caller (key, verified domain or address), so one platform cannot read
+    // another's answer by guessing a key. Identification and rate limiting run before this middleware.
+    const who = (res.locals.who as { bucket?: string } | undefined)?.bucket ?? `${req.headers.authorization ?? ''}|${req.ip ?? ''}`;
+    const caller = createHash('sha256').update(who).digest('hex').slice(0, 24);
     const id = `${caller}:${req.method}:${req.originalUrl}:${key}`;
     const bodyHash = createHash('sha256').update(JSON.stringify(req.body ?? null)).digest('hex');
     const existing = entries.get(id);

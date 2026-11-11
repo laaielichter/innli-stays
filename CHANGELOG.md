@@ -42,6 +42,12 @@ Knowing which agent is calling, holding rooms without abuse, and booking session
 ### Cancelling
 - Every quote has **`cancellation`**: `refundability`, `freeUntil` and what cancelling costs today. `unknown` if the owner only has a text.
 
+### For agent builders
+- `agent-kit/examples/`: a Web Bot Auth signer and the whole booking flow over REST, without dependencies.
+- The idempotency cache now runs after identification and rate limiting.
+- A signed record always names its key: the installation id, or the key's thumbprint.
+- New: [SECURITY.md](SECURITY.md), with how to report a vulnerability and how to run INNLI safely.
+
 ### Hardened after an independent review
 - A signature only counts for this installation's own public host (`INNLI_PUBLIC_URL`), never for a host name the caller sends. A signed `Content-Digest` is compared with the body.
 - Requests relayed by the guide must be single use (nonce), valid for at most five minutes, and signed with method and path.

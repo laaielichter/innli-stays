@@ -1,4 +1,4 @@
-import { createPrivateKey, createPublicKey, generateKeyPairSync, sign, verify } from 'node:crypto';
+import { createHash, createPrivateKey, createPublicKey, generateKeyPairSync, sign, verify } from 'node:crypto';
 import type { Store } from '../store.ts';
 
 /** JSON with sorted keys and without undefined values, so the same record always signs the same. */
@@ -32,7 +32,10 @@ export function publicSigningKey(store: Store): string {
  */
 export function signRecord(store: Store, record: unknown): { alg: 'Ed25519'; keyId: string | undefined; value: string } {
   const { privatePem } = signingKey(store);
-  return { alg: 'Ed25519', keyId: store.getSettings().instanceId, value: sign(null, Buffer.from(canonical(record)), createPrivateKey(privatePem)).toString('base64url') };
+  // The installation id when it has one; otherwise the key's own thumbprint (the `kid` in the key directory).
+  const jwk = createPublicKey(createPrivateKey(privatePem)).export({ format: 'jwk' });
+  const thumbprint = createHash('sha256').update(`{"crv":"${jwk.crv}","kty":"${jwk.kty}","x":"${jwk.x}"}`).digest('base64url');
+  return { alg: 'Ed25519', keyId: store.getSettings().instanceId ?? thumbprint, value: sign(null, Buffer.from(canonical(record)), createPrivateKey(privatePem)).toString('base64url') };
 }
 
 export function verifyRecord(publicKeyBase64: string, record: unknown, signature: string): boolean {

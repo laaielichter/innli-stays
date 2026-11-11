@@ -252,6 +252,14 @@ export function createApp(opts: AppOptions) {
     };
   };
 
+  /** Identification as a step of its own, so what follows (idempotent replays, the handler) only runs for a caller that was checked and counted. */
+  const identify = async (req: Request, res: Response, next: NextFunction) => {
+    const who = await identifyAgent(req, res);
+    if (!who) return;
+    res.locals.who = who;
+    next();
+  };
+
   // OAuth 2.1 for agent platforms (ChatGPT, Claude and others connecting over MCP).
   app.use(oauthRouter(store, { publicUrl: opts.publicUrl, ownerApproval: Boolean(opts.requireAgentKey), isOwnerKey: (k) => Boolean(store.findPropertyByOwnerKeyHash(hashKey(k))) }));
 
@@ -296,9 +304,8 @@ export function createApp(opts: AppOptions) {
     });
   });
 
-  app.post('/api/agent/v1/tools/:name', idempotent, async (req, res) => {
-    const who = await identifyAgent(req, res);
-    if (!who) return;
+  app.post('/api/agent/v1/tools/:name', identify, idempotent, async (req, res) => {
+    const who = res.locals.who as AgentCaller;
     const name = String(req.params.name) as ToolName;
     const def = TOOLS[name];
     if (!def) {
@@ -333,8 +340,7 @@ export function createApp(opts: AppOptions) {
   };
   /** Runs one booking-session operation for an identified caller. The platform names itself in UCP-Agent. */
   const ucpOperation = (run: (req: Request, agent: AgentCaller, profile: string) => Promise<unknown> | unknown, created = false) => async (req: Request, res: Response) => {
-    const who = await identifyAgent(req, res);
-    if (!who) return;
+    const who = res.locals.who as AgentCaller;
     const profile = /profile="([^"]{1,500})"/.exec(String(req.headers['ucp-agent'] ?? ''))?.[1];
     let host: string | undefined;
     try {
@@ -355,11 +361,11 @@ export function createApp(opts: AppOptions) {
       ucpError(res, err);
     }
   };
-  app.post(`${UCP_BASE_PATH}/booking-sessions`, idempotent, ucpOperation((req, agent, profile) => ucp.create(req.body, agent, profile), true));
-  app.get(`${UCP_BASE_PATH}/booking-sessions/:id`, ucpOperation((req, agent) => ucp.get(String(req.params.id), agent)));
-  app.put(`${UCP_BASE_PATH}/booking-sessions/:id`, idempotent, ucpOperation((req, agent) => ucp.update(String(req.params.id), req.body, agent)));
-  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
-  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions`, identify, idempotent, ucpOperation((req, agent, profile) => ucp.create(req.body, agent, profile), true));
+  app.get(`${UCP_BASE_PATH}/booking-sessions/:id`, identify, ucpOperation((req, agent) => ucp.get(String(req.params.id), agent)));
+  app.put(`${UCP_BASE_PATH}/booking-sessions/:id`, identify, idempotent, ucpOperation((req, agent) => ucp.update(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, identify, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, identify, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
 
   // The same five operations as MCP tools, for platforms that speak UCP over MCP.
   app.post(UCP_MCP_PATH, async (req, res) => {
