@@ -162,6 +162,8 @@ async function renderRentalReady() {
 function renderAll() {
   renderRentalReady();
   const p = state.property;
+  // A rental company has campers, not rooms.
+  $('[data-tab=units]').textContent = T(p.type === 'camper_rental' ? 'Campers' : 'Kamers');
   $('#prop-name').textContent = p.name;
   $('#published').checked = p.published;
   const status = $('#prop-status');
@@ -1189,7 +1191,7 @@ function renderRequests() {
         r.handledBy ? h('span', { class: 'muted', 'data-user-text': true }, ` · ${T('afgehandeld door {0}', r.handledBy)}`) : '',
       ),
       r.guest.message ? h('div', { class: 'msg', 'data-user-text': true }, r.guest.message) : null,
-      r.status === 'new' && r.holdUntil ? h('div', { class: 'small' }, T('Kamer vastgehouden tot {0}; daarna vervalt de aanvraag.', new Date(r.holdUntil).toLocaleString(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }))) : null,
+      r.status === 'new' && r.holdUntil ? h('div', { class: 'small' }, T(state.property.type === 'camper_rental' ? 'Camper vastgehouden tot {0}; daarna vervalt de aanvraag.' : 'Kamer vastgehouden tot {0}; daarna vervalt de aanvraag.', new Date(r.holdUntil).toLocaleString(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }))) : null,
       r.decidedBy === 'instant' ? h('div', { class: 'small muted' }, 'Direct bevestigd volgens je regels.') : null,
       plan ? h('div', { class: 'small' }, h('span', { class: 'chip info', 'data-user-text': true }, plan.name), plan.refundable ? '' : ` ${T('niet-restitueerbaar')}`) : null,
       r.extras?.length || r.discountCode ? h('div', { class: 'small', 'data-user-text': true }, [

@@ -212,6 +212,35 @@ describe('camper rental', () => {
     assert.ok(odd.items.some((i: Json) => i.state === 'problem' && /4250 kg/.test(i.why)));
     await fetch(`${server.url}/api/owner/facts/vehicle.licenceCategory`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: 'C1', unitId: 'grote-camper' }) });
   });
+
+  it('checks the driver on every way in, also the form on the public page', async () => {
+    const page = await (await fetch(`${server.url}/verblijf/veluwe-campers?lang=en`)).text();
+    assert.match(page, /name="driverAge"/);
+    assert.match(page, /Security deposit/);
+    assert.doesNotMatch(page, />Rooms</);
+    const d = dates();
+    const post = (extra: Json) =>
+      fetch(`${server.url}/verblijf/veluwe-campers/aanvraag?lang=en`, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ unitId: 'buscamper', ...d, adults: '2', name: 'Piet Proef', email: 'piet@example.com', ...extra }) });
+    const none = await post({});
+    assert.equal(none.status, 400);
+    assert.match(await none.text(), /age and driving licence/);
+    const young = await post({ driverAge: '20', driverLicence: 'B', driverLicenceYears: '2' });
+    assert.equal(young.status, 400);
+    assert.match(await young.text(), /at least 23/);
+    const ok = await post({ driverAge: '30', driverLicence: 'B', driverLicenceYears: '8' });
+    assert.equal(ok.status, 303);
+    const made = server.store.requestsFor('prop_veluwecampers').find((r) => r.guest.email === 'piet@example.com')!;
+    assert.deepEqual(made.driver, { age: 30, licenceCategory: 'B', licenceYears: 8, licenceCountry: undefined });
+  });
+
+  it('keeps the checks when a request is changed to a larger party', async () => {
+    const q = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: goodDriver });
+    const sent = await tool('request_booking', { quoteId: q.body.quoteId, guest: { name: 'Mo Wissel', email: 'mo@example.com' }, guestConsent: true });
+    assert.equal(sent.status, 200, JSON.stringify(sent.body));
+    const changed = await tool('modify_request', { statusToken: sent.body.statusToken, guestConsent: true, unitId: 'grote-camper', guests: { adults: 4 } });
+    assert.equal(changed.status, 400, JSON.stringify(changed.body));
+    assert.equal(changed.body.code, 'DRIVER_NOT_ELIGIBLE');
+  });
 });
 
 describe('starter packs', () => {

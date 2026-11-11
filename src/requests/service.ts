@@ -4,7 +4,8 @@ import type { ErrorCode } from '../agentErrors.ts';
 import { track } from '../analytics/funnel.ts';
 import { CatalogError, stayPolicies, type Catalog } from '../catalog.ts';
 import { addDays, stayNights } from '../domain/dates.ts';
-import { DEFAULT_BOOKING_RULES, type BookingRequest, type BookingRules, type Language, type Property } from '../domain/types.ts';
+import { isCamperRental, rentalBlockers } from '../domain/rental.ts';
+import { DEFAULT_BOOKING_RULES, type BookingRequest, type BookingRules, type Driver, type Language, type Property, type Quote } from '../domain/types.ts';
 import { currentLang, defaultLang, formatDate, LOCALE, money, ownerLang, t, type Lang } from '../i18n/index.ts';
 import type { Store } from '../store.ts';
 import type { Mailer } from './mailer.ts';
@@ -39,6 +40,22 @@ export const requestInputSchema = z.object({
   quoteId: z.string().max(80).optional(),
   extras: z.array(z.object({ id: z.string().max(40), qty: z.coerce.number().int().min(1).max(50).default(1) })).max(20).optional(),
   discountCode: z.string().trim().max(40).optional().transform((v) => v || undefined),
+  /** Camper rental: who drives. From an agent as an object; from the form on the page as separate fields. */
+  driver: z
+    .object({
+      age: z.coerce.number().int().min(16).max(99),
+      licenceCategory: z.string().trim().max(20).optional().transform((v) => v || undefined),
+      licenceYears: z.coerce.number().int().min(0).max(80).optional(),
+      licenceCountry: z.string().trim().length(2).optional(),
+      hasInternationalPermit: z.boolean().optional(),
+    })
+    .optional(),
+  driverAge: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(16).max(99).optional()),
+  driverLicence: z.string().trim().max(20).optional().transform((v) => v || undefined),
+  driverLicenceYears: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).max(80).optional()),
+  driverLicenceCountry: z.preprocess((v) => (v === '' ? undefined : v), z.string().trim().length(2).optional()),
+  /** Camper rental: countries the guest plans to drive in. */
+  destinations: z.array(z.string().trim().length(2)).max(15).optional(),
   /** Agent platform URL for signed status updates (https only). */
   callbackUrl: z.string().url().max(500).refine((u) => u.startsWith('https://') || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(u), { error: () => 'callbackUrl must use https' }).optional(),
 });
@@ -185,6 +202,20 @@ export class RequestService {
     if (offer.availability.status === 'unavailable') throw new RequestError(t('req.unitUnavailable', { unit: offer.unit.name }), 409, 'UNAVAILABLE');
     if (property.facts['pets.dogsAllowed']?.value === false && offer.guests.dogs > 0) throw new RequestError(t('req.noDogs'));
 
+    // Camper rental: every way in (an agent, a checkout session, the form on the page, a change) passes here,
+    // so this is where the driver, the route and the vehicle are checked.
+    let driver: Driver | undefined;
+    let destinations: string[] | undefined;
+    if (isCamperRental(property)) {
+      const fromQuote = input.quoteId ? this.store.getQuote(input.quoteId) : undefined;
+      const sameQuote = fromQuote && fromQuote.propertyId === property.id && fromQuote.unitId === offer.unit.id ? fromQuote : undefined;
+      driver = input.driver ?? (input.driverAge !== undefined ? { age: input.driverAge, licenceCategory: input.driverLicence, licenceYears: input.driverLicenceYears, licenceCountry: input.driverLicenceCountry } : undefined) ?? sameQuote?.driver ?? opts.replaces?.driver;
+      destinations = (input.destinations ?? sameQuote?.destinations ?? opts.replaces?.destinations)?.map((c) => c.toUpperCase());
+      if (!driver) throw new RequestError(t('req.driverRequired'), 400, 'INVALID_INPUT');
+      const blocker = rentalBlockers(property, offer.unit, { driver, destinations, guests: offer.guests, checkout: input.checkout } as Quote);
+      if (blocker) throw new RequestError(blocker.message, 400, blocker.code);
+    }
+
     const rules = rulesOf(property);
     const link = input.ref ? this.store.getBookingLink(input.ref) : undefined;
     const viaLink = link && link.propertyId === property.id ? link : undefined;
@@ -208,6 +239,8 @@ export class RequestService {
       quotedTotal: offer.quote.total,
       quoteComplete: offer.quote.complete,
       guest: { name: input.name, email: input.email, phone: input.phone, message: input.message },
+      driver,
+      destinations,
       // Stay page: the page's language. Agent without guestLanguage: the host's language.
       language: opts.language ?? (opts.agentClient ? (property.language ?? defaultLang()) : currentLang()),
       status: 'new',
@@ -220,7 +253,7 @@ export class RequestService {
         via: opts.agentClient ? 'agent' : 'stay_page',
         agentClient: opts.agentClient,
         statement: opts.agentClient
-          ? `Guest agreed to share name and e-mail with ${property.name} and to send this request (confirmed to ${opts.agentClient}).`
+          ? `Guest agreed to share name and e-mail${driver ? ", and the driver's age and licence details," : ''} with ${property.name} and to send this request (confirmed to ${opts.agentClient}).`
           : 'Guest submitted the request form on the stay page.',
         givenAt: now.toISOString(),
         termsHash: opts.approved?.hash,

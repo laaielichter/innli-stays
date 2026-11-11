@@ -75,7 +75,8 @@ export function consentSummary(property: Property, quotes: Quote[]): string {
       const unit = property.units.find((u) => u.id === x.unitId);
       return unit && isCamperRental(property) ? [rentalSentence(property, unit, x, (n) => money(n, 'en', x.currency))] : [];
     }).slice(0, 1),
-    `Name and e-mail are shared with ${property.name}.`,
+    // Say exactly what leaves the guest's hands: for a rental that includes who drives.
+    isCamperRental(property) && q.driver ? `Name, e-mail and the driver's age and licence details are shared with ${property.name}.` : `Name and e-mail are shared with ${property.name}.`,
   ].join(' ');
 }
 

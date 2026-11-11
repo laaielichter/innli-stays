@@ -161,7 +161,8 @@ export function factApplies(def: FactDefinition, propertyType: string | undefine
 }
 
 export function factDefinitionsFor(scope: FactScope, propertyType?: string): FactDefinition[] {
-  return FACT_CATALOG.filter((d) => d.scope === scope && factApplies(d, propertyType));
+  // Without a type every fact counts: a public page shows whatever the owner confirmed.
+  return FACT_CATALOG.filter((d) => d.scope === scope && (propertyType === undefined || factApplies(d, propertyType)));
 }
 
 export function unknownFact(now = new Date()): Fact {

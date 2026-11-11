@@ -192,6 +192,8 @@ export class AgentActions {
       discountCode: q.discountCode,
       callbackUrl: args.callbackUrl,
       quoteId: q.id,
+      driver: q.driver,
+      destinations: q.destinations,
       name: args.guest.name,
       email: args.guest.email,
       phone: args.guest.phone,
@@ -218,13 +220,6 @@ export class AgentActions {
         m.holder = holder;
         if (m.consent) Object.assign(m.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
         this.store.saveRequest(m);
-      }
-    }
-    if (isCamperRental(property) && !replay) {
-      // The company needs to know who drives; it is removed with the guest's other personal data.
-      for (const m of this.requests.members(property, members[0])) {
-        const q = (quotes as Quote[]).find((x) => x.unitId === m.unitId);
-        if (q?.driver) this.store.saveRequest(Object.assign(m, { driver: q.driver, destinations: q.destinations }));
       }
     }
     const request = this.requests.members(property, members[0])[0];
@@ -386,8 +381,6 @@ export class AgentActions {
     try {
       created = await this.requests.create(property, raw, { agentClient: agent.name, language: old.language, replaces: old });
       created.holder = holder;
-      if (old.driver) created.driver = old.driver;
-      if (old.destinations) created.destinations = old.destinations;
       if (created.consent) Object.assign(created.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
       this.store.saveRequest(created);
     } catch (err) {
