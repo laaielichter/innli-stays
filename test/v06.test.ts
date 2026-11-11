@@ -205,7 +205,7 @@ describe('agent features of 0.6', () => {
     const spec = await (await fetch(`${server.url}/api/agent/v1/openapi.json`)).json();
     assert.equal(spec.openapi, '3.1.0');
     assert.ok(spec.paths['/api/agent/v1/tools/search_stays'].post.requestBody.content['application/json'].schema.properties.requirements);
-    assert.equal(Object.keys(spec.paths).length, 19);
+    assert.equal(Object.keys(spec.paths).length, 20);
     const headers = { 'content-type': 'application/json', authorization: `Bearer ${server.creds.agentKey}` };
     const ok = await fetch(`${server.url}/api/agent/v1/tools/search_stays`, { method: 'POST', headers, body: JSON.stringify({ area: 'Veluwe', guests: { adults: 2 } }) });
     assert.equal(ok.status, 200);
