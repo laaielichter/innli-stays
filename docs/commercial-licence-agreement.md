@@ -12,7 +12,7 @@ This is the agreement used for a commercial licence to INNLI, at the fixed price
 
 **2. What the licensee may do.** For the licence period, and for every version of the software released on or before its last day, the licensee may use, modify and build the software into [one product or service: name / its products and services], and distribute or offer it to its own customers as part of that, without publishing its own source code. This right is not exclusive and cannot be transferred or sublicensed on its own.
 
-**3. Period and price.** The licence period runs from [date] to [date, one year later]. The price is [€ 2,500 / € 9,500], excluding VAT, payable in advance. The licence starts when the payment has arrived.
+**3. Period and price.** The licence period runs from [date] to [date, one or three years later]. The price is [€ 490 / € 2,500 / € 9,500] [for three years: two and a half times that amount], excluding VAT, payable in advance. The licensee states that [number] people work for it on the first day of the period. The licence starts when the payment has arrived.
 
 **4. After the period.** The licensee may keep using the versions released on or before the last day of the period, under this agreement, without further payment. Versions released later need a new period.
 

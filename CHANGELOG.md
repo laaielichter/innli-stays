@@ -10,6 +10,10 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - `get_quote` takes a **`driver`** (age, licence category, years held). The quote has a `rental` block: kilometres included for this rental, the deposit (not part of the total), insurance, pick-up and return, whether this driver may rent this vehicle, and which rules the company did not state.
 - The consent summary and hash include the rental terms: a changed deposit after the guest agreed gives `TERMS_CHANGED`.
 - `request_booking` refuses a camper request without a driver, and one where the driver or party breaks a rule (new error code `DRIVER_NOT_ELIGIBLE`). The driver's details are stored with the request and removed with the guest's personal data.
+- **Insurance packages**: a paid option can carry a deductible and a deposit of its own. The quote lists the packages, and with one chosen the deductible, deposit, consent summary and booking record follow it. The passport also holds liability cover, roadside assistance, where the insurance is valid, and whether the deposit needs a credit card.
+- **Where the guest drives**: `get_quote` takes `destinations`; a country the vehicle may not go to, or is not insured in, refuses the request (`RENTAL_NOT_POSSIBLE`).
+- **Different countries**: a licence from outside Europe follows the company's rule (accepted or not, international driving permit or not); kilometres are also given in miles where people use miles; the owner is warned when a car licence is stated for a vehicle too heavy for one by the usual rule of that country. These are rules of thumb, marked as not legal advice.
+- **Ready to rent out?**: a checklist in the dashboard of what must be in order (rental cover from the insurer, liability, rental terms, a valid inspection per vehicle and more). A rental company cannot be made visible to agents until the required points are confirmed. INNLI cannot check them and says so.
 - No tourist tax line for campers. The sample data has a camper rental company with three vehicles.
 - Details: [docs/campers.md](docs/campers.md).
 
@@ -17,6 +21,10 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - When setting up, an owner can choose a **starter pack**: *B&B with two rooms*, *One holiday home*, *One campervan* or *One family motorhome*. The pack creates the rooms or vehicles and fills the passport with what is usual for that kind of business.
 - Everything a pack fills in is a **suggestion** (not confirmed, source `starter`). It never replaces a confirmed fact, and it never suggests a price, deposit or fee. The owner checks each one and presses "Correct".
 - An existing property can apply a pack of its own type from the Passport tab (`POST /api/owner/starter-pack`); the list is at `GET /api/starter-packs`.
+
+### Licensing
+- A third fixed price: **Starter**, € 490 a year, for one maker or a team of up to 3. Three years paid at once cost two and a half.
+- Running INNLI for your own stay or rental company stays free, with every function.
 
 ### Website in ten languages
 - The website is in English (the default), Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese, with a language picker and `hreflang` links. `site/index.html` is the only page edited by hand; `npm run site` writes the others from `site/i18n/<lang>.json`. The translations were made by machine and have not been checked by native speakers.

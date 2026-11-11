@@ -1,4 +1,5 @@
-# Nieuwe versie uitbrengen:  git tag v2.2.0 && git push origin v2.2.0
+# Release a new version: Actions → Release → Run workflow (on main), or push a tag: git tag v2.2.0 && git push origin v2.2.0
+# Started by hand, the tag is made from the version in package.json.
 # Maakt een GitHub-release met de zips (programma + WordPress-plugin) en een
 # Docker-image voor x86 en ARM (Raspberry Pi) op ghcr.io/<eigenaar>/innli,
 # en publiceert het npm-pakket innli-stays.
@@ -6,6 +7,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 permissions:
   contents: write
   packages: write
@@ -27,7 +29,9 @@ jobs:
       - name: GitHub-release maken
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt --title "INNLI ${GITHUB_REF_NAME#v}" --generate-notes
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh release create "v$VERSION" dist/*.zip dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "INNLI $VERSION" --generate-notes
 
   npm:
     needs: zip
@@ -66,7 +70,7 @@ jobs:
         id: image
         run: |
           echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/innli" >> "$GITHUB_OUTPUT"
-          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
         with:
           context: .

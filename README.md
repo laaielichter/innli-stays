@@ -181,7 +181,7 @@ INNLI is an **open research project**: how can AI agents find and book small ind
 | | For whom | Cost |
 |---|---|---|
 | **Run it yourself** | Hosts and developers who run INNLI on their own computer or server. Everything in this repository, no limits. | Free (AGPL-3.0) |
-| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. The larger licence includes INNLI Pro: all-or-nothing trips across several stays. | From € 2,500 a year, fixed prices: [COMMERCIAL.md](COMMERCIAL.md) |
+| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. The larger licence includes INNLI Pro: all-or-nothing trips across several stays. | From € 490 a year, fixed prices: [COMMERCIAL.md](COMMERCIAL.md) |
 
 INNLI takes no commission on bookings, does not sell data of guests or hosts, and has no paid places in search results.
 

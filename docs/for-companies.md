@@ -12,7 +12,7 @@ Software that an accommodation runs itself, so that AI agents can find it, under
 - an **agent connection** over MCP, REST (OpenAPI 3.1), ACP checkout sessions and UCP lodging booking sessions (draft);
 - **card guarantees** from agent platforms: authorised at checkout, captured only when the host confirms, on the property's own payment account;
 - **pricing, availability and booking**: itemised totals, holds, booking requests or instant booking, changes, cancellations, signed records;
-- **camper rental**: driver rules, kilometres, deposit and insurance, checked before a request is sent ([campers.md](campers.md));
+- **camper rental**: driver rules, kilometres, deposit, insurance packages, countries, and a checklist of what must be in order before renting out ([campers.md](campers.md));
 - a **dashboard** for the owner (English and Dutch), a public **stay page** in four languages, and a **WordPress plugin**;
 - the **INNLI guide**: one address through which agents reach every listed installation.
 
@@ -48,7 +48,7 @@ Everything here can be reproduced from the repository.
 
 | Claim | How to check |
 |---|---|
-| 258 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
+| 263 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
 | Types are strict and clean | `npm run typecheck` |
 | The npm package installs and starts | `npm run smoke:npm` |
 | A running installation behaves as agents expect | `npx innli-conformance <address>`: 14 read-only checks |
@@ -86,7 +86,7 @@ The 2.1 changes went through a separate security review pass by an AI reviewer t
 
 ## How this works
 
-- **A licence** has a fixed price and a short agreement: [COMMERCIAL.md](../COMMERCIAL.md).
+- **A licence** has one of three fixed prices (€ 490, € 2,500 or € 9,500 a year) and a short agreement: [COMMERCIAL.md](../COMMERCIAL.md).
 - **A takeover** goes by written offer. Say what you want to take over and what you offer. The maker answers in writing, within a week.
 - Everything is arranged in writing. No calls or meetings are needed, and none are offered.
 - The maker does not join the buyer as an employee and does not offer support after a handover, beyond answering written questions about the code for an agreed, limited time.
