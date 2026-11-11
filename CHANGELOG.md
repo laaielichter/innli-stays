@@ -4,11 +4,10 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
 ## Unreleased
 
-### How INNLI earns
-- The licence does not change: the software stays open source under the AGPL-3.0 and free to run yourself.
-- The wording does: INNLI no longer says it "runs on donations" or has "no subscription". It earns from optional services around the open software: hosted INNLI (planned), setup and support, commercial licences and guides for regions or chains. See *Plans* in the README.
-- Still excluded: commission on bookings, selling data, and paid places in search results.
-- New: [TRADEMARK.md](TRADEMARK.md). The licences cover the code; the name "INNLI" and the logo have their own rules.
+### Licensing and ownership
+- The licence does not change: AGPL-3.0, with a commercial licence for companies.
+- The README and website no longer say the project "runs on donations" or make promises about the future. They state what is true now: free to run yourself, no commission, no selling data, no paid places in search results.
+- New: [TRADEMARK.md](TRADEMARK.md) (the licences cover the code; the name and logo have their own rules), [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (every run-time dependency and its licence) and [docs/for-companies.md](docs/for-companies.md) (what the project consists of, for a company that wants to license it or take it over).
 
 ## 2.1.0 - 2026-11-11
 

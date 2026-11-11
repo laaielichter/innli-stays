@@ -26,17 +26,12 @@ De AGPL vraagt dat wie een aangepaste versie via een netwerk aanbiedt, de gebrui
 
 - Het recht om INNLI in een gesloten product of dienst te bouwen, zonder de plicht uit de AGPL om je eigen code te publiceren.
 - Dezelfde code als de open versie: er is geen aparte gesloten editie van de software die een verblijf zelf draait.
-- In overleg: ondersteuning, inspraak in de planning, garanties en hulp bij een koppeling met jouw systeem.
 
 De prijs hangt af van het gebruik (één product of meer, het aantal verblijven dat je bedient) en wordt per klant afgesproken.
 
-## Andere betaalde diensten
+## Het hele project
 
-- **INNLI gehost** (gepland): wij draaien een installatie voor een eigenaar, op diens eigen adres.
-- **Installatie en ondersteuning** voor eigenaren en hotels.
-- **Een eigen gids** voor een regio, VVV of keten.
-
-Geen van deze is nodig om INNLI te gebruiken. Zelf draaien blijft gratis onder de AGPL.
+INNLI is gebouwd door en eigendom van één maker. Een bedrijf dat het hele project wil overnemen (code, naam, pakketnamen en de gids) vindt in [docs/for-companies.md](docs/for-companies.md) (Engels) wat daarbij hoort.
 
 ## De naam
 

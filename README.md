@@ -28,7 +28,7 @@ INNLI is not a chatbot and not another hotel system. It has four parts:
 
 Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.
 
-**Open source (AGPL-3.0), and free to run yourself.** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. INNLI never takes commission on a booking. It earns from optional services around the open software: see [Plans](#plans).
+**Open source (AGPL-3.0), and free to run yourself.** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. INNLI takes no commission on bookings. A commercial licence is available for companies: see [Using INNLI](#using-innli).
 
 
 ## What it does
@@ -164,28 +164,24 @@ In Dutch: [README.nl.md](README.nl.md) and [docs/nl/](docs/nl/).
 
 ## Research
 
-INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. It is self-funded for now. Grants and paid services pay for further work; the software you run yourself stays open source. To cite INNLI, see [CITATION.cff](CITATION.cff).
+INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. It is self-funded. To cite INNLI, see [CITATION.cff](CITATION.cff).
 
-## Plans
+## Using INNLI
 
-The software is the same for everyone. What you pay for, if anything, is someone doing the work for you.
-
-| | For whom | Price |
+| | For whom | Cost |
 |---|---|---|
-| **Run it yourself** | Hosts and developers who host INNLI on their own computer or server. Everything in this repository, no limits. | Free (AGPL-3.0) |
-| **Hosted INNLI** *(planned)* | Hosts who do not want to run a server: we run it, update it and back it up, on your own address. | A fixed amount a month. [Register your interest](https://github.com/laaielichter/innli-stays/issues/new?template=hosted_interest.md) |
-| **Setup and support** | Hosts and hotels who want it installed, connected to their booking system and kept working. | On request |
+| **Run it yourself** | Hosts and developers who run INNLI on their own computer or server. Everything in this repository, no limits. | Free (AGPL-3.0) |
 | **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. | On request: [COMMERCIAL.md](COMMERCIAL.md) |
-| **Your own guide** | Regions, tourist boards and chains that want one agent address for their own stays. | On request |
 
-What INNLI will not do: take commission on a booking, sell data of guests or hosts, or sell places in search results.
+INNLI takes no commission on bookings, does not sell data of guests or hosts, and has no paid places in search results.
+
+Companies that want to take the whole project further: see [For companies](docs/for-companies.md).
 
 ## Support INNLI
 
-Running it yourself is free and stays free. Does it help your stay, or are you building an agent with it?
+Does it help your stay, or are you building an agent with it?
 - **Star it** on GitHub, so others find INNLI.
 - **Contribute:** report bugs, translate, or build a connection to a booking system.
-- **Sponsor:** with the *Sponsor* button at the top of the GitHub page (once it is switched on).
 
 ## Licence
 
