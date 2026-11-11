@@ -146,6 +146,7 @@ npm run pakket -- --concept  # download package (zip) in dist/
 
 ## Documentation
 
+- [docs/demo.md](docs/demo.md): watch an AI agent book a stay, or do it yourself in five minutes
 - [docs/install.md](docs/install.md): installing (zip or Docker)
 - [docs/owner-guide.md](docs/owner-guide.md): guide for the B&B owner
 - [docs/hotels.md](docs/hotels.md): for hotels: room types, rate plans, answer assistant, staff, webhooks to your PMS
