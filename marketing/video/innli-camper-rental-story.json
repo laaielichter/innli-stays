@@ -1,0 +1,79 @@
+{
+  "version": "aes.story/1",
+  "name": "INNLI camper rental story",
+  "deliver": "vertical-share",
+  "size": "720",
+  "safeArea": "story",
+  "music": {
+    "bpm": 96
+  },
+  "style": {
+    "accent": "#d9643a",
+    "accent2": "#7a9a7e",
+    "ink": "#17202a",
+    "muted": "#5b6672",
+    "panel": "#fbf7ef",
+    "background": {
+      "from": "#fbf7ef",
+      "to": "#f5efe4"
+    },
+    "grid": false,
+    "grain": 3,
+    "glow": 0.3
+  },
+  "scenes": [
+    {
+      "id": "drive",
+      "source": "camper-drive.mp4",
+      "start": 0,
+      "beats": 8,
+      "framing": "fill"
+    },
+    {
+      "id": "ask",
+      "kind": "terminal",
+      "beats": 8,
+      "title": "You just ask your AI",
+      "window": "a camper rental via INNLI",
+      "command": "camper for 4, automatic, 2 weeks in July",
+      "output": [
+        "4 seats with a belt: yes",
+        "your licence: fine",
+        "2,100 km included",
+        "deposit and insurance: clear",
+        "requested direct"
+      ]
+    },
+    {
+      "id": "clear",
+      "kind": "title",
+      "beats": 4,
+      "lines": [
+        "No surprises",
+        "at *pick-up.*"
+      ],
+      "size": 300
+    },
+    {
+      "id": "owners",
+      "kind": "chips",
+      "beats": 6,
+      "title": "Rent out campers?\n*Be the answer.*",
+      "items": [
+        "Your campers",
+        "Your prices",
+        "Your rules",
+        "No commission",
+        "Free and open source"
+      ]
+    },
+    {
+      "id": "end",
+      "kind": "card/end",
+      "beats": 6,
+      "title": "INNLI",
+      "tagline": "Camper rental,\n*bookable* by AI agents.",
+      "url": "github.com/laaielichter/innli-stays"
+    }
+  ]
+}
