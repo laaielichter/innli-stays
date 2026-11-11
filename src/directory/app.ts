@@ -13,7 +13,7 @@ import { agentCard, llmsTxt, mcpServerCard, type StayLink } from '../agent/disco
 export function createGuideApp(guide: Guide, opts: { fetcher?: Fetcher; insecureAgentDirectories?: boolean } = {}) {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  app.set('trust proxy', Math.max(0, Math.min(5, Number(process.env.GIDS_TRUST_PROXY ?? 1) || 0)));
   app.use(express.json({ limit: '512kb' }));
   const mcpLimit = rateLimiter(120);
   const verifiedLimit = rateLimiter(600);
@@ -60,7 +60,7 @@ export function createGuideApp(guide: Guide, opts: { fetcher?: Fetcher; insecure
     const ip = req.ip ?? 'unknown';
     // A platform that signs its requests (Web Bot Auth) is recognised here too, and the guide passes that on.
     const signed = await botAuth.verify(
-      { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [...new Set([String(req.headers.host ?? ''), req.hostname, guide.publicUrl ? new URL(guide.publicUrl).host : ''].filter(Boolean))], headers: req.headers },
+      { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [guide.publicUrl ? new URL(guide.publicUrl).host : String(req.headers.host ?? '')], headers: req.headers },
       { mayFetch: () => directoryLimit(ip) },
     );
     const verified = signed.status === 'verified' ? signed.agent : undefined;

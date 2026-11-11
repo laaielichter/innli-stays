@@ -112,9 +112,28 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.match(String((await tool('search_stays', { area: 'Egmond' }, headers)).headers.get('x-innli-agent-identity')), /^verified/);
       assert.equal((await tool('search_stays', { area: 'Egmond' }, headers)).headers.get('x-innli-agent-identity'), 'invalid; reason="replayed_nonce"');
 
+      // Nor does it help to claim another host name: only this installation's public host counts.
+      const claimed = await fetch(`${server.url}/api/agent/v1/tools/search_stays`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-host': 'other.example', ...platform.signed('https://other.example/api/agent/v1/tools/search_stays') }, body: '{"area":"Egmond"}' });
+      assert.equal(claimed.headers.get('x-innli-agent-identity'), 'invalid; reason="bad_signature"');
       // A signature made for another host is worthless here.
       const elsewhere = await tool('search_stays', { area: 'Egmond' }, platform.signed('https://other.example/api/agent/v1/tools/search_stays'));
       assert.equal(elsewhere.headers.get('x-innli-agent-identity'), 'invalid; reason="bad_signature"');
+    });
+
+    it('the signer from the agent kit is recognised', async () => {
+      const kit = (await import('../agent-kit/examples/web-bot-auth.mjs' as string)) as { newKey(): { privateKeyPem: string; jwks: Json }; createSigner(o: Json): { sign(url: string, method?: string): Record<string, string> } };
+      const { privateKeyPem, jwks } = kit.newKey();
+      const directory: Server = createServer((_req, res) => res.end(JSON.stringify(jwks)));
+      await new Promise<void>((r) => directory.listen(0, '127.0.0.1', r));
+      try {
+        const origin = `http://127.0.0.1:${(directory.address() as AddressInfo).port}`;
+        const signer = kit.createSigner({ origin, privateKeyPem });
+        const url = `${server.url}/api/agent/v1/tools/search_stays`;
+        const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...signer.sign(url) }, body: '{"area":"Egmond"}' });
+        assert.equal(res.headers.get('x-innli-agent-identity'), `verified; agent="${new URL(origin).host}"`);
+      } finally {
+        await new Promise((r) => directory.close(r));
+      }
     });
 
     it('publishes its own keys in the standard directory', async () => {
@@ -215,6 +234,60 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       }
     });
 
+    it('a change counts as a hold, and questions follow the identified-agents rule too', async () => {
+      const fresh = await startTestServer({ hotel: true });
+      try {
+        const post = async (name: string, body: Json, headers: Record<string, string> = {}) => {
+          const res = await fetch(`${fresh.url}/api/agent/v1/tools/${name}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+          return { status: res.status, body: (await res.json()) as Json };
+        };
+        const day = (n: number) => addDays(new Date().toISOString().slice(0, 10), n);
+        const tokens: string[] = [];
+        for (let i = 0; i < MAX_OPEN_HOLDS.anonymous; i++) {
+          const w = freeWindow(['duinzicht-1'], 2, 40 + i * 10);
+          const q = (await post('get_quote', { propertyId: 'prop_duinzicht', unitId: 'kamer-1', ...w })).body;
+          tokens.push((await post('request_booking', { quoteId: q.quoteId, guest: { name: 'Mo Di', email: `mo${i}@example.com` }, guestConsent: true })).body.statusToken);
+        }
+        // Changing one is fine (it replaces its own request) and records who holds the nights.
+        const w = freeWindow(['duinzicht-1'], 2, 90);
+        const changed = await post('modify_request', { statusToken: tokens[0], ...w, guestConsent: true });
+        assert.equal(changed.status, 200, JSON.stringify(changed.body));
+        assert.match(String(fresh.store.getRequestByToken(changed.body.statusToken)!.holder), /^h_/);
+        // But the change is a hold of its own: no new request fits beside it.
+        const w2 = freeWindow(['duinzicht-1'], 2, 120);
+        const q = (await post('get_quote', { propertyId: 'prop_duinzicht', unitId: 'kamer-1', ...w2 })).body;
+        assert.equal((await post('request_booking', { quoteId: q.quoteId, guest: { name: 'Mo Di', email: 'mo9@example.com' }, guestConsent: true })).body.code, 'LIMIT_REACHED');
+
+        // Two anonymous callers never share an idempotency key.
+        fresh.store.getProperty('prop_spaarne')!.bookingRules = { instantBooking: true, minLeadDays: 0, maxNights: 21, holdHours: 12, requireIdentifiedAgent: true };
+        for (const name of ['ask_host', 'join_waitlist', 'modify_request']) {
+          const args: Json = name === 'ask_host' ? { propertyId: 'prop_spaarne', question: 'Is there a lift to the rooms?' } : name === 'join_waitlist' ? { propertyId: 'prop_spaarne', checkin: day(30), checkout: day(31), email: 'w@example.com', guestConsent: true } : null as never;
+          if (args) assert.equal((await post(name, args)).body.code, 'AGENT_IDENTITY_REQUIRED', name);
+        }
+        assert.equal((await post('ask_host', { propertyId: 'prop_spaarne', question: 'Is there a lift to the rooms?' }, { authorization: `Bearer ${fresh.creds.agentKey}` })).status, 200);
+      } finally {
+        await fresh.close();
+      }
+    });
+
+    it('anonymous callers do not share idempotency keys', async () => {
+      const fresh = await startTestServer({ hotel: true });
+      try {
+        const checkin = addDays(new Date().toISOString().slice(0, 10), 60);
+        const book = async (ip: string, email: string) => {
+          const headers = { 'content-type': 'application/json', 'x-forwarded-for': ip };
+          const q = (await (await fetch(`${fresh.url}/api/agent/v1/tools/get_quote`, { method: 'POST', headers, body: JSON.stringify({ propertyId: 'prop_spaarne', unitId: 'standaard', checkin, checkout: addDays(checkin, 1) }) })).json()) as Json;
+          return (await (await fetch(`${fresh.url}/api/agent/v1/tools/request_booking`, { method: 'POST', headers, body: JSON.stringify({ quoteId: q.quoteId, guest: { name: 'Guest One', email }, guestConsent: true, idempotencyKey: 'order-1' }) })).json()) as Json;
+        };
+        const a = await book('203.0.113.1', 'a@example.com');
+        const b = await book('203.0.113.2', 'b@example.com');
+        assert.notEqual(a.requestId, b.requestId, 'each caller gets their own booking');
+        assert.equal((await book('203.0.113.1', 'a@example.com')).requestId, a.requestId, 'a retry by the same caller is the same booking');
+      } finally {
+        await fresh.close();
+      }
+    });
+
     it('limits open requests per guest address', async () => {
       const statuses: number[] = [];
       for (let i = 0; i < MAX_OPEN_HOLDS.perGuest + 1; i++) {
@@ -259,13 +332,13 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.equal(other.status, 409);
       assert.equal(other.body.code, 'idempotency_key_reused');
       assert.equal(server.store.requestsFor('prop_spaarne').filter((r) => r.guest.email === 'retry@example.com').length, 1);
-      assert.equal(server.store.requestsFor('prop_spaarne').find((r) => r.guest.email === 'retry@example.com')!.idempotencyKey, 'key-1', 'stored with the request, so it survives a restart');
+      assert.equal(server.store.requestsFor('prop_spaarne').find((r) => r.guest.email === 'retry@example.com')!.idempotencyKey!.endsWith(':key-1'), true, 'stored with the request (scoped to the caller), so it survives a restart');
     });
   });
 
   describe('UCP lodging booking sessions', () => {
     const ucp = async (method: string, path: string, body?: Json, headers: Record<string, string> = {}) => {
-      const res = await fetch(`${server.url}/ucp/v1${path}`, { method, headers: { 'content-type': 'application/json', 'ucp-agent': 'profile="https://platform.example/profile"', ...headers }, body: body ? JSON.stringify(body) : undefined });
+      const res = await fetch(`${server.url}/ucp/v1${path}`, { method, headers: { 'content-type': 'application/json', 'ucp-agent': 'profile="https://platform.example/profile"', authorization: `Bearer ${server.creds.agentKey}`, ...headers }, body: body ? JSON.stringify(body) : undefined });
       return { status: res.status, headers: res.headers, body: (await res.json()) as Json };
     };
     const sumsToTotal = (totals: Json[]) => assert.equal(totals.filter((t) => t.type !== 'total').reduce((n, t) => n + t.amount, 0), totals.find((t) => t.type === 'total')!.amount);
@@ -286,6 +359,7 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
 
     it('needs the UCP-Agent header', async () => {
       const res = await ucp('POST', '/booking-sessions', { property: { id: 'prop_spaarne' }, stays: [] }, { 'ucp-agent': '' });
+      for (const bad of [{ property: { id: 'prop_spaarne' }, stays: [null] }, { property: null, stays: 'x' }, []]) assert.equal((await ucp('POST', '/booking-sessions', bad as Json)).body.ucp.status, 'error', 'malformed input is an outcome, not a crash');
       assert.equal(res.status, 400);
       assert.equal(res.body.code, 'missing_ucp_agent');
     });
@@ -293,7 +367,7 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
     it('hotel with instant booking: incomplete → ready_for_complete → completed', async () => {
       const checkin = addDays(new Date().toISOString().slice(0, 10), 80);
       const stay = { id: 'stay_a', accommodation_type: { id: 'standaard' }, rate_plan: { id: 'non-refundable' }, occupancy: { adults: 2, total: 2 }, stay_dates: { start_date: checkin, end_date: addDays(checkin, 3) } };
-      const created = await ucp('POST', '/booking-sessions', { property: { id: 'prop_spaarne' }, stays: [stay] }, platform.signed(`${server.url}/ucp/v1/booking-sessions`));
+      const created = await ucp('POST', '/booking-sessions', { property: { id: 'prop_spaarne' }, stays: [stay] });
       assert.equal(created.status, 201);
       const s = created.body;
       assert.equal(s.status, 'incomplete');
@@ -366,8 +440,7 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
         ],
         booker: { first_name: 'John', last_name: 'Doe', email: 'john.doe@example.com' },
       };
-      const sign = () => platform.signed(`${server.url}/ucp/v1/booking-sessions`);
-      const s = (await ucp('POST', '/booking-sessions', body, sign())).body;
+      const s = (await ucp('POST', '/booking-sessions', body)).body;
       assert.equal(s.status, 'ready_for_complete');
       assert.equal(s.stays.length, 2);
       sumsToTotal(s.totals);
@@ -376,7 +449,7 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.deepEqual(s.policies, []);
       assert.ok(s.messages.some((m: Json) => m.code === 'cancellation_terms_not_structured' && /14 dagen/.test(m.content)));
 
-      const done = (await ucp('POST', `/booking-sessions/${s.id}/complete`, { payment: {} }, sign())).body;
+      const done = (await ucp('POST', `/booking-sessions/${s.id}/complete`, { payment: {} })).body;
       assert.equal(done.status, 'complete_in_progress');
       assert.equal(done.confirmation, undefined, 'not a booking yet, so no confirmation');
       assert.ok(done.messages.some((m: Json) => m.code === 'awaiting_host_confirmation'));
@@ -389,6 +462,80 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.equal(confirmed.status, 'completed');
       assert.ok(confirmed.confirmation.id);
       assert.deepEqual(confirmed.totals, s.totals, 'the confirmed price is the price the buyer saw');
+    });
+
+    it('the same operations over MCP (/ucp/mcp)', async () => {
+      const profile = (await (await fetch(`${server.url}/.well-known/ucp`)).json()) as Json;
+      const service = profile.ucp.services['dev.ucp.lodging'].find((x: Json) => x.transport === 'mcp');
+      assert.equal(service.endpoint, `${server.url}/ucp/mcp`);
+      const client = new Client({ name: 'platform', version: '1' });
+      await client.connect(new StreamableHTTPClientTransport(new URL(service.endpoint), { requestInit: { headers: { authorization: `Bearer ${server.creds.agentKey}` } } }));
+      const mcp = async (name: string, args: Json) => (await client.callTool({ name, arguments: { meta: { 'ucp-agent': { profile: 'https://platform.example/profile' } }, ...args } })) as Json;
+      try {
+        assert.deepEqual((await client.listTools()).tools.map((t) => t.name).sort(), ['cancel_booking_session', 'complete_booking_session', 'create_booking_session', 'get_booking_session', 'update_booking_session']);
+        const checkin = addDays(new Date().toISOString().slice(0, 10), 110);
+        const booking = { property: { id: 'prop_spaarne' }, stays: [{ accommodation_type: { id: 'standaard' }, occupancy: { adults: 2 }, stay_dates: { start_date: checkin, end_date: addDays(checkin, 2) } }] };
+        const meta = { 'ucp-agent': { profile: 'https://platform.example/profile' }, 'idempotency-key': 'create-1' };
+        const created = (await mcp('create_booking_session', { meta, booking })).structuredContent;
+        assert.equal(created.status, 'incomplete');
+        assert.match(created.id, /^bks_/);
+        assert.equal((await mcp('create_booking_session', { meta, booking })).structuredContent.id, created.id, 'a retried create is the same session');
+        const ready = (await mcp('update_booking_session', { id: created.id, booking: { ...booking, booker: { first_name: 'Ada', last_name: 'Byron', email: 'ada@example.com' } } })).structuredContent;
+        assert.equal(ready.status, 'ready_for_complete');
+        const done = (await mcp('complete_booking_session', { id: created.id, booking: { payment: {} } })).structuredContent;
+        assert.equal(done.status, 'completed');
+        assert.equal((await mcp('get_booking_session', { id: created.id })).structuredContent.confirmation.id, done.confirmation.id);
+        assert.equal((await mcp('cancel_booking_session', { id: created.id })).structuredContent.status, 'canceled');
+
+        const soldOut = await mcp('create_booking_session', { booking: { ...booking, property: { id: 'prop_nope' } } });
+        assert.equal(soldOut.isError, undefined, 'a business outcome is a result, not a tool error');
+        assert.equal(soldOut.structuredContent.ucp.status, 'error');
+        const unknown = await mcp('get_booking_session', { id: 'bks_nope' });
+        assert.equal(unknown.isError, true);
+        assert.equal(unknown.structuredContent.code, 'not_found');
+      } finally {
+        await client.close();
+      }
+    });
+
+    it('a session belongs to its caller; a failed update leaves it untouched; mixed rate plans are judged per room', async () => {
+      const checkin = addDays(new Date().toISOString().slice(0, 10), 130);
+      const dates = { start_date: checkin, end_date: addDays(checkin, 2) };
+      const stays = [
+        { id: 'a', accommodation_type: { id: 'standaard' }, occupancy: { adults: 2 }, stay_dates: dates },
+        { id: 'b', accommodation_type: { id: 'standaard' }, occupancy: { adults: 2 }, stay_dates: dates },
+        { id: 'c', accommodation_type: { id: 'standaard' }, occupancy: { adults: 1 }, stay_dates: dates },
+      ];
+      const s = (await ucp('POST', '/booking-sessions', { property: { id: 'prop_spaarne' }, stays, booker: { first_name: 'Eva', last_name: 'Smit', email: 'eva@example.com' } })).body;
+      assert.equal(s.status, 'ready_for_complete');
+      // Every stay adds up on its own, and the stays add up to the session, line by line.
+      for (const stay of s.stays) sumsToTotal(stay.totals);
+      for (const t of s.totals) assert.equal(s.stays.reduce((n: number, x: Json) => n + x.totals.filter((y: Json) => y.type === t.type && y.display_text === t.display_text).reduce((m: number, y: Json) => m + y.amount, 0), 0), t.amount, t.type);
+
+      // Someone else, even with the id, does not see it.
+      assert.equal((await ucp('GET', `/booking-sessions/${s.id}`, undefined, { authorization: '' })).status, 404);
+      assert.equal((await ucp('POST', `/booking-sessions/${s.id}/cancel`, {}, { authorization: '' })).status, 404);
+
+      // An update that cannot be priced changes nothing.
+      const failed = await ucp('PUT', `/booking-sessions/${s.id}`, { property: { id: 'prop_spaarne' }, stays: [{ ...stays[0], rate_plan: { id: 'does-not-exist' } }] });
+      assert.equal(failed.body.messages[0].code, 'rate_plan_not_found');
+      const still = (await ucp('GET', `/booking-sessions/${s.id}`)).body;
+      assert.equal(still.status, 'ready_for_complete');
+      assert.deepEqual(still.totals, s.totals);
+      assert.equal(still.stays.length, 3);
+      assert.ok(Date.parse(still.expires_at) > Date.now(), 'the rooms are still held');
+      await ucp('POST', `/booking-sessions/${s.id}/cancel`, {});
+
+      // One refundable room and one non-refundable room: not "refundable", and the buyer is told which.
+      const units = server.store.getProperty('prop_spaarne')!.units.map((u) => u.id);
+      const other = units.find((u) => u !== 'standaard')!;
+      const mixed = (await ucp('POST', '/booking-sessions', { property: { id: 'prop_spaarne' }, stays: [
+        { accommodation_type: { id: 'standaard' }, occupancy: { adults: 2 }, stay_dates: dates },
+        { accommodation_type: { id: other }, rate_plan: { id: 'non-refundable' }, occupancy: { adults: 2 }, stay_dates: dates },
+      ] })).body;
+      assert.notEqual(mixed.policies[0]?.refundability, 'refundable');
+      assert.ok(mixed.messages.some((m: Json) => m.code === 'dev.ucp.lodging.policy.cancellation' && /Non-refundable: /.test(m.content)));
+      await ucp('POST', `/booking-sessions/${mixed.id}/cancel`, {});
     });
 
     it('a property with its own booking system hands the buyer over', async () => {

@@ -35,6 +35,8 @@ export interface BookingSessionRecord {
   /** Platform that opened the session (UCP-Agent profile). */
   platformProfile: string;
   agentClient: string;
+  /** The identified caller that opened the session; only that caller may read or change it. Empty for anonymous callers. */
+  owner?: string;
   createdAt: string;
   expiresAt: string;
   /** Set once the session was completed: the booking request it became. */

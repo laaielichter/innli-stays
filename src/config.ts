@@ -26,6 +26,8 @@ export interface Config {
   backupDir?: string;
   /** Days of backups to keep. */
   backupKeep: number;
+  /** Reverse proxies in front whose X-Forwarded-* headers are trusted. */
+  trustProxy: number;
 }
 
 export function loadConfig(env = process.env): Config {
@@ -46,6 +48,7 @@ export function loadConfig(env = process.env): Config {
     retentionDays: Math.max(30, Number(env.INNLI_BEWAARTERMIJN_DAGEN ?? 180) || 180),
     backupDir: env.INNLI_BACKUP_DIR || undefined,
     backupKeep: Math.max(1, Number(env.INNLI_BACKUP_KEEP ?? 14) || 14),
+    trustProxy: Math.max(0, Math.min(5, Number(env.INNLI_TRUST_PROXY ?? 1) || 0)),
   };
 }
 

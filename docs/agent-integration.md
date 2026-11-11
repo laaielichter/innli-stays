@@ -1,113 +1,113 @@
-# INNLI voor agentbouwers
+# INNLI for agent builders
 
-INNLI biedt één [MCP](https://modelcontextprotocol.io)-server met kleine, onafhankelijke accommodaties (B&B's, pensions, bijzondere verblijven) waarvan de eigenaar de gegevens zelf controleert.
+INNLI offers a single [MCP](https://modelcontextprotocol.io) server with small, independent accommodations (B&Bs, guesthouses, unique stays) whose owners check the data themselves.
 
-- Endpoint: `POST https://<innli-host>/mcp` (Streamable HTTP, stateless, JSON-antwoorden)
-- Geen MCP? Dezelfde 19 tools werken via REST: `POST /api/agent/v1/tools/<toolnaam>` met de argumenten als JSON-body. De beschrijving staat in OpenAPI 3.1 op `GET /api/agent/v1/openapi.json`, bruikbaar als *GPT Action* of als functiedefinitie.
-- Authenticatie: `Authorization: Bearer <agentsleutel>` (verplicht als de server met `INNLI_REQUIRE_AGENT_KEY=1` draait). Je sleutel bepaalt onder welke naam aanvragen, doorkliks en boekingen in de statistieken van eigenaren verschijnen.
-- Ieder antwoord heeft een `x-request-id`. Stuur je er zelf een mee, dan wordt die overgenomen. Vermeld hem bij een supportvraag. Bij te veel verzoeken volgt `429` met `Retry-After` (seconden).
-- MCP-resources: `innli://stay/{propertyId}` (paspoort als JSON; `resources/list` geeft alle gepubliceerde verblijven). Prompt: `plan_stay` met argument `wish`, een stappenplan van wens tot aanvraag.
-- `GET /.well-known/innli.json`: versie, endpoints en de publieke sleutel waarmee boekingsdossiers ondertekend zijn.
+- Endpoint: `POST https://<innli-host>/mcp` (Streamable HTTP, stateless, JSON responses)
+- No MCP? The same 19 tools work over REST: `POST /api/agent/v1/tools/<tool-name>` with the arguments as a JSON body. The description is in OpenAPI 3.1 at `GET /api/agent/v1/openapi.json`, usable as a *GPT Action* or as a function definition.
+- Authentication: `Authorization: Bearer <agent-key>` (required if the server runs with `INNLI_REQUIRE_AGENT_KEY=1`). Your key decides under which name requests, click-throughs and bookings appear in the owners' statistics.
+- Every response has an `x-request-id`. If you send one yourself, it is reused. Quote it in any support question. Too many requests get a `429` with `Retry-After` (seconds).
+- MCP resources: `innli://stay/{propertyId}` (passport as JSON; `resources/list` returns all published stays). Prompt: `plan_stay` with the argument `wish`, a step-by-step plan from wish to request.
+- `GET /.well-known/innli.json`: version, endpoints and the public key used to sign booking records.
 
 ## Flow
 
 ```
-search_stays ─► get_stay_details ─► get_quote ─┬─► prepare_booking ─► gast opent link
+search_stays ─► get_stay_details ─► get_quote ─┬─► prepare_booking ─► guest opens link
       │               ▲                         └─► request_booking ─► check_status (booked?)
-      │               └── vraag van de gast? answer_question ─► nog onbekend? ask_host ─► check_status (answer)
-      └── flexibel? find_available_dates / get_availability_calendar · kiezen? compare_stays
+      │               └── guest question? answer_question ─► still unknown? ask_host ─► check_status (answer)
+      └── flexible? find_available_dates / get_availability_calendar · choosing? compare_stays
 ```
 
-Overzicht van alle functies en wat er nog komt: [agent-features.md](agent-features.md).
+Overview of all features and what is coming next: [agent-features.md](nl/agent-features.md) (Dutch).
 
 ### `search_stays`
-Zoekt op `area` / `country` / `near {lat,lng,radiusKm}`, gezelschap (`guests {adults, children, dogs}`), eisen (`requirements`), en optioneel `checkin`/`checkout`, `maxTotalPrice`, `breakfast`. Met `confirmedOnly: true` krijg je alleen verblijven waarvan de eigenaar iedere eis heeft bevestigd.
+Searches by `area` / `country` / `near {lat,lng,radiusKm}`, party (`guests {adults, children, dogs}`), requirements (`requirements`), and optionally `checkin`/`checkout`, `maxTotalPrice`, `breakfast`. With `confirmedOnly: true` you only get stays whose owner has confirmed every requirement.
 
-- `flexibleDates {from, to, nights}` in plaats van vaste datums: per verblijf de eerste aankomstdag in die periode waarop `nights` nachten vrij zijn. De gevonden datums staan in het resultaat.
-- `nearPlace {kind, maxKm}`: alleen verblijven waarvan de eigenaar een plek van dat soort binnen `maxKm` heeft opgegeven. Soorten: `station`, `bus_stop`, `beach`, `centre`, `supermarket`, `restaurant`, `nature`, `bike_rental`, `other`. Dit zijn afstanden volgens de eigenaar en geen routeberekening.
-- **Groepen.** Past het gezelschap in geen enkele kamer, dan krijg je een combinatie van 2 of 3 kamers in hetzelfde verblijf. Zo'n resultaat heeft `unit: null` en `rooms` (per kamer de gasten en eisen). Het bevat ook `offer {quoteIds, total, rooms, bookingMode, next}`. Ieder kamer krijgt minstens één volwassene; honden gaan mee in de eerste kamer. Boek met `request_booking({ quoteIds })`.
+- `flexibleDates {from, to, nights}` instead of fixed dates: for each stay, the first arrival day in that period on which `nights` nights are free. The dates found are in the result.
+- `nearPlace {kind, maxKm}`: only stays whose owner has listed a place of that kind within `maxKm`. Kinds: `station`, `bus_stop`, `beach`, `centre`, `supermarket`, `restaurant`, `nature`, `bike_rental`, `other`. These are distances given by the owner, not a route calculation.
+- **Groups.** If the party does not fit in any single room, you get a combination of 2 or 3 rooms in the same stay. Such a result has `unit: null` and `rooms` (the guests and requirements per room). It also contains `offer {quoteIds, total, rooms, bookingMode, next}`. Each room gets at least one adult; dogs go in the first room. Book with `request_booking({ quoteIds })`.
 
-Ondersteunde eisen: `dogs_allowed`, `enclosed_garden`, `ground_floor_unit`, `breakfast_included`, `breakfast_available`, `step_free_access`, `walk_in_shower`, `long_bed` (+`minBedLengthCm`), `private_bathroom`, `private_entrance`, `quiet_location`, `parking_on_site`, `children_welcome`. Honden en kinderen in het gezelschap voegen `dogs_allowed` en `children_welcome` automatisch toe.
+Supported requirements: `dogs_allowed`, `enclosed_garden`, `ground_floor_unit`, `breakfast_included`, `breakfast_available`, `step_free_access`, `walk_in_shower`, `long_bed` (+`minBedLengthCm`), `private_bathroom`, `private_entrance`, `quiet_location`, `parking_on_site`, `children_welcome`. Dogs and children in the party add `dogs_allowed` and `children_welcome` automatically.
 
-Ieder resultaat bevat per eis een `level`:
+Each result contains a `level` for each requirement:
 
-| level | betekenis | hoe presenteren |
+| level | meaning | how to present it |
 |---|---|---|
-| `met` | door de eigenaar bevestigd | als feit |
-| `unverified` | aanwijzing, niet (recent) bevestigd | "volgens de website…, controleer bij de eigenaar" |
-| `unknown` | geen betrouwbare informatie | "onbekend, vraag na bij de eigenaar" |
+| `met` | confirmed by the owner | as fact |
+| `unverified` | an indication, not (recently) confirmed | "according to the website…, check with the owner" |
+| `unknown` | no reliable information | "unknown, ask the owner" |
 
-Verblijven met een bevestigd `not_met` worden niet teruggegeven. `excluded` geeft aan welke verblijven afvielen op beschikbaarheid of budget.
+Stays with a confirmed `not_met` are not returned. `excluded` shows which stays were dropped because of availability or budget.
 
 ### `get_stay_details`
-Volledig paspoort: `facts.facts` (met `status`, `lastVerified`, `needsRecheck`, `source`) en `facts.unknown` — beslissende gegevens die onbekend zijn. Vul die nooit zelf in, ook niet op basis van foto's of reviews.
+The full passport: `facts.facts` (with `status`, `lastVerified`, `needsRecheck`, `source`) and `facts.unknown`, which are deciding details that are unknown. Never fill these in yourself, not even based on photos or reviews.
 
-Daarnaast:
-- `photos` (per verblijf en per kamer, met `alt`);
-- `pointsOfInterest` (soort, naam, afstand volgens de eigenaar);
-- `faq`, met antwoorden van de eigenaar op eerdere gastvragen die hij openbaar maakte;
-- `reviews`, alleen van gasten met een geaccepteerde boeking, met gemiddelde en reactie van de eigenaar;
-- `host`, met reactietijd en bevestigingsgraad;
-- `discounts` per kamer;
-- `directBookingPerk`: wat de gast extra krijgt bij direct boeken.
+Also:
+- `photos` (per stay and per room, with `alt`);
+- `pointsOfInterest` (kind, name, distance according to the owner);
+- `faq`, with the owner's answers to earlier guest questions that they made public;
+- `reviews`, only from guests with an accepted booking, with the average and the owner's reply;
+- `host`, with response time and confirmation rate;
+- `discounts` per room;
+- `directBookingPerk`: what the guest gets extra for booking direct.
 
-Met `language` (`en`, `de`, `fr`) krijg je de beschrijving in die taal, als de eigenaar die schreef. `availableLanguages` zegt welke er zijn. Gegevens zelf zijn taalonafhankelijk.
+With `language` (`nl`, `en`, `de`, `fr`) you get the description in that language, if the owner wrote one. `availableLanguages` tells you which ones exist. The facts themselves are language-neutral.
 
 ### `check_availability`
-Per kamer `status` (`available` / `unavailable` / `unknown`) en `certainty`:
-- `live`: zojuist gecontroleerd in het boekingssysteem
-- `synced`: uit een gesynchroniseerde kalender; kan uren oud zijn
-- `none`: geen bron
+Per room a `status` (`available` / `unavailable` / `unknown`) and a `certainty`:
+- `live`: just checked in the booking system
+- `synced`: from a synchronised calendar; can be hours old
+- `none`: no source
 
 ### `get_quote`
-Regels (`lines`, inclusief een negatieve `discount`-regel bij lang verblijf, last minute of vroegboekkorting), `total`, `totalIncludesAllMandatoryCosts`, `priceCertainty` (`live`/`indicative`), `bookingMode` en `validUntil` (30 min live, 15 min indicatief). Noem een indicatieve of onvolledige prijs nooit als definitief.
+Lines (`lines`, including a negative `discount` line for a long stay, last minute or early booking discount), `total`, `totalIncludesAllMandatoryCosts`, `priceCertainty` (`live`/`indicative`), `bookingMode` and `validUntil` (30 min live, 15 min indicative). Never present an indicative or incomplete price as final.
 
-Voor hotels en groepen:
-- `rooms`: aantal identieke kamers van dit kamertype (standaard het minimum dat de groep nodig heeft). `get_stay_details` geeft per kamer `roomsOfThisType`; beschikbaarheid geeft `roomsLeft`. `check_availability` neemt ook `rooms`.
-- `ratePlanId`: een tariefplan uit `get_stay_details.ratePlans`, bijv. `non-refundable`. Elke prijs heeft `ratePlanOptions`: hetzelfde verblijf in elk plan, met totaal, `refundable`, ontbijt en annuleringsvoorwaarden. Laat de gast kiezen. `policies` volgt het gekozen plan.
-- `hold: true`: houdt de kamers 15 minuten vast terwijl de gast beslist (`holdUntil`). Een `request_booking` met deze `quoteId` neemt de reservering over.
+For hotels and groups:
+- `rooms`: the number of identical rooms of this room type (default: the minimum the party needs). `get_stay_details` gives `roomsOfThisType` per room; availability gives `roomsLeft`. `check_availability` also takes `rooms`.
+- `ratePlanId`: a rate plan from `get_stay_details.ratePlans`, e.g. `non-refundable`. Every quote has `ratePlanOptions`: the same stay in every plan, with the total, `refundable`, breakfast and cancellation conditions. Let the guest choose. `policies` follows the chosen plan.
+- `hold: true`: holds the rooms for 15 minutes while the guest decides (`holdUntil`). A `request_booking` with this `quoteId` takes over the hold.
 
 ### `prepare_booking`
-Geeft een `url` (`/r/<ref>`) die de gast naar de eigen boekingsomgeving van de accommodatie brengt, met datums en gasten ingevuld waar ondersteund.
-- `bookingMode: "booking_link"` — gast rondt de boeking af bij de accommodatie.
-- `bookingMode: "availability_request"` — gast stuurt een aanvraag; de eigenaar bevestigt.
+Returns a `url` (`/r/<ref>`) that takes the guest to the accommodation's own booking environment, with dates and guests filled in where supported.
+- `bookingMode: "booking_link"`: the guest completes the booking with the accommodation.
+- `bookingMode: "availability_request"`: the guest sends a request; the owner confirms.
 
-`status` is altijd `"not_booked"`. Vertel de gast nooit dat een verblijf geboekt is. Via `prepare_booking` krijgt INNLI geen gastgegevens; met `request_booking` alleen met toestemming van de gast, en ze blijven op de installatie van de B&B.
+`status` is always `"not_booked"`. Never tell the guest that a stay is booked. Through `prepare_booking` INNLI receives no guest data; through `request_booking` only with the guest's permission, and the data stays on the B&B's installation.
 
-### Flexibele data
-- `find_available_dates` — voor één accommodatie: alle aankomstdagen tussen `from` en `to` waarop een kamer `nights` nachten vrij is, met totaalprijs. `weekendsOnly` beperkt tot vrijdag-aankomsten. Bij een live boekingssysteem worden maximaal 14 aankomstdagen gecontroleerd.
-- `get_availability_calendar` — maandoverzicht per kamer (`YYYY-MM`) met vrije nachten en prijs per nacht. Voor live boekingssystemen verwijst het naar `find_available_dates`.
+### Flexible dates
+- `find_available_dates`: for one accommodation, all arrival days between `from` and `to` on which a room is free for `nights` nights, with the total price. `weekendsOnly` limits this to Friday arrivals. With a live booking system, at most 14 arrival days are checked.
+- `get_availability_calendar`: a monthly overview per room (`YYYY-MM`) with free nights and the price per night. For live booking systems it refers you to `find_available_dates`.
 
-### Kiezen
-- `compare_stays` — 1 tot 5 accommodaties naast elkaar: beste kamer, beschikbaarheid, totaalprijs, kerngegevens met status, en het aantal onbekende beslissende gegevens.
-- `search_stays.sort` — `best_match` (standaard), `price` (met datums) of `distance` (met `near`).
-- Offertes bevatten `nightly` (prijs per nacht), `policies` (annulering, in/uitchecken, honden, dieetwensen; met status) en `summaryForGuest` (één zin om aan de gast te tonen).
+### Choosing
+- `compare_stays`: 1 to 5 accommodations side by side: best room, availability, total price, key details with their status, and the number of unknown deciding details.
+- `search_stays.sort`: `best_match` (default), `price` (with dates) or `distance` (with `near`).
+- Quotes contain `nightly` (price per night), `policies` (cancellation, check-in/check-out, dogs, dietary needs; with status) and `summaryForGuest` (one sentence to show the guest).
 
-### Namens de gast handelen (alleen met toestemming)
-- `request_booking` — voor offertes met `bookingMode: "availability_request"`. Voor een groep geef je `quoteIds` (2–3 offertes van hetzelfde verblijf, dezelfde datums) in plaats van `quoteId`. Dan wordt alles samen vastgehouden, geaccepteerd, afgewezen of geannuleerd: alles of niets. Vereist `guestConsent: true`: vraag de gast eerst of naam en e-mail met deze eigenaar gedeeld mogen worden. Gebruik `idempotencyKey` om dubbele aanvragen bij een nieuwe poging te voorkomen. Geeft een `statusToken`; dit is **geen boeking** tot de eigenaar accepteert.
-- `ask_host` — stel de eigenaar een vraag, bij voorkeur met `factKey` als het over een onbekend gegeven gaat (bijv. `garden.fullyEnclosed`). Antwoordt de eigenaar met een waarde, dan wordt dat een bevestigd gegeven voor alle volgende gasten. `replyEmail` alleen met `guestConsent: true`.
-- `answer_question` — de antwoord-assistent van het verblijf. Beantwoordt een gastvraag (hond, ontbijt, parkeren, trappen, inchecken, bedden, kosten, annuleren …) meteen uit de door de eigenaar bevestigde gegevens en de gepubliceerde FAQ, in nl/en/de/fr. Raadt nooit: `confidence` is `confirmed`, `faq`, `partial` of `unknown`; `sources` noemt elke bron; `unknown` noemt wat onbekend is, zodat je daarover `ask_host` kunt gebruiken. Leest alleen, neemt geen contact op, geen toestemming nodig.
-- `ask_host` antwoordt meteen met `status: "answered"` en `answeredBy: "assistant"` als de antwoord-assistent het weet; de eigenaar wordt dan niet gestoord. Anders `status: "sent"`.
-- `modify_request` — wijzigt data, kamer, gezelschap, aantal kamers of tariefplan, alleen op verzoek van de gast (`guestConsent: true`). Een openstaande aanvraag wordt meteen vervangen. Bij een bevestigde boeking gaat er een wijzigingsverzoek naar de eigenaar; de huidige boeking blijft geldig tot de wijziging bevestigd is en wordt dan vervangen. Geeft een nieuwe `statusToken` en `replacesRequestId`. Groepen: annuleer en vraag opnieuw aan.
-- `report_data_issue` — meldt de eigenaar dat een gegeven in het paspoort fout of verouderd lijkt (bijv. een prijs die elders anders staat). Verandert zelf niets. Behandel het gegeven tot de eigenaar het corrigeert als onzeker.
-- `check_status` — status van een aanvraag, een vraag (met `answer` en `answeredBy`) of een melding. Een aanvraag geeft terug:
-  - `status`: `new` (kamer vastgehouden tot `holdUntil`), `accepted`, `declined`, `expired` (eigenaar reageerde niet op tijd; niets geboekt) of `cancelled`;
-  - `booked: true` alleen bij `accepted`, met `decidedBy` (`owner` of `instant`);
-  - `payment` (aanbetaling: bedrag, uiterlijke datum, betaallink, `pending`/`paid`);
-  - `record`: het boekingsdossier met prijsregels, voorwaarden en toestemming zoals ze bij de aanvraag golden;
-  - `next`: wat de agent de gast nu kan vertellen of voorstellen;
-  - `alternatives` bij `declined` of `expired`: andere vrije aankomstdagen (7 dagen eerder tot 14 dagen later) met prijs;
-  - `signedRecord` + `signature`: het dossier ondertekend met Ed25519 (zie hieronder).
-- `join_waitlist` — als een verblijf vol is. Vereist `email` en `guestConsent: true`. Komt er een passende kamer vrij (annulering, verlopen aanvraag, eigenaar opent nachten), dan krijgt de gast een mail met een ingevulde aanvraaglink. Maximaal 3 per e-mailadres per verblijf. Volg de status met `check_status`.
-- `cancel_request` — trekt een aanvraag in of annuleert een boeking, alleen als de gast daar uitdrukkelijk om vraagt (`guestConsent: true`). De nachten gaan weer open en de eigenaar krijgt bericht. Het antwoord bevat de annuleringsvoorwaarden zoals ze bij de boeking golden. Eventuele kosten regelen gast en eigenaar samen.
+### Acting on behalf of the guest (only with permission)
+- `request_booking`: for quotes with `bookingMode: "availability_request"`. For a group you pass `quoteIds` (2–3 quotes from the same stay, same dates) instead of `quoteId`. Everything is then held, accepted, declined or cancelled together: all or nothing. Requires `guestConsent: true`: first ask the guest whether their name and e-mail may be shared with this owner. Use `idempotencyKey` to prevent duplicate requests when you retry. Returns a `statusToken`; this is **not a booking** until the owner accepts.
+- `ask_host`: ask the owner a question, preferably with `factKey` if it is about an unknown detail (e.g. `garden.fullyEnclosed`). If the owner answers with a value, it becomes a confirmed detail for all future guests. `replyEmail` only with `guestConsent: true`.
+- `answer_question`: the property's answer assistant. Answers a guest's question (dogs, breakfast, parking, stairs, check-in, beds, costs, cancellation …) straight away from the details the owner confirmed and the published FAQ, in nl/en/de/fr. It never guesses: `confidence` is `confirmed`, `faq`, `partial` or `unknown`; `sources` names every source; `unknown` lists what is not known, so you can use `ask_host` for that. Read-only, contacts nobody, needs no consent.
+- `ask_host` answers right away with `status: "answered"` and `answeredBy: "assistant"` when the answer assistant knows the answer, so the owner is not disturbed. Otherwise `status: "sent"`.
+- `modify_request`: changes dates, room, party, number of rooms or rate plan, only when the guest asks (`guestConsent: true`). A pending request is replaced right away. For a confirmed booking a change request goes to the owner; the current booking stays valid until the change is confirmed, and is then replaced. Returns a new `statusToken` and `replacesRequestId`. Groups: cancel and request again.
+- `report_data_issue`: tells the owner that a detail in the passport looks wrong or outdated (e.g. a price that is different elsewhere). Changes nothing itself. Treat the detail as uncertain until the owner corrects it.
+- `check_status`: the status of a request, a question (with `answer` and `answeredBy`) or a report. For a request it returns:
+  - `status`: `new` (room held until `holdUntil`), `accepted`, `declined`, `expired` (the owner did not reply in time; nothing booked) or `cancelled`;
+  - `booked: true` only with `accepted`, with `decidedBy` (`owner` or `instant`);
+  - `payment` (deposit: amount, due date, payment link, `pending`/`paid`);
+  - `record`: the booking record with price lines, terms and consent as they applied when the request was made;
+  - `next`: what the agent can now tell or suggest to the guest;
+  - `alternatives` with `declined` or `expired`: other free arrival days (from 7 days earlier to 14 days later) with prices;
+  - `signedRecord` + `signature`: the record signed with Ed25519 (see below).
+- `join_waitlist`: when a stay is full. Requires `email` and `guestConsent: true`. If a suitable room becomes free (a cancellation, an expired request, the owner opens nights), the guest gets an e-mail with a pre-filled request link. At most 3 per e-mail address per stay. Follow the status with `check_status`.
+- `cancel_request`: withdraws a request or cancels a booking, only if the guest explicitly asks for it (`guestConsent: true`). The nights open again and the owner is told. The response contains the cancellation terms as they applied at the time of booking. Guest and owner settle any costs between themselves.
 
-### Direct bevestigen en betrouwbaarheid
-- Heeft de eigenaar *direct bevestigen* aan, dan geeft `request_booking` meteen `booked: true` als het verblijf binnen zijn regels valt (dagen vooruit, maximaal aantal nachten, volledige prijs). Vlak daarvoor worden de agenda's opnieuw gecontroleerd.
-- Zo niet, dan wordt de kamer vastgehouden tot `holdUntil` (standaard 48 uur). Daarna vervalt de aanvraag automatisch en krijgt de gast bericht.
-- `get_stay_details` en zoekresultaten bevatten `host`: `instantBooking`, `requestsHeldForHours`, `medianResponseHours`, `confirmationRate` en `deposit`. Gebruik dit om gasten realistische verwachtingen te geven.
+### Instant booking and reliability
+- If the owner has *instant booking* switched on, `request_booking` returns `booked: true` straight away when the stay falls within their rules (days ahead, maximum number of nights, full price). The calendars are checked again just before this.
+- If not, the room is held until `holdUntil` (48 hours by default). After that, the request expires automatically and the guest is told.
+- `get_stay_details` and search results contain `host`: `instantBooking`, `requestsHeldForHours`, `medianResponseHours`, `confirmationRate` and `deposit`. Use these to give guests realistic expectations.
 
-### Ondertekend boekingsdossier
-`signature` is `{alg: "Ed25519", keyId, value}`. `value` is een handtekening (base64url) over de canonieke JSON van `signedRecord`: sleutels gesorteerd, zonder spaties, zonder `undefined`-velden. De publieke sleutel staat in `/.well-known/innli.json` (`signingKey`, base64 van DER/SPKI). Zo kun je de gast, of een geschil, later laten zien welke prijs en voorwaarden de eigenaar toezegde. Je hoeft INNLI daarvoor niet op zijn woord te geloven.
+### Signed booking record
+`signature` is `{alg: "Ed25519", keyId, value}`. `value` is a signature (base64url) over the canonical JSON of `signedRecord`: keys sorted, no spaces, no `undefined` fields. The public key is in `/.well-known/innli.json` (`signingKey`, base64 of DER/SPKI). This lets you show the guest, or a dispute, which price and terms the owner promised. You do not have to take INNLI's word for it.
 
 ```js
 import { createPublicKey, verify } from 'node:crypto';
@@ -117,163 +117,134 @@ const canonical = (v) => Array.isArray(v) ? `[${v.map(canonical).join(',')}]`
 const ok = verify(null, Buffer.from(canonical(signedRecord)), createPublicKey({ key: Buffer.from(signingKey, 'base64'), format: 'der', type: 'spki' }), Buffer.from(signature.value, 'base64url'));
 ```
 
-Hotels en drukke accommodaties: zie [hotels.md](hotels.md).
+Hotels and busy properties: see [hotels.md](hotels.md).
 
-### Nieuw in 2.0
-Waarom en op basis van welk onderzoek: [agents-2.0.md](agents-2.0.md).
+### New in 2.0
+Why, and based on which research: [agents-2.0.md](agents-2.0.md).
 
-- **Core-profiel:**
-  - `POST /mcp?profile=core` (of de header `x-innli-profile: core`) biedt 8 tools: `search_stays`, `get_stay_details`, `get_quote`, `answer_question`, `request_booking`, `check_status`, `post_stay_wish` en `get_wish_offers`;
-  - de instructies zijn kort en de antwoorden standaard compact;
-  - het volledige profiel heeft 19 tools.
-- **`detail: "brief"`** werkt bij `search_stays`, `get_stay_details`, `get_quote`, `check_availability` en `compare_stays`. Je krijgt dezelfde feiten en statussen, maar eisen zijn gegroepeerd per niveau (`met`, `unverified`, `unknown`, `not_met`) en gegevens staan als `{ sleutel: waarde }`. Dat is ongeveer 70% minder tokens.
-- **`nextActions`** staat in elk antwoord: de volgende aanroepen, met ingevulde argumenten.
-  - `needs` zegt wat je nog aan de gast moet vragen.
-  - `requiresGuestApproval: true` betekent: pas na een duidelijk ja van de gast.
-- **`freshness`** staat in elk leesantwoord:
-  - `generatedAt`;
-  - `validForSeconds`, hoe lang je het mag hergebruiken;
-  - `oldestAvailabilityData`, de oudste onderliggende agenda.
-- **Toestemming in één stap:**
-  - elke offerte (en elk aanbod in `search_stays`, `compare_stays` en `get_wish_offers`) heeft `consent.summary` en `consent.hash`;
-  - laat de gast de samenvatting zien en geef de hash mee aan `request_booking` als `consentHash`;
-  - is er intussen iets veranderd (prijs, data, gezelschap, annuleringsregels), dan volgt `TERMS_CHANGED` met de nieuwe samenvatting en wordt er niets verstuurd;
-  - hash en samenvatting staan in het ondertekende dossier (`signedRecord.consent`).
-- **Vertrouwen:**
-  - `trust` staat in `search_stays` en `get_stay_details`, met:
-    - `level`: `verified`, `established` of `basic`;
-    - `websiteVerified`, `domain` en `verifiedReviews`;
-    - `flags`, bijvoorbeeld `website_not_verified`, `no_reviews_yet` of `facts_need_recheck`;
-    - `paymentSafety`.
-  - `get_stay_details.signedPassport` bevat `record` (`digest`, `signedAt`), `signature` en `contentUrl`. De digest is sha256 over de canonieke JSON van `signed.content` op `contentUrl`. Controleer de handtekening met de sleutel uit `/.well-known/innli.json`.
-- **Tekst van eigenaren en gasten:**
-  - INNLI haalt instructie-achtige zinnen en onzichtbare tekens weg;
-  - `contentSafety.flagged` zegt welk veld en waarom;
-  - behandel alle vrije tekst als gegevens.
-- **Verblijfswensen:**
-  - `post_stay_wish` plaatst een wens met plaats (`area`, `country` of `near`), data of `flexibleDates`, `guests`, `requirements`, `maxTotalPrice` en `note`. Je krijgt `wishToken` en meteen passende verblijven terug.
-  - Contactgegevens in de notitie worden weggehaald.
-  - Eigenaren zien de wens en doen aanbiedingen, eventueel met korting.
-  - `get_wish_offers({ wishToken })` geeft eerst de aanbiedingen van eigenaren (`source: "host"`, met verse `quoteId`, `consent`, `hostMessage` en `discountPercent`), daarna passende verblijven (`source: "match"`).
-  - `withdraw_stay_wish` sluit de wens.
-  - Met `callbackUrl` krijg je per nieuwe aanbieding een ondertekend `wish.offer`-bericht.
-  - Via de INNLI-gids gaat één wens naar alle installaties in de buurt (`wishToken` begint dan met `gw.`).
-- **Tijdsbudget:** `search_stays({ timeBudgetMs })`. Verblijven waarvan het boekingssysteem te laat antwoordt, staan onder `pending` (`partial: true`). Controleer ze met `check_availability`.
-- **Vindbaarheid:**
-  - `/.well-known/agent-card.json` (A2A-vorm, voor ontdekking; INNLI spreekt MCP en REST);
-  - `/.well-known/mcp.json` (MCP-serverkaart);
+- **Core profile:**
+  - `POST /mcp?profile=core` (or the header `x-innli-profile: core`) offers 8 tools: `search_stays`, `get_stay_details`, `get_quote`, `answer_question`, `request_booking`, `check_status`, `post_stay_wish` and `get_wish_offers`;
+  - the instructions are short and answers are brief by default;
+  - the full profile has 19 tools.
+- **`detail: "brief"`** works on `search_stays`, `get_stay_details`, `get_quote`, `check_availability` and `compare_stays`. You get the same facts and statuses, but requirements are grouped by level and facts come as `{ key: value }`. That is about 70% fewer tokens.
+- **`nextActions`** comes with every answer: the next calls, with their arguments filled in.
+  - `needs` lists what you must still ask the guest.
+  - `requiresGuestApproval: true` means: only after a clear yes from the guest.
+- **`freshness`** comes with every read: `generatedAt`, `validForSeconds` and `oldestAvailabilityData`.
+- **Consent in one step:**
+  - every quote (and every offer in `search_stays`, `compare_stays` and `get_wish_offers`) has `consent.summary` and `consent.hash`;
+  - show the guest the summary and pass the hash to `request_booking` as `consentHash`;
+  - if anything changed in between, you get `TERMS_CHANGED` with the new summary and nothing is sent;
+  - the hash and summary go into `signedRecord.consent`.
+- **Trust:**
+  - `trust` comes with `search_stays` and `get_stay_details`: `level`, `websiteVerified`, `domain`, `verifiedReviews`, `flags` and `paymentSafety`.
+  - `get_stay_details.signedPassport` contains `record`, `signature` and `contentUrl`. The digest is sha256 over the canonical JSON of `signed.content` at `contentUrl`. Verify it with the key from `/.well-known/innli.json`.
+- **Text from owners and guests:**
+  - instruction-like sentences and invisible characters are removed;
+  - `contentSafety.flagged` says which field and why.
+- **Stay wishes:**
+  - `post_stay_wish` posts a wish and returns a `wishToken` plus the stays that fit right now.
+  - Hosts make offers, optionally with a discount.
+  - `get_wish_offers` lists host offers first (`source: "host"`, with a fresh `quoteId` and `consent`), then matches (`source: "match"`).
+  - `withdraw_stay_wish` closes the wish.
+  - With `callbackUrl` you get a signed `wish.offer` event for each new offer.
+  - Through the guide, one wish reaches every installation in the area (the token starts with `gw.`).
+- **Time budget:** `search_stays({ timeBudgetMs })`. Slow booking systems are listed under `pending` (`partial: true`).
+- **Discovery:**
+  - `/.well-known/agent-card.json`;
+  - `/.well-known/mcp.json`;
   - `/llms.txt`;
-  - een Claude-plugin en `server.json` in [`agent-kit/`](../agent-kit/README.md).
+  - [`agent-kit/`](../agent-kit/README.md).
 
-### Nieuw in 1.1
-- **Opties met prijs:** `get_stay_details.extras` (fiets, lunchpakket, late check-out, kinderbedje …, met prijs, `per` en `max`). Geef `get_quote({ extras: [{ id, qty }] })` alleen wat de gast vraagt. Elke prijs heeft `extrasAvailable`.
-- **Kortingscodes:** `acceptsDiscountCodes: true` betekent dat de eigenaar codes uitgeeft. Vraag de gast ernaar en geef `discountCode` mee aan `get_quote`. Verzin nooit codes; een ongeldige code geeft een duidelijke fout.
-- **Aankomstregels:** `units[].arrivalRules` (aankomstdagen per seizoen of het hele jaar, en `singleNightSupplement`). Een aankomst op een andere dag geeft een waarschuwing en wordt niet direct bevestigd.
-- **Annuleringskosten:**
-  - elke prijs heeft `cancellationCosts`: vanaf welke datum welk percentage en bedrag;
-  - `check_status` geeft bij een boeking `cancellationCostIfCancelledNow`, met `freeUntil`;
-  - `cancel_request` geeft `cancellationCost`.
+### New in 1.1
+- **Paid options:** `get_stay_details.extras` (bikes, packed lunch, late check-out, cot …, with price, `per` and `max`). Pass `get_quote({ extras: [{ id, qty }] })` only for what the guest asks for. Every quote has `extrasAvailable`.
+- **Discount codes:** `acceptsDiscountCodes: true` means the owner hands out codes. Ask the guest and pass `discountCode` to `get_quote`. Never invent codes; an invalid code gives a clear error.
+- **Arrival rules:** `units[].arrivalRules` (arrival weekdays per season or for the whole year, and `singleNightSupplement`). Arriving on another day gives a warning and is not confirmed instantly.
+- **Cancellation costs:**
+  - every quote has `cancellationCosts`: from which date, which percentage and amount;
+  - for a booking, `check_status` gives `cancellationCostIfCancelledNow`, with `freeUntil`;
+  - `cancel_request` returns `cancellationCost`.
 
-  Zonder gestructureerde regels is `amount` `null`. Noem dan de tekstvoorwaarden.
-- **Vol of bijna vol:** `check_availability` geeft
-  - `alternatives` als alles vol is: vrije verblijven in de buurt, met prijs;
-  - `fewLeft` bij kamertypes met nog 2 of minder kamers;
-  - `demand` als agents de afgelopen 7 dagen vaak naar dezelfde data keken.
+  Without structured rules `amount` is `null`. Then quote the text conditions.
+- **Full or nearly full:** `check_availability` returns
+  - `alternatives` when everything is full: free stays nearby, with a price;
+  - `fewLeft` for room types with 2 or fewer rooms left;
+  - `demand` when agents often checked the same dates in the last 7 days.
 
-  Dit zijn feiten, geen verkooptrucs: noem ze zonder te overdrijven.
-- **Beoordelingen per onderdeel:**
-  - onderdelen: schoon, ontbijt, rust, ligging, prijs/kwaliteit en gastheer/-vrouw;
-  - de gemiddelden staan in `get_stay_details.reviews.aspects`;
-  - `rating` staat in `search_stays` en `compare_stays`.
-- **Huisregels en duurzaamheid:**
-  - nieuwe gegevens: `rules.*` en `eco.*`;
-  - zoekeisen: `non_smoking`, `ev_charging`, `eco_label` en `car_free_reachable`;
-  - `answer_question` beantwoordt vragen hierover.
-- **Flexibel zoeken:**
-  - `search_stays.flexibleDates.pattern` is `weekend` (vr–zo), `long_weekend` (vr–ma) of `midweek` (ma–vr), over alle passende verblijven tegelijk;
-  - `maxPricePerNight` is het gemiddelde per nacht, inclusief verplichte kosten.
-- **Statusupdates zonder pollen:** `request_booking({ callbackUrl })`, alleen https.
-  - Elke statuswijziging gaat als POST naar die URL: `{ event, signature }`.
-  - Controleer `signature.value` (Ed25519, base64url) over de canonieke JSON van `event`, met de sleutel uit `/.well-known/innli.json`.
-- **OAuth 2.1 voor platforms:**
-  - `/mcp` antwoordt `401` met `WWW-Authenticate: Bearer resource_metadata=…` als een sleutel vereist is;
-  - endpoints: `/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`, `/oauth/register` (dynamische registratie), `/oauth/authorize` (PKCE S256) en `/oauth/token`;
-  - scopes: `stays:read` en `stays:act`;
-  - het token is 90 dagen geldig;
-  - met `INNLI_REQUIRE_AGENT_KEY=1` keurt alleen de eigenaar een platform goed.
+  These are facts, not sales tricks: mention them without exaggerating.
+- **Reviews per aspect:**
+  - aspects: cleanliness, breakfast, quiet, location, value and host;
+  - the averages are in `get_stay_details.reviews.aspects`;
+  - `rating` is in `search_stays` and `compare_stays`.
+- **House rules and sustainability:**
+  - new details: `rules.*` and `eco.*`;
+  - search requirements: `non_smoking`, `ev_charging`, `eco_label` and `car_free_reachable`;
+  - `answer_question` answers questions about them.
+- **Flexible search:**
+  - `search_stays.flexibleDates.pattern` is `weekend` (Fri–Sun), `long_weekend` (Fri–Mon) or `midweek` (Mon–Fri), across all matching stays at once;
+  - `maxPricePerNight` is the average per night, including mandatory costs.
+- **Status updates without polling:** `request_booking({ callbackUrl })`, https only.
+  - Every status change is POSTed to that URL as `{ event, signature }`.
+  - Verify `signature.value` (Ed25519, base64url) over the canonical JSON of `event`, with the key from `/.well-known/innli.json`.
+- **OAuth 2.1 for platforms:**
+  - `/mcp` answers `401` with `WWW-Authenticate: Bearer resource_metadata=…` when a key is required;
+  - endpoints: `/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`, `/oauth/register` (dynamic registration), `/oauth/authorize` (PKCE S256) and `/oauth/token`;
+  - scopes: `stays:read` and `stays:act`;
+  - the token is valid for 90 days;
+  - with `INNLI_REQUIRE_AGENT_KEY=1`, only the owner can approve a platform.
 
-### Rechten
-Agentsleutels hebben `read` (zoeken, prijzen) en/of `act` (aanvragen, vragen, annuleren). Met een sleutel die alleen `read` heeft, geven de handelende tools een duidelijke fout.
+### Permissions
+Agent keys have `read` (searching, prices) and/or `act` (requests, questions, cancelling). With a key that only has `read`, the tools that act return a clear error.
 
-### Talen en valuta
-- Alle tekst voor agents (toelichting per eis, prijsregels, waarschuwingen, fouten) is standaard Engels. De installatie kan dat wijzigen met `INNLI_AGENT_LANG`.
-- `get_stay_details` neemt `language` (`nl`, `en`, `de`, `fr`) voor de beschrijving van de eigenaar.
-- `request_booking`, `ask_host` en `join_waitlist` nemen `guestLanguage` (`nl`, `en`, `de`, `fr`). Zo krijgt de gast de e-mails van de eigenaar in zijn eigen taal. Standaard is dat de taal van de eigenaar.
-- Iedere offerte en ieder aanbod heeft `currency`.
-- `search_stays` neemt `currency` voor `maxTotalPrice` (standaard `EUR`) en rekent nooit om. Bij een budget staan verblijven in een andere valuta onder `excluded`, met de reden.
-- REST en MCP accepteren de header `x-innli-lang` of `?lang=` om de taal expliciet te kiezen.
+### Languages and currencies
+- All text meant for agents (match details, price lines, warnings, errors) is in English by default. The installation can change this with `INNLI_AGENT_LANG`.
+- `get_stay_details` takes `language` (`nl`, `en`, `de`, `fr`) for the host's description.
+- `request_booking`, `ask_host` and `join_waitlist` take `guestLanguage` (`nl`, `en`, `de`, `fr`), so the host's e-mails reach the guest in their own language. The default is the host's language.
+- Every quote and offer has a `currency`.
+- `search_stays` takes `currency` for `maxTotalPrice` (default `EUR`) and never converts. When a budget is given, stays priced in another currency are listed under `excluded`, with the reason.
+- The REST and MCP endpoints accept an `x-innli-lang` header or `?lang=` to choose the language explicitly.
 
-English version: [en/agent-integration.md](en/agent-integration.md).
+## Errors
+An error comes back as a tool result with `isError: true`. The first text line is the readable message, and `structuredContent.error` has the same error as data: `code`, `message`, `retryable`, `retryAfterSeconds`, `hint` and `nextTools`.
 
-## Fouten
-Een fout komt terug als tool-resultaat met `isError: true`. De eerste tekstregel is de leesbare melding, en `structuredContent.error` bevat dezelfde fout als gegevens:
-
-```json
-{ "code": "QUOTE_EXPIRED", "message": "Quote expired. Get a fresh price with get_quote.", "retryable": true, "hint": "Get a fresh quote and show the guest the current price before continuing.", "nextTools": ["get_quote"] }
-```
-
-**Codes:**
-
-| Code | Betekenis | Wat te doen |
-|---|---|---|
-| `INVALID_INPUT` | De argumenten kloppen niet. | Pas ze aan. |
-| `NOT_FOUND` | Het verblijf, de kamer of het token is onbekend. | — |
-| `QUOTE_NOT_FOUND` | De offerte is onbekend. | Vraag een nieuwe prijs op. |
-| `QUOTE_EXPIRED` | De offerte is verlopen. | Vraag een nieuwe prijs op. |
-| `UNAVAILABLE` | Niet vrij. | Zie `nextTools`. |
-| `CONSENT_REQUIRED` | Toestemming ontbreekt. | Vraag de gast. |
-| `TERMS_CHANGED` | De voorwaarden zijn veranderd. | Toon de nieuwe samenvatting. |
-| `FORBIDDEN` | Deze sleutel mag dit niet. | — |
-| `RATE_LIMITED` | Te veel verzoeken. | Wacht `retryAfterSeconds`. |
-| `CONFLICT` | De status is intussen veranderd. | Gebruik `check_status`. |
-| `LIMIT_REACHED` | Een limiet is bereikt. | — |
-| `UPSTREAM_ERROR` | Het boekingssysteem antwoordde niet. | — |
+**Codes:** `INVALID_INPUT`, `NOT_FOUND`, `QUOTE_NOT_FOUND`, `QUOTE_EXPIRED`, `UNAVAILABLE`, `CONSENT_REQUIRED`, `TERMS_CHANGED`, `FORBIDDEN`, `AGENT_IDENTITY_REQUIRED`, `RATE_LIMITED`, `CONFLICT`, `LIMIT_REACHED`, `UPSTREAM_ERROR`. Do not retry when `retryable` is false.
 
 **REST:**
-- Fouten geven de passende HTTP-status: 400, 403, 404, 409, 410, 429 of 502.
-- De body is `{ error, code, message, retryable, hint, nextTools }`. `error` is de leesbare melding, zoals vóór 2.0.
-- Elk agentantwoord bevat de headers `RateLimit`, `RateLimit-Policy`, `RateLimit-Limit`, `RateLimit-Remaining` en `RateLimit-Reset`.
+- Errors use the matching HTTP status (400, 403, 404, 409, 410, 429 or 502).
+- The body is `{ error, code, message, retryable, hint, nextTools }`. `error` stays the readable message, as before 2.0.
+- Every agent response carries IETF RateLimit headers.
 
-## Nieuw in 2.1
+## New in 2.1
 
-Achtergrond en het onderzoek erachter: [agents-2.1.md](agents-2.1.md).
+Background and the research behind it: [agents-2.1.md](agents-2.1.md).
 
-### Identiteit: Web Bot Auth
-Onderteken elk verzoek met HTTP Message Signatures (RFC 9421). INNLI weet dan welk platform er belt, zonder account:
+### Identity: Web Bot Auth
+Sign each request with HTTP Message Signatures (RFC 9421) and INNLI knows which platform is calling, without an account:
 ```
 Signature-Agent: "https://agent.example"
-Signature-Input: sig1=("@authority" "signature-agent");created=1762850000;expires=1762850060;keyid="<JWK-thumbprint>";alg="ed25519";nonce="<willekeurig>";tag="web-bot-auth"
-Signature: sig1=:<base64-handtekening>:
+Signature-Input: sig1=("@authority" "signature-agent");created=1762850000;expires=1762850060;keyid="<JWK thumbprint>";alg="ed25519";nonce="<random>";tag="web-bot-auth"
+Signature: sig1=:<base64 signature>:
 ```
-- Sleutels: een JWKS met je Ed25519-sleutel op `https://agent.example/.well-known/http-message-signatures-directory`.
-- `keyid` is de thumbprint volgens RFC 7638. `created` en `expires` zijn verplicht en liggen hooguit 24 uur uit elkaar. Een `nonce` wordt één keer geaccepteerd.
-- Onderteken minstens `@authority` en `signature-agent`.
-- De antwoordheader `x-innli-agent-identity` zegt `verified; agent="agent.example"`, `key`, `anonymous` of `invalid; reason="…"`. Een ongeldige handtekening laat het verzoek niet mislukken: het wordt als anoniem behandeld.
-- Een bewezen platform heeft een eigen limiet van 600 verzoeken per minuut.
+- Keys: a JWKS with your Ed25519 key at `https://agent.example/.well-known/http-message-signatures-directory`.
+- `keyid` is the RFC 7638 thumbprint. `created` and `expires` are required, at most 24 hours apart. A `nonce` is accepted once.
+- Sign at least `@authority` and `signature-agent`.
+- The response header `x-innli-agent-identity` says `verified; agent="agent.example"`, `key`, `anonymous`, or `invalid; reason="…"`. An invalid signature does not fail the request: it is served as anonymous.
+- A verified platform has its own rate limit of 600 requests a minute.
 
-### Limiet op vasthouden
-Open aanvragen houden kamers vast. Per accommodatie mag een anoniem adres er 2 open hebben, een herkenbare agent 25 en één e-mailadres van een gast 3. Daarboven: `LIMIT_REACHED` (REST 429). Een eigenaar kan voor aanvragen ook een herkenbare agent eisen: `AGENT_IDENTITY_REQUIRED` (REST 403).
+### Hold limits
+Open requests hold rooms. Per property an anonymous address may have 2 open, an identified agent 25, and one guest e-mail address 3. Beyond that: `LIMIT_REACHED` (REST 429). A host can also require an identified agent for requests: `AGENT_IDENTITY_REQUIRED` (REST 403).
 
 ### Idempotency-Key
-REST-tools en UCP nemen een `Idempotency-Key`-header aan (hooguit 255 tekens). Dezelfde sleutel met dezelfde inhoud geeft 24 uur lang het eerste antwoord, met `Idempotent-Replayed: true`. Dezelfde sleutel met andere inhoud geeft 409.
+REST tool calls and UCP operations take an `Idempotency-Key` header (at most 255 characters). The same key with the same body returns the first answer with `Idempotent-Replayed: true`, for 24 hours. The same key with another body returns 409.
 
-### Boekingssessies volgens UCP (concept)
-- Profiel: `GET /.well-known/ucp`. Adres: `/ucp/v1`. Elk verzoek heeft `UCP-Agent: profile="https://platform.example/profile"` nodig.
-- `POST /booking-sessions` → 201 met de sessie; `GET` en `PUT /booking-sessions/{id}`; `POST /booking-sessions/{id}/complete` met `{"payment": {}}`; `POST /booking-sessions/{id}/cancel`.
-- `stays[]`: `accommodation_type.id` is de `unitId` van INNLI, `rate_plan.id` een tariefplan of `standard`. Alle verblijven in een sessie hebben dezelfde data. Honden: `occupancy.pets`.
-- Bedragen zijn hele getallen in de kleinste munteenheid. `totals[]` tellen op tot het ene `total`.
-- Zakelijke uitkomsten (vol, te veel gasten) komen met HTTP 200, `ucp.status: "error"` en `messages[]`; protocolfouten met een HTTP-status en `{ code, content }`.
-- Na afronden geeft `io.innli.status_token` via `check_status` toegang tot het ondertekende boekingsdossier.
+### UCP lodging booking sessions (draft)
+- Over MCP: connect to `/ucp/mcp`. Each tool takes `meta: { "ucp-agent": { profile }, "idempotency-key"? }`, the session in `booking`, and an existing session's `id` at the top level.
+- Profile: `GET /.well-known/ucp`. Endpoint: `/ucp/v1`. Every request needs `UCP-Agent: profile="https://platform.example/profile"`.
+- `POST /booking-sessions` → 201 with the session; `GET` and `PUT /booking-sessions/{id}`; `POST /booking-sessions/{id}/complete` with `{"payment": {}}`; `POST /booking-sessions/{id}/cancel`.
+- `stays[]`: `accommodation_type.id` is the INNLI `unitId`, `rate_plan.id` a rate plan or `standard`. All stays of a session share their dates. Dogs: `occupancy.pets`.
+- Amounts are integers in the currency's minor unit. `totals[]` add up to the one `total`.
+- Business outcomes (sold out, too many guests) come with HTTP 200, `ucp.status: "error"` and `messages[]`; protocol errors with an HTTP status and `{ code, content }`.
+- After completion, `io.innli.status_token` gives access to the signed booking record through `check_status`.
 
-### Annuleren in offertes
-`cancellation: { refundability, freeUntil, costNow, percentNow }`, waarbij `refundability` `refundable`, `partially_refundable`, `non_refundable` of `unknown` is.
+### Cancellation in quotes
+`cancellation: { refundability, freeUntil, costNow, percentNow }`, where `refundability` is `refundable`, `partially_refundable`, `non_refundable` or `unknown`.

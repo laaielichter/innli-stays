@@ -6,7 +6,7 @@ import { cancellationCost, cancellationSchedule, refundability } from '../domain
 import { DateRangeError } from '../domain/dates.ts';
 import type { BookingRequest, Property, Quote, QuoteLine } from '../domain/types.ts';
 import { money } from '../i18n/index.ts';
-import type { AgentActions, AgentContext } from '../requests/agentActions.ts';
+import { holderId, type AgentActions, type AgentContext } from '../requests/agentActions.ts';
 import { rulesOf, type RequestService } from '../requests/service.ts';
 import type { Store } from '../store.ts';
 import type { BookingSessionRecord, UcpPerson, UcpStayInput } from './types.ts';
@@ -25,6 +25,7 @@ import type { BookingSessionRecord, UcpPerson, UcpStayInput } from './types.ts';
 
 export const UCP_VERSION = process.env.INNLI_UCP_VERSION || '2026-08-25';
 export const UCP_BASE_PATH = '/ucp/v1';
+export const UCP_MCP_PATH = '/ucp/mcp';
 const BOOKING = 'dev.ucp.lodging.booking';
 const TERMS = 'dev.ucp.common.payment.terms';
 const CANCELLATION = 'dev.ucp.lodging.policy.cancellation';
@@ -85,7 +86,10 @@ export function ucpProfile(store: Store, publicUrl: string, keys: unknown[]) {
     ucp: {
       version: UCP_VERSION,
       services: {
-        'dev.ucp.lodging': [{ version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/overview`, transport: 'rest', schema: `${SPEC}/${UCP_VERSION}/services/lodging/rest.openapi.json`, endpoint: `${url}${UCP_BASE_PATH}` }],
+        'dev.ucp.lodging': [
+          { version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/overview`, transport: 'rest', schema: `${SPEC}/${UCP_VERSION}/services/lodging/rest.openapi.json`, endpoint: `${url}${UCP_BASE_PATH}` },
+          { version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/overview`, transport: 'mcp', schema: `${SPEC}/${UCP_VERSION}/services/lodging/mcp.openrpc.json`, endpoint: `${url}${UCP_MCP_PATH}` },
+        ],
       },
       capabilities: {
         [BOOKING]: [{ version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/lodging/booking`, schema: `${SPEC}/${UCP_VERSION}/schemas/lodging/booking.json` }],
@@ -111,6 +115,7 @@ export class UcpLodging {
   private actions: AgentActions;
   private requests: RequestService;
   private publicUrl: string;
+  private created = new Map<string, string>();
 
   constructor(store: Store, catalog: Catalog, actions: AgentActions, requests: RequestService, publicUrl: string) {
     this.store = store;
@@ -122,7 +127,11 @@ export class UcpLodging {
 
   // ---------------------------------------------------------------- Operations
 
-  async create(body: unknown, agent: AgentContext, platformProfile: string) {
+  /** @param idempotencyKey a retried create with the same key returns the session the first call made (MCP binding). */
+  async create(body: unknown, agent: AgentContext, platformProfile: string, idempotencyKey?: string) {
+    const createKey = idempotencyKey ? `${holderId(agent)}:${idempotencyKey}` : undefined;
+    const earlier = createKey ? this.store.getBookingSession(this.created.get(createKey) ?? '') : undefined;
+    if (earlier) return this.render(earlier);
     const input = this.parse(body);
     const property = this.property(input.propertyId);
     const session: BookingSessionRecord = {
@@ -137,20 +146,25 @@ export class UcpLodging {
       travel_purpose: input.travel_purpose,
       platformProfile,
       agentClient: agent.name,
+      owner: (agent.identity ?? 'anonymous') === 'anonymous' ? undefined : holderId(agent),
       createdAt: new Date().toISOString(),
       expiresAt: new Date().toISOString(),
     };
     await this.price(property, session, agent);
     this.store.saveBookingSession(session);
+    if (createKey) {
+      this.created.set(createKey, session.id);
+      if (this.created.size > 2000) this.created.delete(this.created.keys().next().value!);
+    }
     return this.render(session);
   }
 
-  get(id: string) {
-    return this.render(this.session(id));
+  get(id: string, agent?: AgentContext) {
+    return this.render(this.session(id, agent));
   }
 
   async update(id: string, body: unknown, agent: AgentContext) {
-    const session = this.session(id);
+    const session = this.session(id, agent);
     if (session.statusToken) return this.render(session, [{ type: 'error', code: 'session_not_editable', severity: 'recoverable', content: 'This session was already completed; it can no longer be changed. Cancel it, or start a new session.' }]);
     if (this.statusOf(session) === 'canceled') return this.render(session);
     const input = this.parse(body);
@@ -158,18 +172,29 @@ export class UcpLodging {
     const property = this.property(session.propertyId);
     const same = input.checkin === session.checkin && input.checkout === session.checkout && JSON.stringify(input.stays.map(stayKey)) === JSON.stringify(session.stays.map(stayKey));
     // Full replacement: what the platform left out is gone.
-    Object.assign(session, { stays: same ? input.stays.map((s, i) => ({ ...s, id: session.stays[i].id })) : input.stays, guests: input.guests, booker: input.booker, travel_purpose: input.travel_purpose, agentClient: agent.name });
-    if (!same || Date.parse(session.expiresAt) < Date.now()) {
+    const next: BookingSessionRecord = { ...session, stays: same ? input.stays.map((s, i) => ({ ...s, id: session.stays[i].id })) : input.stays, guests: input.guests, booker: input.booker, travel_purpose: input.travel_purpose, agentClient: agent.name };
+    if (!same) {
+      // The old holds make way for the new selection; if pricing that fails, they come back and the session stays as it was.
+      Object.assign(next, { checkin: input.checkin, checkout: input.checkout });
+      const held = session.quotes.map((q) => this.store.getQuote(q.quoteId)).filter((q) => q?.hold).map((q) => ({ quote: q!, hold: q!.hold }));
       this.release(session);
-      Object.assign(session, { checkin: input.checkin, checkout: input.checkout });
-      await this.price(property, session, agent);
+      try {
+        await this.price(property, next, agent);
+      } catch (err) {
+        for (const h of held) {
+          h.quote.hold = h.hold;
+          this.store.saveQuote(h.quote);
+        }
+        throw err;
+      }
     }
+    Object.assign(session, next);
     this.store.saveBookingSession(session);
     return this.render(session);
   }
 
   async complete(id: string, body: unknown, agent: AgentContext) {
-    const session = this.session(id);
+    const session = this.session(id, agent);
     // A repeated Complete is answered with the state the first one produced.
     if (session.statusToken) return this.render(session);
     const status = this.statusOf(session);
@@ -223,7 +248,7 @@ export class UcpLodging {
   }
 
   async cancel(id: string, body: unknown, agent: AgentContext) {
-    const session = this.session(id);
+    const session = this.session(id, agent);
     const reason = str((body as Json | undefined)?.reason, 500);
     if (!session.statusToken) {
       this.cancelOpen(session, reason ?? 'canceled_by_platform');
@@ -245,7 +270,7 @@ export class UcpLodging {
 
   private parse(body: unknown) {
     const b = (body ?? {}) as Json;
-    const propertyId = str((b.property as Json | undefined)?.id, 120);
+    const propertyId = str((b.property as Json | null | undefined)?.id, 120);
     if (!propertyId) throw new UcpOutcome('invalid_request', 'property.id is required.', 'recoverable');
     const rawStays = Array.isArray(b.stays) ? (b.stays as Json[]) : [];
     if (!rawStays.length || rawStays.length > 10) throw new UcpOutcome('invalid_request', 'stays must hold 1 to 10 entries.', 'recoverable');
@@ -253,26 +278,27 @@ export class UcpLodging {
     let checkin: string | undefined;
     let checkout: string | undefined;
     const stays: UcpStayInput[] = rawStays.map((s, i) => {
-      const dates = (s.stay_dates ?? {}) as Json;
+      if (!s || typeof s !== 'object' || Array.isArray(s)) throw new UcpOutcome('invalid_request', `stays[${i}] must be an object.`, 'recoverable');
+      const dates = (s.stay_dates && typeof s.stay_dates === 'object' ? s.stay_dates : {}) as Json;
       const start = str(dates.start_date, 10);
       const end = str(dates.end_date, 10);
       if (!start || !end || !DATE.test(start) || !DATE.test(end)) throw new UcpOutcome('invalid_request', `stays[${i}].stay_dates needs start_date and end_date as YYYY-MM-DD.`, 'recoverable');
       checkin ??= start;
       checkout ??= end;
       if (start !== checkin || end !== checkout) throw new UcpOutcome('stay_dates_differ', 'All stays of one booking session must have the same dates. Open a second session for other dates.', 'recoverable');
-      const unitId = str((s.accommodation_type as Json | undefined)?.id, 120);
+      const unitId = str((s.accommodation_type as Json | null | undefined)?.id, 120);
       if (!unitId) throw new UcpOutcome('invalid_request', `stays[${i}].accommodation_type.id is required.`, 'recoverable');
       const occ = (s.occupancy && typeof s.occupancy === 'object' ? s.occupancy : {}) as Json;
       const count = (v: unknown) => (Array.isArray(v) ? v.length : Math.max(0, Math.floor(Number(v) || 0)));
       const children = count(occ.children);
       const adults = occ.adults === undefined ? Math.max(1, count(occ.total) - children) : count(occ.adults);
       if (adults < 1) throw new UcpOutcome('invalid_request', `stays[${i}].occupancy needs at least one adult.`, 'recoverable');
-      const assignments = Array.isArray(s.guest_assignments) ? (s.guest_assignments as Json[]).slice(0, 20).map((a) => ({ guest_id: String(a.guest_id ?? ''), role: str(a.role, 40) })) : undefined;
+      const assignments = Array.isArray(s.guest_assignments) ? (s.guest_assignments as Json[]).slice(0, 20).map((a) => ({ guest_id: String(a?.guest_id ?? '').slice(0, 80), role: str(a?.role, 40) })) : undefined;
       for (const a of assignments ?? []) {
         if (!guests?.some((g) => g.id === a.guest_id)) throw new UcpOutcome('invalid_request', `stays[${i}].guest_assignments refers to guest "${a.guest_id}", which is not in guests[].`, 'recoverable');
       }
-      const ratePlanId = str((s.rate_plan as Json | undefined)?.id, 120) ?? 'standard';
-      return { id: str(s.id, 120) ?? `stay_${unitId}__${ratePlanId}${i ? `_${i + 1}` : ''}`, unitId, ratePlanId, occupancy: { adults, children, dogs: count(occ.pets ?? occ['io.innli.dogs']) }, occupancyEcho: occ, guest_assignments: assignments };
+      const ratePlanId = str((s.rate_plan as Json | null | undefined)?.id, 120) ?? 'standard';
+      return { id: str(s.id, 120) ?? `stay_${unitId}__${ratePlanId}${i ? `_${i + 1}` : ''}`, unitId, ratePlanId, occupancy: { adults, children, dogs: count(occ.pets ?? occ['io.innli.dogs']) }, occupancyEcho: JSON.stringify(occ).length <= 400 ? occ : {}, guest_assignments: assignments };
     });
     if (new Set(stays.map((s) => s.id)).size !== stays.length) throw new UcpOutcome('invalid_request', 'Every stay needs its own id.', 'recoverable');
     return { propertyId, stays, checkin: checkin!, checkout: checkout!, guests, booker: person(b.booker) as BookingSessionRecord['booker'], travel_purpose: str(b.travel_purpose, 40) };
@@ -284,9 +310,10 @@ export class UcpLodging {
     return property;
   }
 
-  private session(id: string): BookingSessionRecord {
+  /** A session opened by an identified caller belongs to that caller; to anyone else it does not exist. */
+  private session(id: string, agent?: AgentContext): BookingSessionRecord {
     const session = this.store.getBookingSession(id);
-    if (!session) throw new UcpProtocolError(404, 'not_found', 'Unknown booking session.');
+    if (!session || (session.owner && (!agent || holderId(agent) !== session.owner))) throw new UcpProtocolError(404, 'not_found', 'Unknown booking session.');
     return session;
   }
 
@@ -308,7 +335,7 @@ export class UcpLodging {
         if (over) throw new UcpOutcome('occupancy_exceeded_capacity', `${unit.name} sleeps at most ${unit.maxGuests}; stay "${over.id}" has ${over.occupancy.adults + over.occupancy.children} guests. Add a room or choose a larger one.`, 'recoverable');
         const party = members.reduce((g, s) => ({ adults: g.adults + s.occupancy.adults, children: g.children + s.occupancy.children, dogs: g.dogs + s.occupancy.dogs }), { adults: 0, children: 0, dogs: 0 });
         // A session holds rooms without any guest details: counted per caller, like any short hold.
-        if (agent) this.actions.reserveQuoteHold(agent);
+        if (agent) this.actions.reserveQuoteHold(agent, members.length);
         const q = await this.catalog.quote(property.id, first.unitId, session.checkin, session.checkout, party, false, session.agentClient, { rooms: members.length, ratePlanId: first.ratePlanId === 'standard' ? undefined : first.ratePlanId, hold: true });
         quotes.push({ quoteId: q.quoteId, stayIds: members.map((m) => m.id) });
       }
@@ -405,7 +432,9 @@ export class UcpLodging {
       const first = group?.stayIds[0] === s.id;
       // Identical rooms are priced together; each gets its share, the first one any rounding remainder.
       const groupTotals = group ? totalsOf(linesOf(group).lines, m) : [];
-      const split = groupTotals.map((t) => ({ ...t, amount: Math.floor(t.amount / share) + (first ? t.amount % share : 0) }));
+      // Split every addend (towards zero, so discounts work too) and add up: each stay's total is the sum of its own lines.
+      const addends = groupTotals.filter((t) => t.type !== 'total').map((t) => ({ ...t, amount: Math.trunc(t.amount / share) + (first ? t.amount % share : 0) }));
+      const split = [...addends, { type: 'total', amount: addends.reduce((n, t) => n + t.amount, 0) }];
       return {
         id: s.id,
         accommodation_type: { id: s.unitId, title: unit?.name, capacity: unit ? { total: unit.maxGuests } : undefined },
@@ -417,23 +446,30 @@ export class UcpLodging {
       };
     });
 
-    // Cancellation: one machine-readable word plus the full terms in words.
-    const amount = allLines.reduce((sum, l) => sum + l.amount, 0);
-    const ratePlanId = session.stays[0].ratePlanId === 'standard' ? undefined : session.stays[0].ratePlanId;
-    const stay = { checkin: session.checkin, total: amount, ratePlanId };
-    const refund = refundability(property, stay);
-    const policyText = (request?.terms?.policies as { cancellation?: { value?: unknown } } | undefined)?.cancellation?.value ?? property.ratePlans?.find((p) => p.id === ratePlanId)?.cancellation ?? property.facts['policy.cancellation']?.value;
-    const schedule = cancellationSchedule(property, stay)
-      .map((r) => (r.from === 'booking' ? 'Non-refundable: cancelling costs the full amount.' : `From ${r.from}: ${r.percent}% (${money(r.amount, 'en', currency)}).`))
-      .join(' ');
-    const policies =
-      refund.refundability === 'unknown'
-        ? []
-        : [{ type: CANCELLATION, refundability: refund.refundability, description: [refund.freeUntil ? `Free cancellation until ${refund.freeUntil}.` : '', schedule, typeof policyText === 'string' ? policyText : ''].filter(Boolean).join(' '), url: this.stayPage(property) }];
-    if (refund.refundability === 'unknown') {
-      messages.push({ type: 'warning', code: 'cancellation_terms_not_structured', presentation: 'disclosure', path: '$.policies', content: typeof policyText === 'string' ? `Cancellation conditions as the host states them: ${policyText}` : 'The host has not stated cancellation conditions. Ask before booking.' });
-    } else if (refund.refundability === 'non_refundable') {
-      messages.push({ type: 'warning', code: CANCELLATION, presentation: 'disclosure', path: '$.policies[0]', content: 'This booking is non-refundable: cancelling costs the full amount.' });
+    // Cancellation: one machine-readable word plus the full terms in words. Rooms on different rate plans
+    // have different terms, so each is judged on its own amount.
+    const parts = quotes.map((q) => {
+      const first = session.stays.find((s) => q.stayIds.includes(s.id))!;
+      const ratePlanId = first.ratePlanId === 'standard' ? undefined : first.ratePlanId;
+      const stay = { checkin: session.checkin, total: linesOf(q).lines.reduce((sum, l) => sum + l.amount, 0), ratePlanId };
+      const text = (request?.terms?.policies as { cancellation?: { value?: unknown } } | undefined)?.cancellation?.value ?? property.ratePlans?.find((p) => p.id === ratePlanId)?.cancellation ?? property.facts['policy.cancellation']?.value;
+      const schedule = cancellationSchedule(property, stay)
+        .map((r) => (r.from === 'booking' ? 'Non-refundable: cancelling costs the full amount.' : `From ${r.from}: ${r.percent}% (${money(r.amount, 'en', currency)}).`))
+        .join(' ');
+      return { stay, refund: refundability(property, stay), schedule, text: typeof text === 'string' ? text : '', name: property.units.find((u) => u.id === first.unitId)?.name ?? first.unitId };
+    });
+    const kinds = new Set(parts.map((p) => p.refund.refundability));
+    // All rooms alike: that word. Some refundable and some not: part of the amount comes back.
+    const overall = kinds.has('unknown') ? 'unknown' : kinds.size === 1 ? [...kinds][0] : 'partially_refundable';
+    const describe = (p: (typeof parts)[number]) => [parts.length > 1 ? `${p.name}:` : '', p.refund.freeUntil ? `Free cancellation until ${p.refund.freeUntil}.` : '', p.schedule, p.text].filter(Boolean).join(' ');
+    const policyText = parts.map((p) => (parts.length > 1 && p.text ? `${p.name}: ${p.text}` : p.text)).filter(Boolean).join(' ');
+    const policies = overall === 'unknown' ? [] : [{ type: CANCELLATION, refundability: overall, description: parts.map(describe).join(' '), url: this.stayPage(property) }];
+    if (overall === 'unknown') {
+      messages.push({ type: 'warning', code: 'cancellation_terms_not_structured', presentation: 'disclosure', path: '$.policies', content: policyText ? `Cancellation conditions as the host states them: ${policyText}` : 'The host has not stated cancellation conditions. Ask before booking.' });
+    }
+    const fixed = parts.filter((p) => p.refund.refundability === 'non_refundable');
+    if (fixed.length) {
+      messages.push({ type: 'warning', code: CANCELLATION, presentation: 'disclosure', path: overall === 'unknown' ? '$.policies' : '$.policies[0]', content: fixed.length === parts.length ? 'This booking is non-refundable: cancelling costs the full amount.' : `Non-refundable: ${fixed.map((p) => p.name).join(', ')}. Cancelling costs the full amount for ${fixed.length === 1 ? 'that room' : 'those rooms'}.` });
     }
 
     // Payment timing: what is paid to the property, and when. INNLI moves no money.
@@ -465,7 +501,8 @@ export class UcpLodging {
     if (status === 'requires_escalation' && !messages.some((x) => x.severity?.startsWith('requires_'))) messages.push({ type: 'error', code: 'completed_at_property', severity: 'requires_buyer_input', content: 'This property takes bookings in its own booking system. Hand the buyer over through continue_url; dates and guests are pre-filled where supported.' });
     if (status === 'complete_in_progress') messages.push({ type: 'info', code: 'awaiting_host_confirmation', content: `The request is with ${property.name} and the rooms are held until ${request!.holdUntil}. It is not a booking until the status is completed; the buyer pays nothing if the host does not confirm.` });
     if (status === 'canceled' && request) {
-      const fee = request.status === 'cancelled' && request.decidedAt ? cancellationCost(property, stay, request.cancelledAt?.slice(0, 10)) : undefined;
+      const costs = request.status === 'cancelled' && request.decidedAt ? parts.map((p) => cancellationCost(property, p.stay, request.cancelledAt?.slice(0, 10)).amount) : [];
+      const fee = { amount: costs.every((c) => c !== null) ? costs.reduce((n: number, c) => n + (c ?? 0), 0) : null };
       const why: Record<string, string> = { declined: 'The host declined the request. Nothing was booked.', expired: 'The host did not answer in time. Nothing was booked.', cancelled: `The booking was cancelled.${fee?.amount ? ` Cancellation costs under the agreed conditions: ${money(fee.amount, 'en', currency)}.` : ''}` };
       messages.push({ type: 'info', code: `request_${request.status}`, content: why[request.status] ?? 'This session is no longer valid.' });
     } else if (status === 'canceled' && !session.canceledAt) messages.push({ type: 'info', code: 'session_expired', content: 'The session expired and the rooms were released. Start a new booking session.' });

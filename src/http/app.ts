@@ -46,7 +46,8 @@ import { agentCard, llmsTxt, mcpServerCard, staysOf } from '../agent/discovery.t
 import { BotAuthVerifier, DIRECTORY_PATH, DIRECTORY_TYPE, keyDirectory } from '../agent/botAuth.ts';
 import { checkWebsite, signedPassport, VERIFICATION_FILE, VERIFICATION_META, verificationToken, websiteVerified } from '../agent/trust.ts';
 import { idempotency } from './idempotency.ts';
-import { UCP_BASE_PATH, UcpLodging, UcpOutcome, UcpProtocolError, ucpProfile, UCP_VERSION } from '../ucp/lodging.ts';
+import { createUcpMcpServer } from '../ucp/mcp.ts';
+import { UCP_BASE_PATH, UCP_MCP_PATH, UcpLodging, UcpOutcome, UcpProtocolError, ucpProfile, UCP_VERSION } from '../ucp/lodging.ts';
 import { oauthRouter, wwwAuthenticate } from './oauth.ts';
 import { captionProblem, contentTypeOf, MAX_PHOTO_BYTES, MEDIA_FILE, MediaError, savePhoto } from './media.ts';
 
@@ -79,6 +80,8 @@ export interface AppOptions {
   /** Retry delays for outbound webhooks (tests use short ones). */
   webhookRetryDelaysMs?: number[];
   demo?: boolean;
+  /** Reverse proxies in front of this installation whose X-Forwarded-* headers are trusted (default 1; 0 when exposed directly). */
+  trustProxy?: number;
   /** Accept agent key directories over plain http (tests, sample mode). Default: only in sample mode. */
   insecureAgentDirectories?: boolean;
 }
@@ -122,7 +125,9 @@ export function createApp(opts: AppOptions) {
   const { store, catalog } = opts;
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  // Behind one reverse proxy or tunnel by default (see docs/hosting.md). Exposed directly to the internet: set INNLI_TRUST_PROXY=0,
+  // or callers can pretend to be another address.
+  app.set('trust proxy', opts.trustProxy ?? 1);
   const json = express.json({ limit: '1mb', verify: (req, _res, buf) => ((req as RawRequest).rawBody = buf) });
   // A restored backup can be larger; that route parses its own body.
   app.use((req, res, next) => (req.path === '/api/owner/restore' ? next() : json(req, res, next)));
@@ -164,6 +169,7 @@ export function createApp(opts: AppOptions) {
   const verifiedLimit = rateWindow(600);
   // Looking up an unknown key directory costs an outbound request: keep that scarce per address.
   const directoryLimit = rateLimiter(6);
+  const signatureLimit = rateLimiter(900);
   const guideOrigin = (() => {
     try {
       return opts.guideUrl ? new URL(opts.guideUrl).origin : undefined;
@@ -171,6 +177,8 @@ export function createApp(opts: AppOptions) {
       return undefined;
     }
   })();
+  // A signature is only valid for this installation's own public host: never for a Host or X-Forwarded-Host a caller chose.
+  const publicHost = new URL(opts.publicUrl).host;
   const botAuth = new BotAuthVerifier(opts.fetcher, { allowHttp: opts.insecureAgentDirectories ?? Boolean(opts.demo) });
   const auditLimit = rateLimiter(10);
 
@@ -201,13 +209,15 @@ export function createApp(opts: AppOptions) {
     const found = key ? store.findAgentByKeyHash(hashKey(key)) : undefined;
     const agent = found && (!found.expiresAt || found.expiresAt > new Date().toISOString()) ? found : undefined;
     // A platform that signs its requests proves who it is with its own key: no account needed here.
-    const signed = await botAuth.verify(
-      { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [...new Set([String(req.headers.host ?? ''), req.hostname, new URL(opts.publicUrl).host].filter(Boolean))], headers: req.headers },
+    // Checking a signature costs work: an address that sends too many is treated as unsigned.
+    const signed: Awaited<ReturnType<BotAuthVerifier['verify']>> = req.headers['signature-input'] && !signatureLimit(ip) ? { status: 'invalid', reason: 'verification_rate_limited' } : await botAuth.verify(
+      { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [publicHost], headers: req.headers, body: (req as RawRequest).rawBody },
       { mayFetch: () => directoryLimit(ip) },
     );
     // The guide this installation is listed in relays for many agents. Its signature proves the request is the
     // guide's; what it says about the agent behind it (name, verified domain, a caller id) is signed with it.
-    const fromGuide = signed.status === 'verified' && guideOrigin === signed.origin && [GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER].every((h) => signed.covered.includes(h));
+    // A relayed request must be signed for exactly this request: single use, short-lived, with method and path.
+    const fromGuide = signed.status === 'verified' && guideOrigin === signed.origin && signed.nonce && signed.validitySeconds <= 300 && ['@method', '@path', GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER].every((h) => signed.covered.includes(h));
     const relayedDomain = fromGuide ? String(req.headers[GUIDE_IDENTITY_HEADER] ?? '').toLowerCase() : '';
     const relay = fromGuide ? { holder: String(req.headers[GUIDE_HOLDER_HEADER] ?? '').replace(/[^\w:.-]/g, '').slice(0, 64) || 'unknown', domain: /^[a-z0-9.-]+(:\d+)?$/.test(relayedDomain) && relayedDomain !== 'anonymous' ? relayedDomain : undefined } : undefined;
     const verified = relay ? relay.domain : signed.status === 'verified' ? signed.agent : undefined;
@@ -240,6 +250,14 @@ export function createApp(opts: AppOptions) {
       verifiedDomain: verified,
       bucket,
     };
+  };
+
+  /** Identification as a step of its own, so what follows (idempotent replays, the handler) only runs for a caller that was checked and counted. */
+  const identify = async (req: Request, res: Response, next: NextFunction) => {
+    const who = await identifyAgent(req, res);
+    if (!who) return;
+    res.locals.who = who;
+    next();
   };
 
   // OAuth 2.1 for agent platforms (ChatGPT, Claude and others connecting over MCP).
@@ -286,9 +304,8 @@ export function createApp(opts: AppOptions) {
     });
   });
 
-  app.post('/api/agent/v1/tools/:name', idempotent, async (req, res) => {
-    const who = await identifyAgent(req, res);
-    if (!who) return;
+  app.post('/api/agent/v1/tools/:name', identify, idempotent, async (req, res) => {
+    const who = res.locals.who as AgentCaller;
     const name = String(req.params.name) as ToolName;
     const def = TOOLS[name];
     if (!def) {
@@ -323,8 +340,7 @@ export function createApp(opts: AppOptions) {
   };
   /** Runs one booking-session operation for an identified caller. The platform names itself in UCP-Agent. */
   const ucpOperation = (run: (req: Request, agent: AgentCaller, profile: string) => Promise<unknown> | unknown, created = false) => async (req: Request, res: Response) => {
-    const who = await identifyAgent(req, res);
-    if (!who) return;
+    const who = res.locals.who as AgentCaller;
     const profile = /profile="([^"]{1,500})"/.exec(String(req.headers['ucp-agent'] ?? ''))?.[1];
     let host: string | undefined;
     try {
@@ -345,17 +361,31 @@ export function createApp(opts: AppOptions) {
       ucpError(res, err);
     }
   };
-  app.post(`${UCP_BASE_PATH}/booking-sessions`, idempotent, ucpOperation((req, agent, profile) => ucp.create(req.body, agent, profile), true));
-  app.get(`${UCP_BASE_PATH}/booking-sessions/:id`, ucpOperation((req) => ucp.get(String(req.params.id))));
-  app.put(`${UCP_BASE_PATH}/booking-sessions/:id`, idempotent, ucpOperation((req, agent) => ucp.update(String(req.params.id), req.body, agent)));
-  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
-  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions`, identify, idempotent, ucpOperation((req, agent, profile) => ucp.create(req.body, agent, profile), true));
+  app.get(`${UCP_BASE_PATH}/booking-sessions/:id`, identify, ucpOperation((req, agent) => ucp.get(String(req.params.id), agent)));
+  app.put(`${UCP_BASE_PATH}/booking-sessions/:id`, identify, idempotent, ucpOperation((req, agent) => ucp.update(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, identify, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, identify, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
+
+  // The same five operations as MCP tools, for platforms that speak UCP over MCP.
+  app.post(UCP_MCP_PATH, async (req, res) => {
+    const who = await identifyAgent(req, res);
+    if (!who) return;
+    const server = createUcpMcpServer(ucp, who, opts.publicUrl);
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+    res.on('close', () => {
+      void transport.close();
+      void server.close();
+    });
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  });
 
   const methodNotAllowed = (_req: Request, res: Response) => {
     res.status(405).set('allow', 'POST').json({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed' }, id: null });
   };
-  app.get('/mcp', methodNotAllowed);
-  app.delete('/mcp', methodNotAllowed);
+  app.get(['/mcp', UCP_MCP_PATH], methodNotAllowed);
+  app.delete(['/mcp', UCP_MCP_PATH], methodNotAllowed);
 
   // ---------------------------------------------------------------- Public
   app.get('/api/public/properties/:id/passport', (req, res) => {

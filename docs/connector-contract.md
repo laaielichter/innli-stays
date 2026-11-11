@@ -1,27 +1,29 @@
-# Koppelcontract voor boekingssystemen
+# Connector contract for booking systems
 
-INNLI kent vier soorten beschikbaarheidsbronnen. Wat een agent mag aanbieden hangt ervan af.
+Nederlands: [nl/connector-contract.md](nl/connector-contract.md).
 
-| Bron | `certainty` | Prijs | Wat de gast krijgt |
+INNLI knows four kinds of availability sources. What an agent may offer depends on the source.
+
+| Source | `certainty` | Price | What the guest gets |
 |---|---|---|---|
-| Live API (dit contract) | `live` | live tarieven per nacht | directe boekingslink (als een sjabloon is ingesteld) |
-| iCal-agenda's (meerdere per kamer: Airbnb, Booking.com, Google Agenda…) | `synced` | basistarief, indicatief | beschikbaarheidsaanvraag |
-| Eigen kamerkalender in INNLI | `synced` | basistarief, indicatief | beschikbaarheidsaanvraag |
-| Geen | `none` | basistarief, indicatief | beschikbaarheidsaanvraag |
+| Live API (this contract) | `live` | live rates per night | direct booking link (if a template is set) |
+| iCal calendars (several per room: Airbnb, Booking.com, Google Calendar…) | `synced` | base rate, indicative | availability request |
+| Own room calendar in INNLI | `synced` | base rate, indicative | availability request |
+| None | `none` | base rate, indicative | availability request |
 
-Nachten die de eigenaar in de kamerkalender sluit zijn altijd onbeschikbaar, ook bij een live koppeling. Bij meerdere iCal-agenda's is een nacht bezet zodra één agenda hem bezet heeft; kan één agenda niet gelezen worden, dan is de status `unknown`.
+Nights the owner closes in the room calendar are always unavailable, also with a live connection. With several iCal calendars, a night is taken as soon as one calendar has it taken. If one calendar cannot be read, the status is `unknown`.
 
-Gesloten nachten zijn als iCal te exporteren (`/api/public/calendar/<property>/<unit>.ics?key=…`, link in het dashboard) zodat Airbnb of Booking.com ze kan importeren. Geïmporteerde agenda's worden bewust niet opnieuw geëxporteerd, om lussen tussen platforms te voorkomen.
+Closed nights can be exported as iCal (`/api/public/calendar/<property>/<unit>.ics?key=…`, link in the dashboard) so that Airbnb or Booking.com can import them. Imported calendars are deliberately not exported again, to prevent loops between platforms.
 
-## 1. Live beschikbaarheid
+## 1. Live availability
 
 ```
 GET {baseUrl}/availability?unit={externalRef}&checkin=YYYY-MM-DD&checkout=YYYY-MM-DD&adults=2&children=0
-Authorization: Bearer {apiKey}        (optioneel)
+Authorization: Bearer {apiKey}        (optional)
 Accept: application/json
 ```
 
-Antwoord (binnen 8 seconden):
+Response (within 8 seconds):
 
 ```json
 {
@@ -34,36 +36,36 @@ Antwoord (binnen 8 seconden):
 }
 ```
 
-- `available` is verplicht. Als `nightly` niet voor iedere nacht een bedrag geeft, gebruikt INNLI het basistarief en markeert de prijs als indicatief.
-- Alleen `EUR` wordt ondersteund.
-- Bij een fout of time-out wordt de status `unknown`; INNLI doet dan geen aanbod op basis van aannames.
+- `available` is required. If `nightly` does not give an amount for every night, INNLI uses the base rate and marks the price as indicative.
+- Only `EUR` is supported.
+- On an error or timeout the status becomes `unknown`. INNLI then makes no offer based on assumptions.
 
-`src/demo/engine.ts` is een werkende referentie-implementatie.
+`src/demo/engine.ts` is a working reference implementation.
 
-## 2. Boekingslink (deeplink)
+## 2. Booking link (deep link)
 
-Sjabloon met placeholders, bijvoorbeeld:
+A template with placeholders, for example:
 
 ```
 https://boeken.jouw-bnb.nl/?arrival={checkin}&departure={checkout}&adults={adults}&children={children}&room={unit}&ref={ref}
 ```
 
-`{checkin} {checkout} {adults} {children} {dogs} {unit} {ref}` — `{unit}` is de `externalRef` van de kamer. Zonder `{ref}` voegt INNLI `innli_ref=<ref>` toe. Alle waarden zijn URL-gecodeerd.
+`{checkin} {checkout} {adults} {children} {dogs} {unit} {ref}`: `{unit}` is the room's `externalRef`. Without `{ref}`, INNLI adds `innli_ref=<ref>`. All values are URL-encoded.
 
-## 3. Boekingen terugmelden
+## 3. Reporting bookings back
 
-Een boeking telt alleen als bevestigd wanneer de accommodatie die terugmeldt.
+A booking only counts as confirmed when the accommodation reports it back.
 
 ```
 POST {innli}/api/conversions
 Content-Type: application/json
-X-Innli-Signature: hex(HMAC-SHA256(webhookSecret, rauwe body))
+X-Innli-Signature: hex(HMAC-SHA256(webhookSecret, raw body))
 
 { "propertyId": "prop_…", "ref": "<innli_ref>", "bookingReference": "PMS-123", "amount": 251.60 }
 ```
 
-- `webhookSecret` staat in het dashboard onder *Boeking & gegevens*.
-- Dubbele meldingen (zelfde `bookingReference`) worden genegeerd: `{"recorded": false}`.
-- Stuur geen persoonsgegevens van gasten mee.
+- `webhookSecret` is in the dashboard under *Booking & details*.
+- Duplicate reports (same `bookingReference`) are ignored: `{"recorded": false}`.
+- Do not send any personal data of guests.
 
-De WordPress-plugin doet dit met `[innli_conversion]` of `do_action('innli_report_booking', $boekingsnummer, $bedrag)`.
+The WordPress plugin does this with `[innli_conversion]` or `do_action('innli_report_booking', $boekingsnummer, $bedrag)`.

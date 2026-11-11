@@ -1,78 +1,78 @@
-# INNLI voor hotels en drukke accommodaties
+# INNLI for hotels and busy properties
 
-INNLI begon bij B&B's, maar werkt net zo goed voor een hotel met honderden kamers. Deze handleiding legt uit wat er voor hotels bij komt en hoe je het instelt. Alles werkt ook voor een B&B: wie het niet nodig heeft, merkt er niets van.
+INNLI started with B&Bs, but it works just as well for a hotel with hundreds of rooms. This guide explains what INNLI adds for hotels and how to set it up. Everything also works for a B&B; if you do not need it, you will not notice it.
 
-Probeer het met het voorbeeldhotel: `npm run demo` start INNLI met **Hotel Het Spaarne** (48 kamers in vier kamertypes, twee tariefplannen, direct boeken en een FAQ). De sleutels staan in `data/demo-credentials.json`.
+Try it with the sample hotel: `npm run demo` (or `npm run demo:intl`) starts INNLI with **Hotel Het Spaarne**: 48 rooms in four room types, two rate plans, instant booking and a FAQ. The keys are in `data/demo-credentials.json`.
 
-## Kamertypes met meerdere kamers
+## Room types with several rooms
 
-Een hotel verkoopt geen losse kamers maar kamertypes: "Standaard tweepersoonskamer, 24 kamers".
+A hotel does not sell single rooms but room types, such as "Standard double, 24 rooms".
 
-- **Instellen:** Dashboard → *Kamers* → **Aantal kamers van dit type**.
-- **Beschikbaarheid** telt per nacht hoeveel kamers bezet zijn: bevestigde boekingen, lopende aanvragen en tijdelijke reserveringen van agents. Zijn ze allemaal bezet, dan is het type uitverkocht.
-- **Kamerkalender:** het kleine getal per dag is het aantal vrije kamers. Klik op een dag om de verkoop voor die nacht te stoppen (stop-sell).
-- **Groepen:** zes personen krijgen bijvoorbeeld 3 × Standaard. Agents zien `roomsOfThisType` en `roomsLeft` en vragen met `rooms` om meerdere kamers tegelijk (tot 10 per boeking).
-- **Agenda's (iCal):** bij een type met meerdere kamers telt elke boeking in de feed als één bezette kamer.
+- **Set it up:** Dashboard → *Rooms* → **Number of rooms of this type**.
+- **Availability** counts, per night, how many rooms are taken: confirmed bookings, pending requests and short holds by agents. When all are taken, the type is sold out.
+- **Room calendar:** the small number on each day is the number of free rooms. Click a day to stop selling that night (stop-sell).
+- **Groups:** six people get, for example, 3 × Standard. Agents see `roomsOfThisType` and `roomsLeft`, and ask for several rooms at once with `rooms` (up to 10 per booking).
+- **Calendars (iCal):** for a type with several rooms, each booking in the feed counts as one taken room.
 
-## Tariefplannen
+## Rate plans
 
-Naast je standaardprijs kun je tot tien tariefplannen maken (Dashboard → *Boeking & gegevens* → *Tariefplannen*). Een plan heeft:
+Next to your standard rate you can create up to ten rate plans (Dashboard → *Booking & details* → *Rate plans*). A plan has:
 
-- een **prijsverschil** in procenten, bijvoorbeeld −12% voor niet-restitueerbaar of +14% inclusief ontbijt;
-- **restitueerbaar ja/nee**, met eigen annuleringsvoorwaarden;
-- optioneel **ontbijt inbegrepen**.
+- a **price difference** in percent, for example −12% for non-refundable or +14% with breakfast;
+- **refundable yes/no**, with its own cancellation conditions;
+- optionally **breakfast included**.
 
-Agents krijgen bij elke prijs de lijst `ratePlanOptions`: hetzelfde verblijf in elk plan, met totaalprijs en voorwaarden. De gast kiest; de agent vraagt de prijs op met `ratePlanId`. Op de verblijfspagina kiest de gast het tarief in het formulier. Het gekozen plan en de voorwaarden komen in het ondertekende boekingsdossier.
+With every price, agents get `ratePlanOptions`: the same stay in every plan, with the total and the conditions. The guest chooses, and the agent asks for that price with `ratePlanId`. On the stay page the guest picks the rate in the form. The chosen plan and its conditions go into the signed booking record.
 
-## De antwoord-assistent
+## The answer assistant
 
-Drukke accommodaties krijgen veel dezelfde vragen. De antwoord-assistent beantwoordt ze meteen, in het Nederlands, Engels, Duits of Frans. Mag de hond mee? Is er parkeerplaats? Is er een lift?
+Busy properties get the same questions over and over. The answer assistant answers them straight away, in English, Dutch, German or French. Can we bring the dog? Is there parking? Is there a lift?
 
-- **Waar de antwoorden vandaan komen:** alleen uit gegevens die je zelf hebt bevestigd, en uit vragen die je eerder beantwoordde en als veelgestelde vraag publiceerde. Er zit geen taalmodel in en er wordt niets verzonnen.
-- **Wat niet bekend is**, komt gewoon bij jou terecht. Kan de assistent een deel beantwoorden, dan staat dat deel al klaar als concept onder de vraag. Jij vult de rest aan.
-- **Agents** gebruiken de tool `answer_question`, of krijgen bij `ask_host` meteen antwoord als de assistent het weet.
-- **Gasten** gebruiken het vak *Vraag het ons* op de verblijfspagina.
-- **Uitzetten:** Dashboard → *Regels voor aanvragen* → *Antwoord-assistent*.
+- **Where the answers come from:** only the details you confirmed yourself, and questions you answered before and published as a FAQ. No language model is involved and nothing is made up.
+- **What is not known** still comes to you. If the assistant can answer part of a question, that part is ready as a draft under the question. You add the rest.
+- **Agents** use the `answer_question` tool, or get the answer straight away from `ask_host` when the assistant knows it.
+- **Guests** use the *Ask us* box on the stay page.
+- **To turn it off:** Dashboard → *Rules for requests* → *Answer assistant*.
 
-## Wijzigen in plaats van annuleren
+## Changing instead of cancelling
 
-Wil een gast andere data, een andere kamer of meer kamers, dan gebruikt de agent `modify_request`.
+When a guest wants other dates, another room or more rooms, the agent uses `modify_request`.
 
-- **Lopende aanvraag:** die wordt meteen vervangen.
-- **Bevestigde boeking:** die blijft gewoon staan tot jij (of direct boeken) de wijziging bevestigt. Pas dan wordt de oude boeking vervangen. De gast zit dus nooit zonder kamer.
+- **A pending request** is replaced right away.
+- **A confirmed booking** stays valid until you (or instant booking) confirm the change. Only then is the old booking replaced, so the guest is never left without a room.
 
-In het dashboard staat bij de nieuwe aanvraag het label *Wijziging*.
+In the dashboard the new request carries the label *Change*.
 
-## Kamers kort vasthouden
+## Holding rooms for a moment
 
-Met `get_quote({ hold: true })` houdt een agent de kamers 15 minuten vast terwijl de gast beslist. Stuurt de agent binnen die tijd een aanvraag, dan gaat de reservering daarin over. Zo verkoopt een druk hotel niet twee keer de laatste kamer.
+With `get_quote({ hold: true })` an agent holds the rooms for 15 minutes while the guest decides. If the agent sends a request within that time, the hold carries over into the request. That way a busy hotel never sells its last room twice.
 
-## Personeel
+## Staff
 
-Geef iedereen een eigen sleutel (Dashboard → *Boeking & gegevens* → *Personeel*):
+Give everyone their own key (Dashboard → *Booking & details* → *Staff*):
 
-| Rol | Mag |
+| Role | May |
 |---|---|
-| **Receptie** | Aanvragen accepteren en afwijzen, vragen beantwoorden, kamerkalender (stop-sell), beoordelingen, overzicht. Ziet geen geheimen. |
-| **Manager** | Alles van de receptie, plus kamers, prijzen, tariefplannen, gegevens en de webhook. |
-| **Eigenaar** | Alles, plus sleutels voor personeel, licentie en back-ups. |
+| **Reception** | Accept and decline requests, answer questions, room calendar (stop-sell), reviews, overview. Sees no secrets. |
+| **Manager** | Everything reception may do, plus rooms, prices, rate plans, details and the webhook. |
+| **Owner** | Everything, plus staff keys, the licence and backups. |
 
-Bij elke beslissing staat wie die nam ("afgehandeld door Noor"). Vertrekt iemand, dan trek je de sleutel in; die werkt dan meteen niet meer.
+Every decision shows who made it ("handled by Noor"). When someone leaves, revoke their key; it stops working at once.
 
-## Koppeling met je PMS of channel manager (webhook)
+## Connecting your PMS or channel manager (webhook)
 
-INNLI stuurt elke gebeurtenis meteen naar een adres van jou: een PMS, een channel manager, of Zapier/Make. Stel het in onder Dashboard → *Boeking & gegevens* → *Koppeling met je eigen systeem*.
+INNLI sends every event straight to an address of yours: a PMS, a channel manager, or Zapier/Make. Set it up under Dashboard → *Booking & details* → *Connection to your own system*.
 
-| Gebeurtenis | Wanneer |
+| Event | When |
 |---|---|
-| `request.created` | Nieuwe aanvraag, wacht op jou |
-| `booking.confirmed` | Bevestigd, door jou of direct |
-| `request.declined` | Afgewezen |
-| `request.expired` | Niet op tijd beantwoord |
-| `request.cancelled` | Aanvraag ingetrokken of vervangen door een wijziging |
-| `booking.cancelled` | Bevestigde boeking geannuleerd of vervangen door een wijziging |
+| `request.created` | New request, waiting for you |
+| `booking.confirmed` | Confirmed, by you or instantly |
+| `request.declined` | Declined |
+| `request.expired` | Not answered in time |
+| `request.cancelled` | Request withdrawn, or replaced by a change |
+| `booking.cancelled` | Confirmed booking cancelled, or replaced by a change |
 
-Een bericht ziet er zo uit:
+A message looks like this:
 
 ```json
 {
@@ -91,26 +91,26 @@ Een bericht ziet er zo uit:
 }
 ```
 
-**Controleren dat het echt van INNLI komt:**
+**Checking that a message really comes from INNLI:**
 
-1. Lees de header: `x-innli-signature: t=<unix-tijd>,v1=<hex>`.
-2. Bereken HMAC-SHA256 over `<t>.<ruwe body>` met het geheim uit het dashboard.
-3. Vergelijk de uitkomst met `v1`. Weiger berichten met een `t` die meer dan 5 minuten oud is.
+1. Read the header: `x-innli-signature: t=<unix time>,v1=<hex>`.
+2. Compute HMAC-SHA256 over `<t>.<raw body>` with the secret shown in the dashboard.
+3. Compare the result with `v1`. Reject messages whose `t` is more than 5 minutes old.
 
-`unitRef` is de *Code in boekingssysteem* van het kamertype; daarmee koppel je aan je PMS.
+`unitRef` is the room type's *Code in booking system*; use it to map to your PMS.
 
-**Afleveren:** INNLI wacht maximaal 10 seconden op antwoord. Bij een fout probeert INNLI het na 5 seconden en na 1 minuut opnieuw. De laatste aflevering of fout staat in het dashboard. Een kapotte webhook houdt nooit een boeking tegen. Met de knop *Testbericht sturen* controleer je de koppeling.
+**Delivery:** INNLI waits up to 10 seconds for an answer. On an error it retries after 5 seconds and after 1 minute. The last delivery or error is shown in the dashboard. A broken webhook never blocks a booking. Use *Send test message* to check the connection.
 
-## Grote hotels in de gids
+## Large hotels in the guide
 
-De openbare INNLI-gids neemt elk verblijf gratis op, ook hotels met honderden kamers.
+The public INNLI guide lists every stay for free, including hotels with hundreds of rooms.
 
-## Snelheid
+## Speed
 
-Gemeten met `npm run bench`, voor een hotel van 300 kamers met 10.000 boekingen (zie [prestaties.md](prestaties.md)):
+Measured with `npm run bench` for a 300-room hotel with 10,000 bookings:
 
-| Wat | Tijd |
+| What | Time |
 |---|---:|
-| Beschikbaarheid | ~1 ms |
-| Prijs voor 3 kamers met tariefplan | ~1 ms |
-| Kamerkalender van 120 dagen | ~2,5 ms |
+| Availability | ~1 ms |
+| Price for 3 rooms with a rate plan | ~1 ms |
+| 120-day room calendar | ~2.5 ms |

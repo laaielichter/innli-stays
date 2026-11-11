@@ -1,201 +1,219 @@
 # Changelog
 
-## 2.1.0 — 2026-11-11
+Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
-Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies volgens UCP. Het onderzoek naar wat anderen bieden en wat nog open ligt, staat in [docs/agents-2.1.md](docs/agents-2.1.md).
+## 2.1.0 - 2026-11-11
 
-### Agents bewijzen wie ze zijn
-- **Web Bot Auth** (HTTP Message Signatures, RFC 9421): een platform ondertekent zijn verzoeken met een sleutel op zijn eigen domein. INNLI controleert dat, zonder account of gedeeld geheim.
-- Een bewezen platform krijgt een **eigen limiet** van 600 verzoeken per minuut.
-- Het bewezen domein staat in het **ondertekende boekingsdossier** (`consent.agentIdentity`, `consent.agentDomain`).
-- De antwoordheader `x-innli-agent-identity` zegt hoe de beller is herkend, of waarom een handtekening niet klopte.
-- Nieuwe regel voor eigenaren: **Alleen herkenbare agents**. Anonieme agents kunnen dan zoeken en prijzen opvragen, maar niet aanvragen (`AGENT_IDENTITY_REQUIRED`).
-- INNLI zet zijn eigen sleutels op `/.well-known/http-message-signatures-directory` en ondertekent statusberichten ook met RFC 9421.
+Knowing which agent is calling, holding rooms without abuse, and booking sessions that follow UCP. The research into what others offer and what is still unsolved is in [docs/agents-2.1.md](docs/agents-2.1.md).
 
-### Via de INNLI-gids
-- De gids controleert handtekeningen van agents en **ondertekent elk verzoek dat hij doorgeeft**, met de naam, het bewezen domein en een gehasht kenmerk van de beller.
-- Een installatie vertrouwt dat alleen van haar eigen gids (`INNLI_GIDS_URL`). Een bewezen platform blijft zo bewezen, en limieten tellen per beller in plaats van voor de hele gids.
-- Nieuw voor wie een gids draait: `GIDS_PUBLIC_URL`. De sleutel van de gids staat naast het gegevensbestand (`gids.signing-key.pem`).
+### Agents prove who they are
+- **Web Bot Auth** (HTTP Message Signatures, RFC 9421): a platform signs its requests with a key on its own domain. INNLI verifies that, without an account or a shared secret.
+- A verified platform gets its **own limit** of 600 requests a minute.
+- The verified domain is in the **signed booking record** (`consent.agentIdentity`, `consent.agentDomain`).
+- The `x-innli-agent-identity` response header says how the caller was recognised, or why a signature was not valid.
+- New rule for owners: **Identified agents only**. Anonymous agents can then search and ask for prices, but cannot send requests (`AGENT_IDENTITY_REQUIRED`).
+- INNLI publishes its own keys at `/.well-known/http-message-signatures-directory` and signs status callbacks with RFC 9421 too.
 
-### Vasthouden zonder misbruik
-- **Limiet op open aanvragen** per houder en per accommodatie: 2 voor een anoniem adres, 25 voor een herkenbare agent, 3 per e-mailadres van een gast (`LIMIT_REACHED`).
-- Een anonieme agent kan niet meer dan de helft van de kamers tegelijk vasthouden.
-- Anonieme agents worden **per adres** geteld. Voorheen deelden ze één limiet en kon één beller de rest blokkeren.
-- **Kort vasthouden** (`get_quote` met `hold`, UCP-sessies) telt ook per beller: 3 tegelijk voor een anoniem adres, 60 voor een herkenbare agent.
-- Nieuw in het dashboard: **Agents en hun gedrag**. Per agent zie je prijsopvragen, aanvragen, boekingen en wat verviel of werd geannuleerd.
+### Through the INNLI guide
+- The guide verifies agents' signatures and **signs every request it passes on**, with the caller's name, verified domain and a hashed identifier.
+- An installation trusts this only from its own guide (`INNLI_GIDS_URL`). A verified platform stays verified this way, and limits count per caller instead of for the whole guide.
+- New for anyone running a guide: `GIDS_PUBLIC_URL`. The guide's key is stored next to the data file (`gids.signing-key.pem`).
 
-### Boekingssessies volgens UCP (concept)
-- Profiel op `/.well-known/ucp` en een REST-adres op `/ucp/v1` met `booking-sessions`: aanmaken, lezen, bijwerken, afronden en annuleren.
-- Totalen in de kleinste munteenheid, betaaltermijnen (aanbetaling, rest ter plaatse) en annuleringsvoorwaarden met `refundability`.
-- Afronden stuurt dezelfde aanvraag als `request_booking`, met dezelfde toestemmingshash en hetzelfde dossier.
-- De standaard is een concept: `INNLI_UCP_VERSION` stelt de versie in.
+### Holds without abuse
+- **Limit on open requests** per holder and per property: 2 for an anonymous address, 25 for an identified agent, 3 per guest e-mail address (`LIMIT_REACHED`).
+- An anonymous agent cannot hold more than half of the rooms at once.
+- Anonymous agents are counted **per address**. Before, they shared one limit and one caller could block the rest.
+- **Short holds** (`get_quote` with `hold`, UCP sessions) also count per caller: 3 at a time for an anonymous address, 60 for an identified agent.
+- New in the dashboard: **Agents and their behaviour**. Per agent you see quotes, requests, bookings and what expired or was cancelled.
 
-### Betrouwbaar opnieuw proberen
-- **`Idempotency-Key`-header** bij REST-tools en UCP: een herhaald verzoek krijgt het eerste antwoord (`Idempotent-Replayed: true`); dezelfde sleutel met andere inhoud geeft `409`. Bij `request_booking` wordt de sleutel ook bij de aanvraag bewaard.
+### Booking sessions that follow UCP (draft)
+- A profile at `/.well-known/ucp` and a REST address at `/ucp/v1` with `booking-sessions`: create, read, update, complete and cancel.
+- The same five operations as MCP tools at `/ucp/mcp`, for platforms that speak UCP over MCP.
+- Totals in the smallest currency unit, payment terms (deposit, the rest on site) and cancellation conditions with `refundability`.
+- Completing sends the same request as `request_booking`, with the same consent hash and the same record.
+- The standard is a draft: `INNLI_UCP_VERSION` sets the version.
 
-### Zelf controleren
-- **`npx innli-conformance <adres>`** (of `npm run conformance -- <adres>`): 13 controles die alleen lezen en niets boeken. Bedoeld voor agentplatforms, eigenaren en iedereen die een installatie wil toetsen.
+### Reliable retries
+- **`Idempotency-Key` header** for REST tools and UCP: a repeated request gets the first answer (`Idempotent-Replayed: true`); the same key with different content gives `409`. For `request_booking` the key is also stored with the request.
 
-### Annuleren
-- Elke offerte heeft **`cancellation`**: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar alleen een tekst heeft.
+### Check it yourself
+- **`npx innli-conformance <address>`** (or `npm run conformance -- <address>`): 13 checks that only read and book nothing. Meant for agent platforms, owners and anyone who wants to test an installation.
 
-### Let op bij overstappen van 2.0
-- `LIMIT_REACHED` geeft via REST nu status 429 in plaats van 400.
-- Een anonieme agent kan per accommodatie nog 2 aanvragen tegelijk open hebben. Platforms die voor veel gasten werken: onderteken je verzoeken of gebruik een sleutel.
-- Naast de gegevens staat een nieuw bestand `innli.booking-sessions.jsonl`. Neem het mee in je back-up.
+### Cancelling
+- Every quote has **`cancellation`**: `refundability`, `freeUntil` and what cancelling costs today. `unknown` if the owner only has a text.
 
-## 2.0.0 — 2026-10-19
+### For agent builders
+- `agent-kit/examples/`: a Web Bot Auth signer and the whole booking flow over REST, without dependencies.
+- The idempotency cache now runs after identification and rate limiting.
+- A signed record always names its key: the installation id, or the key's thumbprint.
+- New: [SECURITY.md](SECURITY.md), with how to report a vulnerability and how to run INNLI safely.
 
-Agents en accommodaties vinden elkaar. We zochten uit waar het tussen AI-agents en accommodaties het meest misgaat, en losten de tien grootste knelpunten op. Het onderzoek en de bronnen staan in [docs/agents-2.0.md](docs/agents-2.0.md).
+### Hardened after an independent review
+- A signature only counts for this installation's own public host (`INNLI_PUBLIC_URL`), never for a host name the caller sends. A signed `Content-Digest` is compared with the body.
+- Requests relayed by the guide must be single use (nonce), valid for at most five minutes, and signed with method and path.
+- `modify_request` counts as a hold and records its holder; `ask_host`, `join_waitlist` and `report_data_issue` follow the *identified agents only* rule too.
+- Idempotency keys are scoped to the caller, so two anonymous agents never get each other's request.
+- UCP: a session opened by an identified caller is only visible to that caller; a failed update leaves the session and its holds untouched; per-stay totals add up exactly, also with discounts; rooms on different rate plans get their own cancellation terms.
+- Short holds are counted per room.
+- New: `INNLI_TRUST_PROXY` (default `1`). Set it to `0` when the installation is reachable directly from the internet. For a guide: `GIDS_TRUST_PROXY`.
 
-### Vraag en aanbod
-- **Verblijfswensen** (`post_stay_wish`, `get_wish_offers`, `withdraw_stay_wish`):
-  - een agent laat een anonieme wens achter, zonder naam of contactgegevens;
-  - passende verblijven antwoorden meteen;
-  - eigenaren zien de wens in de nieuwe tab *Gezocht* en doen een aanbieding, eventueel met een eenmalige korting;
-  - de agent krijgt bij elke aanbieding een verse prijs, en via `callbackUrl` een ondertekend bericht;
-  - via de INNLI-gids gaat één wens naar alle installaties in de buurt.
+### Note when moving from 2.0
+- `LIMIT_REACHED` now gives status 429 over REST instead of 400.
+- An anonymous agent can have only 2 requests open at a time per property. Platforms that work for many guests: sign your requests or use a key.
+- There is a new file next to the data, `innli.booking-sessions.jsonl`. Include it in your backup.
 
-### Sneller en zuiniger voor agents
-- **Core-profiel** (`/mcp?profile=core`): 8 tools en korte instructies. Dat is ongeveer 49% minder context per beurt.
-- **`detail: "brief"`:** dezelfde feiten in ongeveer 70% minder tokens.
-- **Compacte JSON.**
-- **`npm run measure`** toont de cijfers.
-- **`nextActions`:** de volgende aanroepen met ingevulde argumenten, met wat er nog van de gast nodig is.
-- **`freshness`:** hoe lang een antwoord betrouwbaar is, en hoe oud de onderliggende agenda is.
-- **`timeBudgetMs` voor `search_stays`:** trage boekingssystemen houden de rest niet meer op.
+## 2.0.0 - 2026-10-19
 
-### Betrouwbaar
-- **Getypeerde fouten:** `code`, `retryable`, `retryAfterSeconds`, `hint` en `nextTools`, in MCP en REST. REST geeft nu passende HTTP-statussen; `error` blijft de leesbare melding.
-- **RateLimit-headers** bij elk agentantwoord, en een gestructureerde 429.
-- **Toestemming met een hash:**
-  - elke offerte heeft `consent.summary` en `consent.hash`;
-  - zijn de voorwaarden intussen veranderd, dan wordt er niets verstuurd (`TERMS_CHANGED`);
-  - wat de gast goedkeurde staat in het ondertekende dossier.
+Agents and stays find each other. We looked into where things go wrong most between AI agents and accommodations, and solved the ten biggest problems. The research and the sources are in [docs/agents-2.0.md](docs/agents-2.0.md).
 
-### Vertrouwen en veiligheid
-- **Websiteverificatie** met een metatag of een bestand. De WordPress-plugin (2.0.0) zet de tag er vanzelf op.
-- **Vertrouwensblok** (`trust`) bij elk resultaat: niveau, geverifieerd domein, echte beoordelingen, waarschuwingen en veilig betalen.
-- **Ondertekend paspoort:** te controleren met de sleutel in `/.well-known/innli.json`.
-- **Bescherming tegen verborgen instructies:**
-  - INNLI haalt instructie-achtige zinnen en onzichtbare tekens weg uit teksten van eigenaren en gasten, voordat een agent ze leest;
-  - agents zien wat er is weggehaald (`contentSafety`);
-  - eigenaren zien welke zinnen ze moeten herschrijven.
+### Supply and demand
+- **Stay wishes** (`post_stay_wish`, `get_wish_offers`, `withdraw_stay_wish`):
+  - an agent leaves an anonymous wish, without a name or contact details;
+  - stays that fit answer straight away;
+  - owners see the wish in the new *Wanted* tab and make an offer, optionally with a one-time discount;
+  - the agent gets a fresh price with every offer, and a signed message through `callbackUrl`;
+  - through the INNLI guide, one wish goes to all installations nearby.
 
-### Vindbaarheid
-- `/.well-known/agent-card.json`, `/.well-known/mcp.json` en `/llms.txt`, op elke installatie en op de gids.
-- `agent-kit/` met een Claude-plugin (skill `find-stay`) en `server.json` voor het MCP-register.
+### Faster and leaner for agents
+- **Core profile** (`/mcp?profile=core`): 8 tools and short instructions. That is about 49% less context per turn.
+- **`detail: "brief"`:** the same facts in about 70% fewer tokens.
+- **Compact JSON.**
+- **`npm run measure`** shows the numbers.
+- **`nextActions`:** the next calls with prefilled arguments, with what is still needed from the guest.
+- **`freshness`:** how long an answer can be relied on, and how old the underlying calendar is.
+- **`timeBudgetMs` for `search_stays`:** slow booking systems no longer hold up the rest.
 
-### Onderzoek
-- INNLI is opgezet als open onderzoeksproject ([research/](research/README.md)), met zes onderzoeksvragen, meetmethodes, eerste resultaten en conceptaanvragen voor fondsen.
-- Een gelabelde testset tegen prompt-injectie (`npm run research:injection`): 30 van de 30 aanvallen gevangen, 0 van de 40 gewone zinnen geknipt.
-- De evaluatie vond twee fouten in de tekstfilter, die nu zijn opgelost:
-  - een markdown-link naar een kwaadaardige site werd gemist;
-  - getallen en links in geknipte teksten raakten verminkt ("8.00" werd "8. 00").
+### Reliable
+- **Typed errors:** `code`, `retryable`, `retryAfterSeconds`, `hint` and `nextTools`, in MCP and REST. REST now gives fitting HTTP statuses; `error` stays the readable message.
+- **RateLimit headers** on every agent answer, and a structured 429.
+- **Consent with a hash:**
+  - every quote has `consent.summary` and `consent.hash`;
+  - if the terms have changed in the meantime, nothing is sent (`TERMS_CHANGED`);
+  - what the guest approved is in the signed record.
+
+### Trust and safety
+- **Website verification** with a meta tag or a file. The WordPress plugin (2.0.0) adds the tag automatically.
+- **Trust block** (`trust`) with every result: level, verified domain, real reviews, warnings and safe payment.
+- **Signed passport:** can be verified with the key in `/.well-known/innli.json`.
+- **Protection against hidden instructions:**
+  - INNLI removes instruction-like sentences and invisible characters from texts by owners and guests, before an agent reads them;
+  - agents see what was removed (`contentSafety`);
+  - owners see which sentences they need to rewrite.
+
+### Discoverability
+- `/.well-known/agent-card.json`, `/.well-known/mcp.json` and `/llms.txt`, on every installation and on the guide.
+- `agent-kit/` with a Claude plugin (skill `find-stay`) and `server.json` for the MCP registry.
+
+### Research
+- INNLI is set up as an open research project ([research/](research/README.md)), with six research questions, measurement methods, first results and draft applications for funds.
+- A labelled test set against prompt injection (`npm run research:injection`): 30 of the 30 attacks caught, 0 of the 40 ordinary sentences cut.
+- The evaluation found two bugs in the text filter, which are now fixed:
+  - a markdown link to a malicious site was missed;
+  - numbers and links in cut texts got mangled ("8.00" became "8. 00").
 
 ### Open source
-- INNLI is nu open source onder de [GNU AGPL-3.0](LICENSE), met een [commerciële licentie](COMMERCIAL.md) voor wie INNLI gesloten wil inbouwen. De agent-kit is MIT, de WordPress-plugin blijft GPL. Bijdragen vallen onder de [CLA](CLA.md).
-- De openbare INNLI-gids neemt elke installatie gratis op. Een licentiesleutel is niet meer nodig.
-- Wie een eigen gids draait, kan met `GIDS_LICENTIE_VEREIST=1` nog steeds alleen installaties met een sleutel opnemen.
+- INNLI is now open source under the [GNU AGPL-3.0](LICENSE), with a [commercial licence](COMMERCIAL.md) for anyone who wants to build INNLI into closed software. The agent-kit is MIT, the WordPress plugin stays GPL. Contributions fall under the [CLA](CLA.md).
+- The public INNLI guide lists every installation for free. A licence key is no longer needed.
+- Anyone running their own guide can still list only installations with a key, with `GIDS_LICENTIE_VEREIST=1`.
 
-### Let op bij overstappen van 1.x
-- Er zijn 19 tools in plaats van 16.
-- Foutresultaten hebben nu ook `structuredContent.error`.
-- REST-fouten hebben een passende status in plaats van altijd 400: 404, 409, 410, 429 en meer.
-- Tekstantwoorden van MCP zijn compacte JSON.
+### Note when moving from 1.x
+- There are 19 tools instead of 16.
+- Error results now also have `structuredContent.error`.
+- REST errors have a fitting status instead of always 400: 404, 409, 410, 429 and more.
+- Text answers from MCP are compact JSON.
 
-## 1.1.0 — 2026-10-06
+## 1.1.0 - 2026-10-06
 
-15 nieuwe functies.
+15 new features.
 
-### Meer boekingen
-- **Opties met prijs:** fietshuur, lunchpakket, late check-out, kinderbedje.
-  - De prijs geldt per verblijf, nacht, persoon, persoon per nacht of kamer per nacht, met een maximum.
-  - Te kiezen in `get_quote`, in de aanvraag en op de verblijfspagina.
-- **Kortingscodes:** geheim, niet hoofdlettergevoelig, met einddatum, minimum aantal nachten en maximaal aantal keer gebruiken.
-- **Aankomstregels:** aankomstdagen per seizoen of per kamer (bijv. zaterdag tot zaterdag) en een toeslag voor één nacht.
-- **Alternatieven als het vol is:** vrije verblijven in de buurt (eerst binnen 30 km, dan in het land), met prijs.
-- **Eerlijke schaarste:** `fewLeft` als er nog 2 of minder kamers zijn, en het aantal checks door agents voor dezelfde data.
+### More bookings
+- **Priced options:** bike rental, packed lunch, late check-out, cot.
+  - The price applies per stay, night, person, person per night or room per night, with a maximum.
+  - They can be chosen in `get_quote`, in the request and on the stay page.
+- **Discount codes:** secret, not case-sensitive, with an end date, a minimum number of nights and a maximum number of uses.
+- **Arrival rules:** arrival days per season or per room (e.g. Saturday to Saturday) and a supplement for one night.
+- **Alternatives when full:** available stays nearby (first within 30 km, then in the country), with a price.
+- **Honest scarcity:** `fewLeft` when 2 or fewer rooms are left, and the number of checks by agents for the same dates.
 
-### Vertrouwen
-- **Beoordelingen per onderdeel:** schoon, ontbijt, rust, ligging, prijs/kwaliteit en gastheer/-vrouw. De gemiddelden staan in de details, de zoekresultaten, de vergelijking en op de verblijfspagina.
-- **Annuleringskosten uitgerekend:**
-  - een schema bij elke prijs;
-  - de kosten bij nu annuleren in `check_status` en `cancel_request`;
-  - niet-restitueerbaar kost 100%.
-- **Huisregels en duurzaamheid als gegevens:**
-  - roken, feesten, stiltetijden en minimumleeftijd;
-  - keurmerk, groene stroom, laadpaal en bereikbaar zonder auto;
-  - nieuwe zoekeisen, en de antwoord-assistent kent ze.
+### Trust
+- **Reviews per aspect:** cleanliness, breakfast, quiet, location, value for money and host. The averages are in the details, the search results, the comparison and on the stay page.
+- **Cancellation costs calculated:**
+  - a schedule with every price;
+  - the cost of cancelling now in `check_status` and `cancel_request`;
+  - non-refundable costs 100%.
+- **House rules and sustainability as data:**
+  - smoking, parties, quiet hours and minimum age;
+  - eco-label, green electricity, charging point and reachable without a car;
+  - new search requirements, and the answer assistant knows them.
 
-### Gemak voor de eigenaar
-- **Foto's uploaden:**
-  - JPEG, PNG of WebP, gecontroleerd op de inhoud, tot 6 MB;
-  - waarschuwing bij een vage beschrijving.
-- **Agenda en export:** een geheime boekingsagenda (iCal) voor Google, Apple of Outlook, en een CSV-export voor Excel, beveiligd tegen formules.
-- **Cijfers:** bezetting per maand en omzet per kanaal (agents, verblijfspagina, eigen website).
-- **Back-ups:**
-  - automatisch, dagelijks naar een tweede map (`INNLI_BACKUP_DIR`, `INNLI_BACKUP_KEEP`);
-  - terugzetten vanuit het dashboard.
+### Convenience for the owner
+- **Photo upload:**
+  - JPEG, PNG or WebP, checked on the content, up to 6 MB;
+  - a warning for a vague description.
+- **Calendar and export:** a secret booking calendar (iCal) for Google, Apple or Outlook, and a CSV export for Excel, protected against formulas.
+- **Figures:** occupancy per month and revenue per channel (agents, stay page, own website).
+- **Backups:**
+  - automatic, daily to a second folder (`INNLI_BACKUP_DIR`, `INNLI_BACKUP_KEEP`);
+  - restore from the dashboard.
 
-### Bereik
-- **Beds24-koppeling (API V2):**
-  - leest live beschikbaarheid, prijzen en minimaal verblijf;
-  - nog te testen met een echt Beds24-account: de API is gebouwd volgens de openbare beschrijving en getest tegen een nagebouwde Beds24.
-- **OAuth 2.1 voor agentplatforms:**
-  - metadata, dynamische registratie en PKCE;
-  - de eigenaar keurt goed als agentsleutels verplicht zijn.
-- **Statusberichten:** `request_booking` neemt een `callbackUrl`; elke statuswijziging gaat daarheen, ondertekend met Ed25519.
-- **Flexibel zoeken over alle verblijven:**
-  - weekend, lang weekend of midweek;
-  - een maximumprijs per nacht.
+### Reach
+- **Beds24 connection (API V2):**
+  - reads live availability, prices and minimum stay;
+  - still to be tested with a real Beds24 account: the API was built from the public description and tested against a mock Beds24.
+- **OAuth 2.1 for agent platforms:**
+  - metadata, dynamic registration and PKCE;
+  - the owner approves when agent keys are required.
+- **Status callbacks:** `request_booking` takes a `callbackUrl`; every status change goes there, signed with Ed25519.
+- **Flexible search across all stays:**
+  - weekend, long weekend or midweek;
+  - a maximum price per night.
 
-## 1.0.1 — 2026-10-06
+## 1.0.1 - 2026-10-06
 
-WordPress-plugin, getest in WordPress 7.1.3:
-- **INNLI-adres:**
-  - Het adres begint leeg in plaats van met een centraal adres dat kopers niet gebruiken.
-  - Zolang het niet is ingevuld, zeggen het dashboard en de pluginpagina wat er moet gebeuren.
-  - Een adres als `https://…/dashboard/` wordt vanzelf opgeschoond.
-- **Verbinding testen:** de instellingenpagina test de verbinding live en zegt waarom die mislukt: adres onbereikbaar, onbekend accommodatie-ID of niet gepubliceerd.
-- **Aanvraagformulier:** groeit en krimpt mee met de inhoud, zonder schuifbalk erin. De verblijfspagina meldt daarvoor haar hoogte aan de website.
-- **`[innli_facts]`:** krijgt een nette opmaak in twee kolommen die het thema volgt.
-- **Pluginlijst:** naast *Deactiveren* staat een link *Instellingen*.
+WordPress plugin, tested in WordPress 7.1.3:
+- **INNLI address:**
+  - The address starts empty instead of with a central address that buyers do not use.
+  - As long as it is not filled in, the dashboard and the plugin page say what needs to be done.
+  - An address like `https://…/dashboard/` is cleaned up automatically.
+- **Connection test:** the settings page tests the connection live and says why it fails: address unreachable, unknown accommodation ID or not published.
+- **Request form:** grows and shrinks with its content, without a scrollbar inside it. For this, the stay page reports its height to the website.
+- **`[innli_facts]`:** gets a tidy two-column layout that follows the theme.
+- **Plugin list:** there is a *Settings* link next to *Deactivate*.
 
-## 1.0.0 — 2026-10-06
+## 1.0.0 - 2026-10-06
 
-Eerste stabiele versie. Licentiesleutels dekken versies die verschijnen binnen hun updateperiode; 1.0.0 is de basis waarop die periode telt.
+First stable version. Licence keys cover versions released within their update period; 1.0.0 is the base from which that period counts.
 
-### Voor agents
-- MCP-server en REST met OpenAPI 3.1. Er zijn 16 tools:
-  - **zoeken en vergelijken:** `search_stays`, `compare_stays`, `get_stay_details`;
-  - **beschikbaarheid:** `check_availability`, `find_available_dates`, `get_availability_calendar`;
-  - **prijs:** `get_quote`, met meerdere kamers, tariefplannen en 15 minuten vasthouden;
-  - **boeken:** `prepare_booking`, `request_booking`, `modify_request`, `cancel_request`, `join_waitlist`;
+### For agents
+- An MCP server and REST with OpenAPI 3.1. There are 16 tools:
+  - **search and compare:** `search_stays`, `compare_stays`, `get_stay_details`;
+  - **availability:** `check_availability`, `find_available_dates`, `get_availability_calendar`;
+  - **price:** `get_quote`, with several rooms, rate plans and a 15-minute hold;
+  - **booking:** `prepare_booking`, `request_booking`, `modify_request`, `cancel_request`, `join_waitlist`;
   - **contact:** `answer_question`, `ask_host`, `report_data_issue`, `check_status`.
-- Elk gegeven heeft een status: bevestigd, niet bevestigd of onbekend. Onbekend wordt nooit ingevuld.
-- Een prijs vermeldt altijd of alle verplichte kosten erin zitten.
-- Boekingsdossiers zijn ondertekend met Ed25519.
-- Eén adres voor alle installaties via de INNLI-gids.
+- Every fact has a status: confirmed, not confirmed or unknown. Unknown is never filled in.
+- A price always states whether all mandatory costs are included.
+- Booking records are signed with Ed25519.
+- One address for all installations through the INNLI guide.
 
-### Voor eigenaren
-- **Dashboard** in het Nederlands en Engels.
-- **Accommodatiepaspoort** en import van gegevens van de eigen website.
-- **Beschikbaarheid:** een eigen kamerkalender, iCal-agenda's of een live boekingssysteem.
-- **Tarieven:** seizoenen, weekendtoeslag, kortingen en tariefplannen.
-- **Aanvragen:** direct bevestigen, een aanbetaling, de wachtlijst en beoordelingen.
-- **Antwoord-assistent:** beantwoordt gastvragen alleen uit bevestigde gegevens en de FAQ.
-- **Verblijfspagina** in vier talen, met *Vraag het ons*.
-- **WordPress-plugin.**
-- **Valuta:** 15 valuta. INNLI rekent nooit om.
+### For owners
+- **Dashboard** in Dutch and English.
+- **Accommodation passport** and import of details from the owner's own website.
+- **Availability:** INNLI's own room calendar, iCal calendars or a live booking system.
+- **Rates:** seasons, a weekend supplement, discounts and rate plans.
+- **Requests:** instant confirmation, a deposit, the waiting list and reviews.
+- **Answer assistant:** answers guest questions only from confirmed details and the FAQ.
+- **Stay page** in four languages, with *Ask us*.
+- **WordPress plugin.**
+- **Currencies:** 15 currencies. INNLI never converts.
 
-### Voor hotels
-- Kamertypes met meerdere kamers en stop-sell.
-- Personeelssleutels voor receptie en manager.
-- Ondertekende webhooks naar een PMS of channel manager.
-- Licentiepakketten Hotel en Hotelgroep.
+### For hotels
+- Room types with several rooms and stop-sell.
+- Staff keys for reception and manager.
+- Signed webhooks to a PMS or channel manager.
+- Licence packages Hotel and Hotel group.
 
-### Verkoop
-- Eenmalige licenties van € 99 tot € 1.499.
-- Een verkooppakket (zip) dat zonder `npm install` draait.
-- Een Docker-image voor x86 en ARM.
+### Sales
+- One-time licences from € 99 to € 1,499.
+- A sales package (zip) that runs without `npm install`.
+- A Docker image for x86 and ARM.

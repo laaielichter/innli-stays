@@ -12,7 +12,7 @@ Everything an agent platform or developer needs to connect an agent to INNLI. Th
 | Plain-text overview for LLMs | `/llms.txt` |
 | Signing key (records, callbacks, passports) | `/.well-known/innli.json` |
 | OAuth 2.1 metadata | `/.well-known/oauth-protected-resource` |
-| UCP profile and lodging booking sessions (draft) | `/.well-known/ucp`, `/ucp/v1/booking-sessions` |
+| UCP profile and lodging booking sessions (draft), REST and MCP | `/.well-known/ucp`, `/ucp/v1/booking-sessions`, `/ucp/mcp` |
 | Key directory (RFC 9421; INNLI also verifies yours) | `/.well-known/http-message-signatures-directory` |
 
 ## Claude plugin
@@ -28,6 +28,18 @@ claude --plugin-dir ./agent-kit/claude-plugin
 
 `server.json` describes INNLI for the MCP registry as `io.github.laaielichter/innli`: the npm package `innli-stays` (stdio, `innli-mcp`) and a remote Streamable HTTP endpoint on any installation.
 
+## Examples
+
+Two small programs without dependencies, to copy into your own agent (`examples/`):
+
+- **`web-bot-auth.mjs`**: sign your requests so a stay knows who is calling. `node agent-kit/examples/web-bot-auth.mjs new-key` makes a key and prints the JWKS to publish; `createSigner({ origin, privateKeyPem }).sign(url)` returns the headers for one request.
+- **`book-a-stay.mjs`**: the whole honest flow over REST: search, facts with their status, an itemised quote, the consent summary, a safe retry and an exact status. It stops before booking unless you pass `--book`.
+
+```bash
+npm run demo:intl                                   # sample stays at http://localhost:3000
+node agent-kit/examples/book-a-stay.mjs "Tuscany"   # add --book to send the request
+```
+
 ## What agents get in 2.1
 
 - **Identity without an account.** Sign your requests with Web Bot Auth (RFC 9421, Ed25519, `tag="web-bot-auth"`, keys at `<your origin>/.well-known/http-message-signatures-directory`). A verified platform gets its own rate limit (600 a minute), may hold more open requests, and is named in the signed booking record. The `x-innli-agent-identity` response header says how you were recognised, or why a signature failed.
@@ -41,7 +53,7 @@ claude --plugin-dir ./agent-kit/claude-plugin
 - **Through the INNLI guide too.** The guide verifies your signature and passes it on, signed, to each installation: you stay verified and your limits are your own.
 - **Conformance check.** `npx innli-conformance https://stay.example` runs 13 read-only checks against any installation.
 
-Details: [docs/en/agents-2.1.md](../docs/en/agents-2.1.md).
+Details: [docs/agents-2.1.md](../docs/agents-2.1.md).
 
 ## What agents get in 2.0
 

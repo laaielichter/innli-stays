@@ -25,7 +25,7 @@ INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe fin
 ## Later verdienen
 
 INNLI is en blijft open source. Dat is een vaste keuze, geen tussenfase:
-- **Licentie:** de kern is AGPL-3.0 en blijft altijd open. Wie INNLI gesloten in een eigen product wil bouwen, koopt een commerciële licentie ([COMMERCIAL.md](../../COMMERCIAL.md)). Een B&B of hotel mist zonder betalen niets.
+- **Licentie:** de kern is AGPL-3.0 en blijft altijd open. Wie INNLI gesloten in een eigen product wil bouwen, koopt een commerciële licentie ([COMMERCIAL.md](../../COMMERCIAL.nl.md)). Een B&B of hotel mist zonder betalen niets.
 - **Standaarden:** het paspoort, de toestemmings-hash en de uitwisseling van verblijfswensen worden open specificaties die iedereen mag implementeren.
 - **Gegevens:** die blijven bij de eigenaar. Iedereen kan een eigen installatie of een eigen gids draaien.
 
