@@ -110,6 +110,7 @@ export const propertyPatchSchema = z
       maxNights: z.number().int().min(1).max(60),
       holdHours: z.number().int().min(4).max(168),
       autoAnswer: z.boolean().optional(),
+      requireIdentifiedAgent: z.boolean().optional(),
       deposit: z
         .object({
           percent: z.number().min(0).max(100),

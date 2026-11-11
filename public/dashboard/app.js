@@ -821,6 +821,7 @@ function renderBooking() {
   const rf = $('#rules-form').elements;
   rf.instantBooking.checked = rules.instantBooking;
   rf.autoAnswer.checked = rules.autoAnswer ?? true;
+  rf.requireIdentifiedAgent.checked = Boolean(rules.requireIdentifiedAgent);
   rf.minLeadDays.value = rules.minLeadDays;
   rf.maxNights.value = rules.maxNights;
   rf.holdHours.value = rules.holdHours;
@@ -929,6 +930,7 @@ $('#rules-form').addEventListener('submit', guard(async (e) => {
   const bookingRules = {
     instantBooking: f.instantBooking.checked,
     autoAnswer: f.autoAnswer.checked,
+    requireIdentifiedAgent: f.requireIdentifiedAgent.checked,
     minLeadDays: Number(f.minLeadDays.value || 0),
     maxNights: Number(f.maxNights.value || 14),
     holdHours: Number(f.holdHours.value || 48),
@@ -1258,6 +1260,20 @@ async function loadAuditLog() {
           h('td', { class: 'small muted' }, [e.requestId, e.questionId, e.result && T('resultaat: {0}', e.result), e.wasBooked ? T('was geboekt') : ''].filter(Boolean).join(' · ')),
         )))
     : h('p', { class: 'muted' }, 'Nog geen acties van agents.'));
+  const { agents } = await api('/agents');
+  const ID = { verified: 'Bewezen (ondertekend)', key: 'Sleutel', anonymous: 'Anoniem' };
+  $('#agent-reputation').replaceChildren(agents.length
+    ? h('table', { class: 'table' }, h('tr', {}, h('th', {}, 'Agent'), h('th', {}, 'Identiteit'), h('th', {}, 'Prijzen opgevraagd'), h('th', {}, 'Aanvragen'), h('th', {}, 'Geboekt'), h('th', {}, 'Vervallen of geannuleerd'), h('th', {}, 'Houdt nu vast')),
+        agents.slice(0, 30).map((a) => h('tr', {},
+          h('td', {}, a.agent),
+          h('td', {}, h('span', { class: `chip ${a.identity === 'anonymous' ? '' : 'ok'}` }, T(ID[a.identity] || a.identity))),
+          h('td', {}, String(a.quotes)),
+          h('td', {}, String(a.requests)),
+          h('td', {}, String(a.booked)),
+          h('td', {}, String(a.expired + a.cancelled)),
+          h('td', {}, String(a.openHolds)),
+        )))
+    : h('p', { class: 'muted' }, 'Nog geen agents gezien.'));
 }
 
 // ------------------------------------------------------------------ Checklist

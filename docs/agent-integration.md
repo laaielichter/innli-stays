@@ -243,3 +243,37 @@ Een fout komt terug als tool-resultaat met `isError: true`. De eerste tekstregel
 - Fouten geven de passende HTTP-status: 400, 403, 404, 409, 410, 429 of 502.
 - De body is `{ error, code, message, retryable, hint, nextTools }`. `error` is de leesbare melding, zoals vóór 2.0.
 - Elk agentantwoord bevat de headers `RateLimit`, `RateLimit-Policy`, `RateLimit-Limit`, `RateLimit-Remaining` en `RateLimit-Reset`.
+
+## Nieuw in 2.1
+
+Achtergrond en het onderzoek erachter: [agents-2.1.md](agents-2.1.md).
+
+### Identiteit: Web Bot Auth
+Onderteken elk verzoek met HTTP Message Signatures (RFC 9421). INNLI weet dan welk platform er belt, zonder account:
+```
+Signature-Agent: "https://agent.example"
+Signature-Input: sig1=("@authority" "signature-agent");created=1762850000;expires=1762850060;keyid="<JWK-thumbprint>";alg="ed25519";nonce="<willekeurig>";tag="web-bot-auth"
+Signature: sig1=:<base64-handtekening>:
+```
+- Sleutels: een JWKS met je Ed25519-sleutel op `https://agent.example/.well-known/http-message-signatures-directory`.
+- `keyid` is de thumbprint volgens RFC 7638. `created` en `expires` zijn verplicht en liggen hooguit 24 uur uit elkaar. Een `nonce` wordt één keer geaccepteerd.
+- Onderteken minstens `@authority` en `signature-agent`.
+- De antwoordheader `x-innli-agent-identity` zegt `verified; agent="agent.example"`, `key`, `anonymous` of `invalid; reason="…"`. Een ongeldige handtekening laat het verzoek niet mislukken: het wordt als anoniem behandeld.
+- Een bewezen platform heeft een eigen limiet van 600 verzoeken per minuut.
+
+### Limiet op vasthouden
+Open aanvragen houden kamers vast. Per accommodatie mag een anoniem adres er 2 open hebben, een herkenbare agent 25 en één e-mailadres van een gast 3. Daarboven: `LIMIT_REACHED` (REST 429). Een eigenaar kan voor aanvragen ook een herkenbare agent eisen: `AGENT_IDENTITY_REQUIRED` (REST 403).
+
+### Idempotency-Key
+REST-tools en UCP nemen een `Idempotency-Key`-header aan (hooguit 255 tekens). Dezelfde sleutel met dezelfde inhoud geeft 24 uur lang het eerste antwoord, met `Idempotent-Replayed: true`. Dezelfde sleutel met andere inhoud geeft 409.
+
+### Boekingssessies volgens UCP (concept)
+- Profiel: `GET /.well-known/ucp`. Adres: `/ucp/v1`. Elk verzoek heeft `UCP-Agent: profile="https://platform.example/profile"` nodig.
+- `POST /booking-sessions` → 201 met de sessie; `GET` en `PUT /booking-sessions/{id}`; `POST /booking-sessions/{id}/complete` met `{"payment": {}}`; `POST /booking-sessions/{id}/cancel`.
+- `stays[]`: `accommodation_type.id` is de `unitId` van INNLI, `rate_plan.id` een tariefplan of `standard`. Alle verblijven in een sessie hebben dezelfde data. Honden: `occupancy.pets`.
+- Bedragen zijn hele getallen in de kleinste munteenheid. `totals[]` tellen op tot het ene `total`.
+- Zakelijke uitkomsten (vol, te veel gasten) komen met HTTP 200, `ucp.status: "error"` en `messages[]`; protocolfouten met een HTTP-status en `{ code, content }`.
+- Na afronden geeft `io.innli.status_token` via `check_status` toegang tot het ondertekende boekingsdossier.
+
+### Annuleren in offertes
+`cancellation: { refundability, freeUntil, costNow, percentNow }`, waarbij `refundability` `refundable`, `partially_refundable`, `non_refundable` of `unknown` is.

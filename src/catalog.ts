@@ -6,7 +6,7 @@ import { addDays, assertNotInPast, stayNights } from './domain/dates.ts';
 import { factDefinitionsFor, isStale, readFact, type FactScope } from './domain/facts.ts';
 import { evaluateRequirement, impliedRequirements, matchesLocation, matchRoomCombinations, matchScore, matchUnits, roomsNeeded, type CombinationMatch, type LocationFilter, type Requirement, type UnitMatch } from './domain/matching.ts';
 import { buildQuote as buildQuoteRaw, QuoteInputError, weekdayNames, type QuoteInput } from './domain/pricing.ts';
-import { cancellationSchedule } from './domain/cancellation.ts';
+import { cancellationSchedule, refundability } from './domain/cancellation.ts';
 import { nightPrices } from './domain/rates.ts';
 import { isLiveConnector, type AvailabilityResult, type Currency, type FactMap, type FactValue, type Guests, type Language, type PoiKind, type Property, type Quote, type Unit } from './domain/types.ts';
 import type { Store } from './store.ts';
@@ -673,6 +673,7 @@ export class Catalog {
       nightly,
       policies: stayPolicies(property, quote.ratePlanId),
       cancellationCosts: property.cancellationRules?.length || quote.ratePlanId ? cancellationSchedule(property, quote) : undefined,
+      cancellation: refundability(property, quote),
       extrasAvailable: property.extras?.length ? property.extras.map((e) => ({ id: e.id, name: e.name, price: e.price, per: e.per, max: e.max ?? 1, chosen: quote.extras?.find((x) => x.id === e.id)?.qty ?? 0 })) : undefined,
       ratePlanOptions: unit && property.ratePlans?.length ? this.ratePlanOptions(property, unit, quote) : undefined,
       summaryForGuest: guestSummary(property, unit, quote),

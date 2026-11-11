@@ -12,6 +12,7 @@ export const ERROR_CODES = [
   'CONSENT_REQUIRED',
   'TERMS_CHANGED',
   'FORBIDDEN',
+  'AGENT_IDENTITY_REQUIRED',
   'RATE_LIMITED',
   'CONFLICT',
   'LIMIT_REACHED',
@@ -37,9 +38,10 @@ const DEFAULTS: Record<ErrorCode, { retryable: boolean; nextTools?: string[]; hi
   CONSENT_REQUIRED: { retryable: false, hint: 'Ask the guest explicitly and only then call again with guestConsent: true.' },
   TERMS_CHANGED: { retryable: true, nextTools: ['get_quote'], hint: 'The terms the guest agreed to no longer match. Show the guest the new consent.summary and ask again.' },
   FORBIDDEN: { retryable: false, hint: 'This agent key may not do this. Connect with an agent key that has the act scope.' },
+  AGENT_IDENTITY_REQUIRED: { retryable: false, nextTools: ['prepare_booking'], hint: 'This host only takes requests from agents that prove who they are: sign requests with Web Bot Auth (RFC 9421, see /.well-known/agent-card.json) or connect through OAuth. Without that, give the guest the link from prepare_booking.' },
   RATE_LIMITED: { retryable: true, hint: 'Wait retryAfterSeconds before trying again; do not retry in a loop.' },
   CONFLICT: { retryable: false, nextTools: ['check_status'], hint: 'The request changed meanwhile; check_status shows its current state.' },
-  LIMIT_REACHED: { retryable: false },
+  LIMIT_REACHED: { retryable: false, nextTools: ['check_status', 'cancel_request'], hint: 'Too many open requests are holding rooms. Wait for the host to answer, or withdraw one the guest no longer wants.' },
   UPSTREAM_ERROR: { retryable: true, hint: "The property's booking system did not answer; try again later or use the indicative data." },
 };
 

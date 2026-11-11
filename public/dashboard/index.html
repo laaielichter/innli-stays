@@ -164,6 +164,9 @@
           <h2>Logboek agentacties</h2>
           <p class="muted small">Alles wat AI-agents namens gasten deden: aanvragen, annuleringen, vragen. Handig bij onduidelijkheid of een geschil.</p>
           <div id="audit-log"></div>
+          <h3>Agents en hun gedrag</h3>
+          <p class="muted small">Per agent: hoeveel aanvragen een boeking werden, en hoeveel er vervielen of werden geannuleerd. Een agent die veel vasthoudt en weinig boekt, kost je beschikbaarheid. Anonieme agents mogen daarom maar weinig tegelijk vasthouden.</p>
+          <div id="agent-reputation"></div>
         </div>
       </section>
 
@@ -308,6 +311,7 @@
               </div>
               <p class="muted small">Tijdens het vasthouden kan niemand anders de kamer aanvragen. Reageer je niet op tijd, dan vervalt de aanvraag automatisch en krijgt de gast bericht.</p>
               <label class="check-row"><input type="checkbox" name="autoAnswer"> <span><strong>Antwoord-assistent</strong>: vragen van gasten en agents die je bevestigde gegevens of veelgestelde vragen al beantwoorden, worden meteen beantwoord. Alleen wat onbekend is komt bij jou. De assistent verzint niets.</span></label>
+              <label class="check-row"><input type="checkbox" name="requireIdentifiedAgent"> <span><strong>Alleen herkenbare agents</strong>: aanvragen en vragen alleen van agents die bewijzen wie ze zijn (met een sleutel of een ondertekend verzoek). Anonieme agents kunnen nog wel zoeken en prijzen opvragen, en verwijzen de gast naar je verblijfspagina.</span></label>
               <h3>Aanbetaling (tegen no-shows)</h3>
               <div class="form-grid">
                 <label>Percentage <input name="depositPercent" type="number" min="0" max="100" placeholder="0 = geen"></label>

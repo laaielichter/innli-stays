@@ -18,13 +18,13 @@ import { completeness, FACT_CATALOG, FactValidationError, getFactDefinition, own
 import { LANGUAGES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
 import { demoEngine } from '../demo/engine.ts';
 import { registerWithGuide, wellKnown } from '../directory/register.ts';
-import { GUIDE_AGENT_HEADER } from '../directory/types.ts';
+import { GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER } from '../directory/types.ts';
 import { describeLicense, verifyLicense } from '../licensing/license.ts';
 import { RELEASE_DATE, VERSION } from '../version.ts';
 import { createMailer, type Mailer } from '../requests/mailer.ts';
 import { RequestError, RequestService, rulesOf } from '../requests/service.ts';
 import { QuestionService } from '../requests/questions.ts';
-import { AgentActions } from '../requests/agentActions.ts';
+import { AgentActions, MAX_OPEN_HOLDS, type AgentCaller } from '../requests/agentActions.ts';
 import { WaitlistService } from '../requests/waitlist.ts';
 import { ReviewService } from '../requests/reviews.ts';
 import { OutboundWebhooks } from '../requests/webhooks.ts';
@@ -43,7 +43,10 @@ import { rateLimiter, rateWindow } from './safeFetch.ts';
 import { errorBody } from '../agentErrors.ts';
 import { listBackups } from '../backup.ts';
 import { agentCard, llmsTxt, mcpServerCard, staysOf } from '../agent/discovery.ts';
+import { BotAuthVerifier, DIRECTORY_PATH, DIRECTORY_TYPE, keyDirectory } from '../agent/botAuth.ts';
 import { checkWebsite, signedPassport, VERIFICATION_FILE, VERIFICATION_META, verificationToken, websiteVerified } from '../agent/trust.ts';
+import { idempotency } from './idempotency.ts';
+import { UCP_BASE_PATH, UcpLodging, UcpOutcome, UcpProtocolError, ucpProfile, UCP_VERSION } from '../ucp/lodging.ts';
 import { oauthRouter, wwwAuthenticate } from './oauth.ts';
 import { captionProblem, contentTypeOf, MAX_PHOTO_BYTES, MEDIA_FILE, MediaError, savePhoto } from './media.ts';
 
@@ -76,12 +79,14 @@ export interface AppOptions {
   /** Retry delays for outbound webhooks (tests use short ones). */
   webhookRetryDelaysMs?: number[];
   demo?: boolean;
+  /** Accept agent key directories over plain http (tests, sample mode). Default: only in sample mode. */
+  insecureAgentDirectories?: boolean;
 }
 
 type RawRequest = Request & { rawBody?: Buffer };
 
 /** HTTP status for an agent error code on the REST endpoint. */
-const STATUS_OF: Record<string, number> = { NOT_FOUND: 404, QUOTE_NOT_FOUND: 404, QUOTE_EXPIRED: 410, UNAVAILABLE: 409, CONFLICT: 409, TERMS_CHANGED: 409, FORBIDDEN: 403, RATE_LIMITED: 429, UPSTREAM_ERROR: 502, CONSENT_REQUIRED: 400, INVALID_INPUT: 400, LIMIT_REACHED: 400 };
+const STATUS_OF: Record<string, number> = { NOT_FOUND: 404, QUOTE_NOT_FOUND: 404, QUOTE_EXPIRED: 410, UNAVAILABLE: 409, CONFLICT: 409, TERMS_CHANGED: 409, FORBIDDEN: 403, AGENT_IDENTITY_REQUIRED: 403, RATE_LIMITED: 429, UPSTREAM_ERROR: 502, CONSENT_REQUIRED: 400, INVALID_INPUT: 400, LIMIT_REACHED: 429 };
 
 const publicDir = fileURLToPath(new URL('../../public/', import.meta.url));
 
@@ -141,7 +146,7 @@ export function createApp(opts: AppOptions) {
   catalog.setReviewsProvider((p) => reviews.summary(p));
   const webhooks = new OutboundWebhooks(store, opts.fetcher, { retryDelaysMs: opts.webhookRetryDelaysMs });
   requests.listeners.push((p, type, r) => webhooks.emit(p, type, r));
-  const callbacks = new AgentCallbacks(store, opts.fetcher, { retryDelaysMs: opts.webhookRetryDelaysMs });
+  const callbacks = new AgentCallbacks(store, opts.fetcher, { retryDelaysMs: opts.webhookRetryDelaysMs, publicUrl: opts.publicUrl });
   requests.listeners.push((p, type, r) => callbacks.emit(p, type, r));
   const wishes = new WishService(store, catalog, callbacks);
   requests.listeners.push((p, type, r) => wishes.onBookingEvent(p, type, r));
@@ -151,9 +156,22 @@ export function createApp(opts: AppOptions) {
   app.locals.requests = requests;
   app.locals.waitlist = waitlist;
   app.locals.reviews = reviews;
+  const ucp = new UcpLodging(store, catalog, agentActions, requests, opts.publicUrl);
+  const idempotent = idempotency();
   const setupLimit = rateLimiter(10);
 
   const mcpLimit = rateWindow(120);
+  const verifiedLimit = rateWindow(600);
+  // Looking up an unknown key directory costs an outbound request: keep that scarce per address.
+  const directoryLimit = rateLimiter(6);
+  const guideOrigin = (() => {
+    try {
+      return opts.guideUrl ? new URL(opts.guideUrl).origin : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  const botAuth = new BotAuthVerifier(opts.fetcher, { allowHttp: opts.insecureAgentDirectories ?? Boolean(opts.demo) });
   const auditLimit = rateLimiter(10);
 
   // Every response carries a request id (the caller's, or a new one), also in error bodies.
@@ -173,19 +191,37 @@ export function createApp(opts: AppOptions) {
     res.json({ ok: true, version: VERSION, license: 'AGPL-3.0-only', sourceCode: opts.sourceUrl, uptimeSeconds: Math.round((Date.now() - startedAt) / 1000), properties: props.length, published: props.filter((p) => p.published).length });
   });
 
-  /** Who is calling: an agent key, a name relayed by the INNLI guide, or anonymous. Null = refused (response sent). */
-  const identifyAgent = (req: Request, res: Response): { name: string; canAct: boolean } | null => {
+  /**
+   * Who is calling: an agent key, a platform that signed the request (Web Bot Auth),
+   * a name relayed by the INNLI guide, or anonymous. Null = refused (response sent).
+   */
+  const identifyAgent = async (req: Request, res: Response): Promise<AgentCaller | null> => {
+    const ip = req.ip ?? 'unknown';
+    const key = bearer(req);
+    const found = key ? store.findAgentByKeyHash(hashKey(key)) : undefined;
+    const agent = found && (!found.expiresAt || found.expiresAt > new Date().toISOString()) ? found : undefined;
+    // A platform that signs its requests proves who it is with its own key: no account needed here.
+    const signed = await botAuth.verify(
+      { method: req.method, path: req.originalUrl, scheme: req.protocol, authorities: [...new Set([String(req.headers.host ?? ''), req.hostname, new URL(opts.publicUrl).host].filter(Boolean))], headers: req.headers },
+      { mayFetch: () => directoryLimit(ip) },
+    );
+    // The guide this installation is listed in relays for many agents. Its signature proves the request is the
+    // guide's; what it says about the agent behind it (name, verified domain, a caller id) is signed with it.
+    const fromGuide = signed.status === 'verified' && guideOrigin === signed.origin && [GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER].every((h) => signed.covered.includes(h));
+    const relayedDomain = fromGuide ? String(req.headers[GUIDE_IDENTITY_HEADER] ?? '').toLowerCase() : '';
+    const relay = fromGuide ? { holder: String(req.headers[GUIDE_HOLDER_HEADER] ?? '').replace(/[^\w:.-]/g, '').slice(0, 64) || 'unknown', domain: /^[a-z0-9.-]+(:\d+)?$/.test(relayedDomain) && relayedDomain !== 'anonymous' ? relayedDomain : undefined } : undefined;
+    const verified = relay ? relay.domain : signed.status === 'verified' ? signed.agent : undefined;
+    res.set('x-innli-agent-identity', verified ? `verified; agent="${verified}"${relay ? '; via="guide"' : ''}` : relay ? 'anonymous; via="guide"' : signed.status === 'invalid' ? `invalid; reason="${signed.reason}"` : agent ? 'key' : 'anonymous');
     // IETF RateLimit headers on every agent response, so a polite agent can pace itself before it hits the limit.
-    const rate = mcpLimit(req.ip ?? 'unknown');
+    // A verified platform has its own, larger budget: its users share a few addresses and must not block each other.
+    const bucket = agent ? `key:${agent.id}` : verified ? `wba:${verified}` : relay ? `guide:${relay.holder}` : `ip:${ip}`;
+    const rate = verified ? verifiedLimit(bucket) : mcpLimit(agent || relay ? bucket : ip);
     res.set('ratelimit-policy', `${rate.limit};w=60`).set('ratelimit', `limit=${rate.limit}, remaining=${rate.remaining}, reset=${rate.resetSeconds}`);
     res.set('ratelimit-limit', String(rate.limit)).set('ratelimit-remaining', String(rate.remaining)).set('ratelimit-reset', String(rate.resetSeconds));
     if (!rate.allowed) {
       res.status(429).set('retry-after', String(rate.resetSeconds)).json({ error: 'Too many requests', ...errorBody('Too many requests', { code: 'RATE_LIMITED', retryAfterSeconds: rate.resetSeconds }), retryAfterSeconds: rate.resetSeconds });
       return null;
     }
-    const key = bearer(req);
-    const found = key ? store.findAgentByKeyHash(hashKey(key)) : undefined;
-    const agent = found && (!found.expiresAt || found.expiresAt > new Date().toISOString()) ? found : undefined;
     if (key && !agent) {
       res.status(401).set('www-authenticate', `${wwwAuthenticate(opts.publicUrl)}, error="invalid_token"`).json({ error: found ? 'Token expired' : 'Invalid agent key' });
       return null;
@@ -196,7 +232,14 @@ export function createApp(opts: AppOptions) {
     }
     // Requests relayed by the INNLI guide carry the agent's name, for the owner's statistics.
     const relayed = String(req.headers[GUIDE_AGENT_HEADER] ?? '').replace(/[^\p{L}\p{N} .\-_()]/gu, '').slice(0, 80);
-    return { name: agent?.name ?? (relayed || 'anoniem'), canAct: agent ? (agent.scopes ?? ['read', 'act']).includes('act') : opts.anonymousActions !== false };
+    return {
+      // A relayed name says so ("X via INNLI-gids"); a platform calling directly is named by its domain.
+      name: agent?.name ?? (relayed || verified || 'anoniem'),
+      canAct: agent ? (agent.scopes ?? ['read', 'act']).includes('act') : opts.anonymousActions !== false,
+      identity: agent ? 'key' : verified ? 'verified' : 'anonymous',
+      verifiedDomain: verified,
+      bucket,
+    };
   };
 
   // OAuth 2.1 for agent platforms (ChatGPT, Claude and others connecting over MCP).
@@ -204,12 +247,12 @@ export function createApp(opts: AppOptions) {
 
   // ---------------------------------------------------------------- Agents (MCP)
   app.post('/mcp', async (req, res) => {
-    const who = identifyAgent(req, res);
+    const who = await identifyAgent(req, res);
     if (!who) return;
     // Stateless: a fresh server per request keeps horizontal scaling trivial.
     // ?profile=core (or the x-innli-profile header): only the core tools, answering briefly; saves agents context on every turn.
     const profile = parseProfile(req.query.profile ?? req.headers['x-innli-profile']);
-    const server = createMcpServer(catalog, who.name, agentActions, { canAct: who.canAct, waitlist, wishes, profile });
+    const server = createMcpServer(catalog, who.name, agentActions, { canAct: who.canAct, waitlist, wishes, profile, caller: who });
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     res.on('close', () => {
       void transport.close();
@@ -243,8 +286,8 @@ export function createApp(opts: AppOptions) {
     });
   });
 
-  app.post('/api/agent/v1/tools/:name', async (req, res) => {
-    const who = identifyAgent(req, res);
+  app.post('/api/agent/v1/tools/:name', idempotent, async (req, res) => {
+    const who = await identifyAgent(req, res);
     if (!who) return;
     const name = String(req.params.name) as ToolName;
     const def = TOOLS[name];
@@ -252,19 +295,61 @@ export function createApp(opts: AppOptions) {
       res.status(404).json({ error: `Unknown tool: ${name}`, ...errorBody(`Unknown tool: ${name}`, { code: 'NOT_FOUND', hint: 'See /api/agent/v1/openapi.json for the tools.' }) });
       return;
     }
-    const parsed = z.object(def.inputSchema as z.ZodRawShape).safeParse(req.body ?? {});
+    // The header also becomes the stored idempotency key of a booking request, so a retry is safe even after a restart.
+    const headerKey = String(req.headers['idempotency-key'] ?? '').trim().slice(0, 80);
+    const input = name === 'request_booking' && headerKey && req.body && typeof req.body === 'object' && !(req.body as { idempotencyKey?: string }).idempotencyKey ? { ...req.body, idempotencyKey: headerKey } : req.body;
+    const parsed = z.object(def.inputSchema as z.ZodRawShape).safeParse(input ?? {});
     if (!parsed.success) {
       const message = parsed.error.issues.map((i) => `${i.path.join('.') || 'input'}: ${i.message}`).join('; ');
       res.status(400).json({ error: message, ...errorBody(message, { code: 'INVALID_INPUT' }) });
       return;
     }
-    const result = (await runTool(toolHandlers({ catalog, agentClient: who.name, actions: agentActions, waitlist, wishes, canAct: who.canAct }), name, parsed.data)) as { isError?: boolean; content: { text: string }[]; structuredContent?: { error?: { code: string; message: string } } };
+    const result = (await runTool(toolHandlers({ catalog, agentClient: who.name, actions: agentActions, waitlist, wishes, canAct: who.canAct, caller: who }), name, parsed.data)) as { isError?: boolean; content: { text: string }[]; structuredContent?: { error?: { code: string; message: string } } };
     // REST keeps `error` as the readable message (as before 2.0) and adds code, retryable, hint and nextTools beside it.
     if (result.isError) {
       const e = result.structuredContent!.error!;
       res.status(STATUS_OF[e.code] ?? 400).json({ ...e, error: e.message });
     } else res.json(result.structuredContent);
   });
+
+  // ---------------------------------------------------------------- Agents (UCP lodging booking sessions)
+  app.get('/.well-known/ucp', (_req, res) => {
+    res.set('cache-control', 'public, max-age=3600').json(ucpProfile(store, opts.publicUrl, keyDirectory(store).keys));
+  });
+  const ucpError = (res: Response, err: unknown) => {
+    if (err instanceof UcpProtocolError) res.status(err.status).json({ code: err.code, content: err.message });
+    else if (err instanceof UcpOutcome) res.json({ ucp: { version: UCP_VERSION, status: 'error' }, messages: [{ type: 'error', code: err.code, content: err.message, severity: err.severity }], continue_url: opts.publicUrl });
+    else throw err;
+  };
+  /** Runs one booking-session operation for an identified caller. The platform names itself in UCP-Agent. */
+  const ucpOperation = (run: (req: Request, agent: AgentCaller, profile: string) => Promise<unknown> | unknown, created = false) => async (req: Request, res: Response) => {
+    const who = await identifyAgent(req, res);
+    if (!who) return;
+    const profile = /profile="([^"]{1,500})"/.exec(String(req.headers['ucp-agent'] ?? ''))?.[1];
+    let host: string | undefined;
+    try {
+      host = profile ? new URL(profile).host : undefined;
+    } catch {
+      host = undefined;
+    }
+    if (!profile || !host) {
+      res.status(400).json({ code: 'missing_ucp_agent', content: 'Send the UCP-Agent header with your platform profile, e.g. UCP-Agent: profile="https://platform.example/profile".' });
+      return;
+    }
+    // The header alone proves nothing: without a key or a signature the platform is named, but stays anonymous.
+    const agent: AgentCaller = who.identity === 'anonymous' ? { ...who, name: `${host} (UCP, not verified)`.slice(0, 80) } : who;
+    try {
+      const result = await run(req, agent, profile);
+      res.status(created ? 201 : 200).json(result);
+    } catch (err) {
+      ucpError(res, err);
+    }
+  };
+  app.post(`${UCP_BASE_PATH}/booking-sessions`, idempotent, ucpOperation((req, agent, profile) => ucp.create(req.body, agent, profile), true));
+  app.get(`${UCP_BASE_PATH}/booking-sessions/:id`, ucpOperation((req) => ucp.get(String(req.params.id))));
+  app.put(`${UCP_BASE_PATH}/booking-sessions/:id`, idempotent, ucpOperation((req, agent) => ucp.update(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
+  app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
 
   const methodNotAllowed = (_req: Request, res: Response) => {
     res.status(405).set('allow', 'POST').json({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed' }, id: null });
@@ -389,6 +474,11 @@ export function createApp(opts: AppOptions) {
   /** Lets the INNLI guide verify that this installation really runs at this address. */
   app.get('/.well-known/innli.json', (_req, res) => {
     res.json({ ...wellKnown(store), license: 'AGPL-3.0-only', sourceCode: opts.sourceUrl });
+  });
+
+  // This installation's own keys in the standard place, so receivers of its signed callbacks can verify them.
+  app.get(DIRECTORY_PATH, (_req, res) => {
+    res.set('cache-control', 'public, max-age=3600').type(DIRECTORY_TYPE).send(JSON.stringify(keyDirectory(store)));
   });
 
   // Discovery: where agent platforms and crawlers look for an agent-ready service.
@@ -798,6 +888,36 @@ export function createApp(opts: AppOptions) {
       .map((e) => ({ at: e.at, agent: e.agentClient, ...e.meta }))
       .reverse();
     res.json({ entries });
+  });
+  /** How each agent behaves here: who it is, and what became of its requests. */
+  ownerApi.get('/agents', (req, res) => {
+    const p = owner(req);
+    const since = new Date(Date.now() - 90 * 86_400_000);
+    const rows = new Map<string, { agent: string; identity: string; verifiedDomain?: string; quotes: number; requests: number; booked: number; declined: number; expired: number; cancelled: number; openHolds: number; lastSeen?: string }>();
+    const row = (agent: string) => {
+      let r = rows.get(agent);
+      if (!r) rows.set(agent, (r = { agent, identity: 'anonymous', quotes: 0, requests: 0, booked: 0, declined: 0, expired: 0, cancelled: 0, openHolds: 0 }));
+      return r;
+    };
+    for (const e of store.eventsFor(p.id, since)) {
+      if (e.type !== 'quote_issued' || !e.agentClient || e.agentClient === PREVIEW_CLIENT) continue;
+      const r = row(e.agentClient);
+      r.quotes++;
+      if (!r.lastSeen || e.at > r.lastSeen) r.lastSeen = e.at;
+    }
+    const seen = new Set<string>();
+    for (const q of store.requestsFor(p.id)) {
+      if (!q.agentClient || q.consent?.via !== 'agent' || q.createdAt < since.toISOString() || seen.has(q.groupId ?? q.id)) continue;
+      seen.add(q.groupId ?? q.id);
+      const r = row(q.agentClient);
+      r.requests++;
+      if (q.consent.agentIdentity && q.consent.agentIdentity !== 'anonymous') Object.assign(r, { identity: q.consent.agentIdentity, verifiedDomain: q.consent.agentDomain });
+      if (q.status === 'accepted') r.booked++;
+      else if (q.status === 'new') r.openHolds++;
+      else r[q.status]++;
+      if (!r.lastSeen || q.createdAt > r.lastSeen) r.lastSeen = q.createdAt;
+    }
+    res.json({ agents: [...rows.values()].sort((a, b) => b.requests - a.requests || b.quotes - a.quotes), limits: MAX_OPEN_HOLDS });
   });
   ownerApi.post('/requests/:id/decline', async (req, res) => {
     const { note } = z.object({ note: z.string().max(2000).optional() }).parse(req.body ?? {});

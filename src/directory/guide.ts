@@ -1,3 +1,4 @@
+import { createPrivateKey, generateKeyPairSync, type KeyObject } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { z } from 'zod';
@@ -65,18 +66,41 @@ export class Guide {
   private fetcher: Fetcher;
   private requireHttps: boolean;
   private requireLicense: boolean;
+  private key?: KeyObject;
+  /** Public address of this guide, when configured; otherwise the address agents reach it at. */
+  publicUrl?: string;
 
   /**
    * requireLicense: only installations with a licence key are listed. Without it
    * (the public, donation-funded guide) every installation that proves it runs
    * at its address is listed, up to OPEN_MAX_PROPERTIES stays.
    */
-  constructor(opts: { path?: string; fetcher: Fetcher; requireHttps: boolean; requireLicense?: boolean }) {
+  constructor(opts: { path?: string; fetcher: Fetcher; requireHttps: boolean; requireLicense?: boolean; publicUrl?: string }) {
+    this.publicUrl = opts.publicUrl?.replace(/\/$/, '');
     this.path = opts.path;
     this.fetcher = opts.fetcher;
     this.requireHttps = opts.requireHttps;
     this.requireLicense = opts.requireLicense ?? true;
     this.listings = this.path && existsSync(this.path) ? JSON.parse(readFileSync(this.path, 'utf8')) : [];
+  }
+
+  /**
+   * The guide's own Ed25519 key. It signs every request the guide relays, so an
+   * installation knows the request really comes from its guide and may trust
+   * what the guide says about the agent behind it.
+   */
+  signingKey(): KeyObject {
+    if (this.key) return this.key;
+    const file = this.path ? `${this.path.replace(/\.json$/, '')}.signing-key.pem` : undefined;
+    if (file && existsSync(file)) this.key = createPrivateKey(readFileSync(file, 'utf8'));
+    else {
+      this.key = generateKeyPairSync('ed25519').privateKey;
+      if (file) {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, this.key.export({ type: 'pkcs8', format: 'pem' }), { mode: 0o600 });
+      }
+    }
+    return this.key;
   }
 
   private save(): void {

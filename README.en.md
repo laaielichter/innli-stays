@@ -32,6 +32,7 @@ Nederlands: [README.md](README.md).
 | **Findability check** | <br>• robots.txt per crawler, keeping **search** crawlers and **training** crawlers apart.<br>• noindex, title, sitemap, room pages, visible prices and conditions, schema.org.<br>• Consistency with the passport.<br>It never promises a ranking. |
 | **WordPress plugin** | <br>• schema.org data from confirmed facts.<br>• The same facts shown visibly on the page.<br>• AI crawler settings.<br>• A crawler visit counter.<br>• Booking reports and the request form.<br>In English, with a Dutch translation. |
 | **Hotels and busy properties** | Room types with several rooms (availability counted per night, stop-sell), rate plans (non-refundable, with breakfast), 15-minute holds, changes without cancelling first, staff keys (reception/manager), signed webhooks to a PMS or channel manager, and hotel licence packages. Measured: availability for a 300-room hotel with 10,000 bookings in ~1 ms. See [docs/en/hotels.md](docs/en/hotels.md). |
+| **New in 2.1: know your agent, protected holds, UCP** ([docs/en/agents-2.1.md](docs/en/agents-2.1.md)) | What we found missing elsewhere, built in:<br>• *agent identity*: platforms that sign their requests (Web Bot Auth, RFC 9421) are recognised without an account, get their own rate limit, and are named in the signed booking record;<br>• *protected holds*: a limit on open requests per agent and per guest, so a script cannot block a property's rooms;<br>• *UCP lodging booking sessions* (draft) at `/ucp/v1`, with the profile at `/.well-known/ucp`;<br>• an `Idempotency-Key` header, so a retry never books twice;<br>• `cancellation.refundability` on every quote;<br>• per agent in the dashboard: what became a booking and what expired;<br>• identity passed on, signed, through the INNLI guide;<br>• `npx innli-conformance <address>`: 13 read-only checks of any installation. |
 | **New in 2.0: agents and stays find each other** ([docs/en/agents-2.0.md](docs/en/agents-2.0.md)) | Ten problems from research, solved:<br>• *stay wishes*: agents leave an anonymous wish, and hosts answer with an offer from the dashboard, optionally with a discount;<br>• a *core profile* and brief answers: ~49% less context per turn and ~70% smaller answers;<br>• `nextActions` with prefilled arguments and `freshness` on every answer;<br>• typed errors with `retryable` and `hint`, plus RateLimit headers;<br>• consent with a hash over the terms;<br>• website verification (automatic with the WordPress plugin), a trust block and a signed passport;<br>• a guard against hidden instructions in text;<br>• a time budget for search;<br>• an agent card, MCP server card, `llms.txt` and a Claude plugin ([agent-kit](agent-kit/README.md)). |
 | **New in 1.1** | Paid options (bikes, packed lunch, late check-out), private discount codes, arrival weekdays and a one-night supplement, calculated cancellation costs, alternatives when full, honest scarcity ("2 rooms left"), reviews per aspect, house rules and sustainability as facts, searching for "a long weekend" and a price per night, photo upload with checks for vague descriptions, a booking calendar (iCal), CSV export, occupancy and revenue per channel, automatic backups and restore, a Beds24 connection, OAuth 2.1 for agent platforms and signed status callbacks. See [CHANGELOG.md](CHANGELOG.md). |
 | **Answer assistant** | Answers guest questions straight away in four languages, only from the owner's confirmed details and FAQ; no language model, nothing made up. What is unknown goes to the owner, with a draft of what is already known. Also as *Ask us* on the stay page. |
@@ -100,6 +101,7 @@ Then ask, for example: *"Find a quiet farm stay in Tuscany for three nights in M
 | `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Days after the stay before guest data is deleted (minimum 30) |
 | `INNLI_BACKUP_DIR` | – | Folder outside the data folder for a daily automatic backup (USB disk, NAS, synced folder) |
 | `INNLI_BACKUP_KEEP` | `14` | Number of daily backups kept |
+| `INNLI_UCP_VERSION` | `2026-08-25` | Version named in the UCP profile and responses; the lodging capability is a draft |
 
 Command line: `npm run innli -- list`, `npm run innli -- new-key <id>`, `npm run innli -- agent "Name"`, `npm run innli -- license <key>`. Stop the server first.
 
@@ -109,6 +111,7 @@ Command line: `npm run innli -- list`, `npm run innli -- new-key <id>`, `npm run
 npm test                     # unit and end-to-end tests
 npm run typecheck
 npm run lint:php             # WordPress plugin
+npm run conformance -- http://localhost:3000   # 13 read-only checks of what agents rely on
 npm run bench                # performance (300 properties, 200,000 events)
 npm run pakket -- --concept  # download package (zip) in dist/
 ```
@@ -130,6 +133,7 @@ npm run pakket -- --concept  # download package (zip) in dist/
 - [docs/en/hotels.md](docs/en/hotels.md): for hotels: room types, rate plans, answer assistant, staff, webhooks to your PMS
 - [docs/en/hosting.md](docs/en/hosting.md): running locally or online, costs, tunnel, connecting calendars
 - [docs/en/agent-integration.md](docs/en/agent-integration.md): for builders of travel agents
+- [docs/en/agents-2.1.md](docs/en/agents-2.1.md): what other projects and standards offer agents, the five biggest open problems, and how 2.1 solves them
 - [docs/en/agents-2.0.md](docs/en/agents-2.0.md): the ten biggest problems between agents and accommodations, and how 2.0 solves them
 - [agent-kit/](agent-kit/README.md): Claude plugin, MCP registry entry and what agents get in 2.0
 

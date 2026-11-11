@@ -12,6 +12,8 @@ Everything an agent platform or developer needs to connect an agent to INNLI. Th
 | Plain-text overview for LLMs | `/llms.txt` |
 | Signing key (records, callbacks, passports) | `/.well-known/innli.json` |
 | OAuth 2.1 metadata | `/.well-known/oauth-protected-resource` |
+| UCP profile and lodging booking sessions (draft) | `/.well-known/ucp`, `/ucp/v1/booking-sessions` |
+| Key directory (RFC 9421; INNLI also verifies yours) | `/.well-known/http-message-signatures-directory` |
 
 ## Claude plugin
 
@@ -25,6 +27,21 @@ claude --plugin-dir ./agent-kit/claude-plugin
 ## MCP registry
 
 `server.json` describes INNLI for the MCP registry as `io.github.laaielichter/innli`: the npm package `innli-stays` (stdio, `innli-mcp`) and a remote Streamable HTTP endpoint on any installation.
+
+## What agents get in 2.1
+
+- **Identity without an account.** Sign your requests with Web Bot Auth (RFC 9421, Ed25519, `tag="web-bot-auth"`, keys at `<your origin>/.well-known/http-message-signatures-directory`). A verified platform gets its own rate limit (600 a minute), may hold more open requests, and is named in the signed booking record. The `x-innli-agent-identity` response header says how you were recognised, or why a signature failed.
+- **Hold limits.** Open requests hold rooms, so they are limited: 2 per property for an anonymous address, 25 for an identified agent, 3 per guest e-mail. On `LIMIT_REACHED`, wait for the host or withdraw a request with `cancel_request`.
+- **`AGENT_IDENTITY_REQUIRED`.** Some hosts only take requests from identified agents. Without a key or signature, give the guest the link from `prepare_booking`.
+- **Idempotency.** Send an `Idempotency-Key` header on REST and UCP calls. A retry gets the first answer with `Idempotent-Replayed: true`.
+- **UCP lodging booking sessions (draft).** `POST /ucp/v1/booking-sessions` with `property`, `stays[]` (`accommodation_type.id`, `rate_plan.id`, `occupancy`, `stay_dates`), then `PUT` the booker or guests, then `POST …/complete` with `payment: {}`. `completed` means booked; `complete_in_progress` means the host still decides.
+- **`cancellation`** on every quote: `refundability`, `freeUntil`, and the cost of cancelling today.
+- **Signed callbacks, the standard way.** Status callbacks carry `Content-Digest`, `Signature-Input` and `Signature` (RFC 9421) next to the signature in the body.
+
+- **Through the INNLI guide too.** The guide verifies your signature and passes it on, signed, to each installation: you stay verified and your limits are your own.
+- **Conformance check.** `npx innli-conformance https://stay.example` runs 13 read-only checks against any installation.
+
+Details: [docs/en/agents-2.1.md](../docs/en/agents-2.1.md).
 
 ## What agents get in 2.0
 

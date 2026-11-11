@@ -80,6 +80,7 @@ setInterval(maintain, 3_600_000).unref();
 // Privacy: remove guests' personal data once it is no longer needed.
 const purge = () => {
   store.pruneEvents(90);
+  store.pruneBookingSessions();
   const n = store.anonymiseRequests(config.retentionDays);
   if (n) console.log(tx(`Privacy: persoonsgegevens van ${n} oude aanvraag/aanvragen verwijderd.`, `Privacy: personal data of ${n} old request(s) removed.`));
 };

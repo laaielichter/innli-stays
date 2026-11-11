@@ -207,9 +207,43 @@ Agent keys have `read` (searching, prices) and/or `act` (requests, questions, ca
 ## Errors
 An error comes back as a tool result with `isError: true`. The first text line is the readable message, and `structuredContent.error` has the same error as data: `code`, `message`, `retryable`, `retryAfterSeconds`, `hint` and `nextTools`.
 
-**Codes:** `INVALID_INPUT`, `NOT_FOUND`, `QUOTE_NOT_FOUND`, `QUOTE_EXPIRED`, `UNAVAILABLE`, `CONSENT_REQUIRED`, `TERMS_CHANGED`, `FORBIDDEN`, `RATE_LIMITED`, `CONFLICT`, `LIMIT_REACHED`, `UPSTREAM_ERROR`. Do not retry when `retryable` is false.
+**Codes:** `INVALID_INPUT`, `NOT_FOUND`, `QUOTE_NOT_FOUND`, `QUOTE_EXPIRED`, `UNAVAILABLE`, `CONSENT_REQUIRED`, `TERMS_CHANGED`, `FORBIDDEN`, `AGENT_IDENTITY_REQUIRED`, `RATE_LIMITED`, `CONFLICT`, `LIMIT_REACHED`, `UPSTREAM_ERROR`. Do not retry when `retryable` is false.
 
 **REST:**
 - Errors use the matching HTTP status (400, 403, 404, 409, 410, 429 or 502).
 - The body is `{ error, code, message, retryable, hint, nextTools }`. `error` stays the readable message, as before 2.0.
 - Every agent response carries IETF RateLimit headers.
+
+## New in 2.1
+
+Background and the research behind it: [agents-2.1.md](agents-2.1.md).
+
+### Identity: Web Bot Auth
+Sign each request with HTTP Message Signatures (RFC 9421) and INNLI knows which platform is calling, without an account:
+```
+Signature-Agent: "https://agent.example"
+Signature-Input: sig1=("@authority" "signature-agent");created=1762850000;expires=1762850060;keyid="<JWK thumbprint>";alg="ed25519";nonce="<random>";tag="web-bot-auth"
+Signature: sig1=:<base64 signature>:
+```
+- Keys: a JWKS with your Ed25519 key at `https://agent.example/.well-known/http-message-signatures-directory`.
+- `keyid` is the RFC 7638 thumbprint. `created` and `expires` are required, at most 24 hours apart. A `nonce` is accepted once.
+- Sign at least `@authority` and `signature-agent`.
+- The response header `x-innli-agent-identity` says `verified; agent="agent.example"`, `key`, `anonymous`, or `invalid; reason="…"`. An invalid signature does not fail the request: it is served as anonymous.
+- A verified platform has its own rate limit of 600 requests a minute.
+
+### Hold limits
+Open requests hold rooms. Per property an anonymous address may have 2 open, an identified agent 25, and one guest e-mail address 3. Beyond that: `LIMIT_REACHED` (REST 429). A host can also require an identified agent for requests: `AGENT_IDENTITY_REQUIRED` (REST 403).
+
+### Idempotency-Key
+REST tool calls and UCP operations take an `Idempotency-Key` header (at most 255 characters). The same key with the same body returns the first answer with `Idempotent-Replayed: true`, for 24 hours. The same key with another body returns 409.
+
+### UCP lodging booking sessions (draft)
+- Profile: `GET /.well-known/ucp`. Endpoint: `/ucp/v1`. Every request needs `UCP-Agent: profile="https://platform.example/profile"`.
+- `POST /booking-sessions` → 201 with the session; `GET` and `PUT /booking-sessions/{id}`; `POST /booking-sessions/{id}/complete` with `{"payment": {}}`; `POST /booking-sessions/{id}/cancel`.
+- `stays[]`: `accommodation_type.id` is the INNLI `unitId`, `rate_plan.id` a rate plan or `standard`. All stays of a session share their dates. Dogs: `occupancy.pets`.
+- Amounts are integers in the currency's minor unit. `totals[]` add up to the one `total`.
+- Business outcomes (sold out, too many guests) come with HTTP 200, `ucp.status: "error"` and `messages[]`; protocol errors with an HTTP status and `{ code, content }`.
+- After completion, `io.innli.status_token` gives access to the signed booking record through `check_status`.
+
+### Cancellation in quotes
+`cancellation: { refundability, freeUntil, costNow, percentNow }`, where `refundability` is `refundable`, `partially_refundable`, `non_refundable` or `unknown`.

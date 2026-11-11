@@ -33,3 +33,16 @@ export interface WellKnown {
 }
 
 export const GUIDE_AGENT_HEADER = 'x-innli-agent';
+
+/** How the guide knows the agent: the domain it verified (Web Bot Auth), or `anonymous`. Signed by the guide. */
+export const GUIDE_IDENTITY_HEADER = 'x-innli-relay-identity';
+/** A non-reversible id of the caller at the guide, so limits count per caller and not for the whole guide. Signed by the guide. */
+export const GUIDE_HOLDER_HEADER = 'x-innli-relay-holder';
+
+/** Who called the guide, as it is relayed to installations. */
+export interface GuideCaller {
+  name: string;
+  /** Domain whose key signed the agent's request to the guide. */
+  verifiedDomain?: string;
+  holder: string;
+}
