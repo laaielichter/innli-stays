@@ -13,6 +13,11 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - No tourist tax line for campers. The sample data has a camper rental company with three vehicles.
 - Details: [docs/campers.md](docs/campers.md).
 
+### Starter packs for small owners
+- When setting up, an owner can choose a **starter pack**: *B&B with two rooms*, *One holiday home*, *One campervan* or *One family motorhome*. The pack creates the rooms or vehicles and fills the passport with what is usual for that kind of business.
+- Everything a pack fills in is a **suggestion** (not confirmed, source `starter`). It never replaces a confirmed fact, and it never suggests a price, deposit or fee. The owner checks each one and presses "Correct".
+- An existing property can apply a pack of its own type from the Passport tab (`POST /api/owner/starter-pack`); the list is at `GET /api/starter-packs`.
+
 ### Website in ten languages
 - The website is in English (the default), Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese, with a language picker and `hreflang` links. `site/index.html` is the only page edited by hand; `npm run site` writes the others from `site/i18n/<lang>.json`. The translations were made by machine and have not been checked by native speakers.
 - The reply guard reads ten languages (the same list).

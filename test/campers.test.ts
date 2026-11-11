@@ -125,3 +125,48 @@ describe('camper rental', () => {
     assert.deepEqual(completeness(p, new Date(), 'en').unknownCritical, []);
   });
 });
+
+describe('starter packs', () => {
+  let server: TestServer;
+  before(async () => {
+    server = await startTestServer({ empty: true, setupCode: 'ABC123' });
+  });
+  after(() => server.close());
+  const base = { code: 'ABC123', name: 'Camper van Daan', city: 'Zwolle', country: 'NL', language: 'nl', room: { name: '-', maxGuests: 2, baseRatePerNight: 89 } };
+
+  it('lists the packs, and refuses one that does not exist', async () => {
+    const packs = (await (await fetch(`${server.url}/api/starter-packs`)).json()) as Json[];
+    assert.ok(packs.some((p) => p.id === 'camper-one-van' && p.type === 'camper_rental'));
+    const bad = await fetch(`${server.url}/api/setup`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...base, starter: 'nope' }) });
+    assert.equal(bad.status, 400);
+  });
+
+  it('sets up a one-camper company with suggestions the owner still has to confirm', async () => {
+    const res = await fetch(`${server.url}/api/setup`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...base, starter: 'camper-one-van' }) });
+    assert.equal(res.status, 201, await res.clone().text());
+    const { ownerKey: key, propertyId, starter } = (await res.json()) as Json;
+    assert.equal(starter.unitsAdded, 1);
+    const p = server.store.getProperty(propertyId)!;
+    assert.equal(p.type, 'camper_rental');
+    assert.equal(p.published, false);
+    assert.equal(p.units[0].baseRatePerNight, 89);
+    // Suggested, never confirmed; and no price or deposit is made up.
+    assert.deepEqual({ value: p.facts['rental.minDriverAge'].value, status: p.facts['rental.minDriverAge'].status, source: p.facts['rental.minDriverAge'].source }, { value: 23, status: 'unconfirmed', source: 'starter' });
+    assert.equal(p.units[0].facts['vehicle.licenceCategory'].status, 'unconfirmed');
+    assert.equal(p.facts['rental.securityDeposit'], undefined);
+    assert.ok(Object.values(p.facts).every((f) => f.status !== 'confirmed'));
+
+    // What the owner confirmed stays when the pack is applied again.
+    const auth = { 'content-type': 'application/json', authorization: `Bearer ${key}` };
+    const put = await fetch(`${server.url}/api/owner/facts/rental.minDriverAge`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: 25 }) });
+    assert.equal(put.status, 200);
+    const again = await fetch(`${server.url}/api/owner/starter-pack`, { method: 'POST', headers: auth, body: JSON.stringify({ id: 'camper-one-van' }) });
+    assert.equal(again.status, 200, await again.clone().text());
+    const after = server.store.getProperty(propertyId)!;
+    assert.deepEqual([after.facts['rental.minDriverAge'].value, after.facts['rental.minDriverAge'].status], [25, 'confirmed']);
+    assert.equal(after.units.length, 1);
+    // A pack for another kind of property is refused.
+    const wrong = await fetch(`${server.url}/api/owner/starter-pack`, { method: 'POST', headers: auth, body: JSON.stringify({ id: 'bnb-two-rooms' }) });
+    assert.equal(wrong.status, 400);
+  });
+});

@@ -20,6 +20,8 @@ The dashboard then asks rental questions instead of questions about rooms and br
 | Abroad allowed, and in which countries | Suitable for winter, bike rack, awning |
 | Fuel policy | |
 
+**One camper?** Choose the starter pack *One campervan* or *One family motorhome* when you set up INNLI. It creates the vehicle and fills in the usual rental rules as suggestions. You check each one and press "Correct"; prices, deposit and deductible you always enter yourself.
+
 As everywhere in INNLI, each answer has a status. A rule you did not state is *unknown*, not absent: an agent is told to ask you, and may not assume there is no age limit.
 
 What stays the same: seasons and discounts, paid options (an extra driver, bikes), cancellation rules, booking requests or instant booking, the signed booking record, and the cleaning fee. Tourist tax is left out of the price: a camper pays it where it parks for the night.

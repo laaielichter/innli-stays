@@ -7,6 +7,7 @@ This guide is for B&B owners. The technical installation is described in [hostin
 1. Start INNLI (`npm start`, or `docker compose up -d`).
 2. An **installation code** appears in the window (it is also in `data/installatiecode.txt`).
 3. Open the dashboard (`http://localhost:3000/dashboard/`) and enter the code, your name, your town and your first room.
+   Small business? Pick a **starter pack** in that form (for example *B&B with two rooms* or *One campervan*). It creates your rooms or campers and fills the passport with usual answers as suggestions. Nothing counts as confirmed until you press "Correct", and prices you always enter yourself.
 4. You receive an **owner key**. Keep it safe (in a password manager): you use it to log in.
 
 Lost it? `npm run innli -- new-key <id>` creates a new one (stop INNLI first).

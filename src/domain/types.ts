@@ -15,7 +15,7 @@ export type FactValue = boolean | number | string | string[];
  */
 export type FactStatus = 'confirmed' | 'unconfirmed' | 'unknown';
 
-export type FactSource = 'owner' | 'website' | 'booking_system' | 'import';
+export type FactSource = 'owner' | 'website' | 'booking_system' | 'import' | 'starter';
 
 export interface Fact {
   value: FactValue | null;

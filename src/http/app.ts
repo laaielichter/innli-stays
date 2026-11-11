@@ -14,6 +14,7 @@ import type { Fetcher } from '../connectors/availability.ts';
 import { bookingsToken, calendarToken, exportIcs } from '../connectors/export.ts';
 import { bookingsIcs, monthlyStats, requestsCsv } from '../analytics/bookings.ts';
 import { addDays, DateRangeError, stayNights } from '../domain/dates.ts';
+import { applyStarterPack, getStarterPack, STARTER_PACKS } from '../starters.ts';
 import { completeness, FACT_CATALOG, factApplies, FactValidationError, getFactDefinition, ownerConfirmFact, ownerMarkUnknown, ownerSetFact, suggestFact } from '../domain/facts.ts';
 import { LANGUAGES, PROPERTY_TYPES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
 import { demoEngine } from '../demo/engine.ts';
@@ -585,6 +586,7 @@ export function createApp(opts: AppOptions) {
         language: z.enum(LANGUAGES).optional(),
         contactEmail: z.string().trim().email({ error: () => t('own.invalidEmail') }).optional().or(z.literal('')),
         website: z.string().trim().url().optional().or(z.literal('')),
+        starter: z.string().max(40).optional(),
         room: z.object({ name: z.string().trim().min(1).max(120), maxGuests: z.number().int().min(1).max(30), baseRatePerNight: z.number().min(0).max(10_000) }),
       })
       .parse(req.body);
@@ -592,14 +594,27 @@ export function createApp(opts: AppOptions) {
       res.status(403).json({ error: t('own.wrongCode') });
       return;
     }
-    const { property, ownerKey } = createProperty({ name: input.name, type: input.type, address: { city: input.city, country: input.country.toUpperCase() } });
+    const pack = input.starter ? getStarterPack(input.starter) : undefined;
+    if (input.starter && !pack) {
+      res.status(400).json({ error: 'Unknown starter pack.' });
+      return;
+    }
+    const { property, ownerKey } = createProperty({ name: input.name, type: pack?.type ?? input.type, address: { city: input.city, country: input.country.toUpperCase() } });
     if (input.language) property.language = input.language;
     if (input.contactEmail) property.contactEmail = input.contactEmail;
     if (input.website) property.website = input.website;
     property.booking = { connector: { kind: 'manual' } };
-    property.units.push(createUnit({ name: input.room.name, maxGuests: input.room.maxGuests, includedGuests: Math.min(2, input.room.maxGuests), baseRatePerNight: input.room.baseRatePerNight }));
+    // A starter pack brings its own rooms or vehicles and fills the passport with suggestions to confirm.
+    const started = pack ? applyStarterPack(property, pack, { lang: input.language ?? currentLang(), addUnits: true, ratePerNight: input.room.baseRatePerNight }) : undefined;
+    if (!pack) property.units.push(createUnit({ name: input.room.name, maxGuests: input.room.maxGuests, includedGuests: Math.min(2, input.room.maxGuests), baseRatePerNight: input.room.baseRatePerNight }));
     store.saveProperty(property);
-    res.status(201).json({ ownerKey, propertyId: property.id });
+    res.status(201).json({ ownerKey, propertyId: property.id, starter: started });
+  });
+
+  /** Starter packs: a usual set-up for a small owner, as suggestions to confirm. */
+  app.get('/api/starter-packs', (_req, res) => {
+    const lang = currentLang() === 'nl' ? 'nl' : 'en';
+    res.json(STARTER_PACKS.map((p) => ({ id: p.id, type: p.type, name: p.name[lang], summary: p.summary[lang], units: p.units.length, suggestions: Object.keys(p.facts).length + p.units.reduce((n, u) => n + Object.keys(u.facts).length, 0) })));
   });
 
   /** The fact catalog with labels, categories and hints in the requested language (?lang=). */
@@ -704,6 +719,19 @@ export function createApp(opts: AppOptions) {
     const fact = ownerMarkUnknown(unitFacts(p, unitId), req.params.key);
     store.saveProperty(p);
     res.json({ fact, completeness: completeness(p) });
+  });
+
+  /** Fill an existing passport from a starter pack. Confirmed facts are left alone; no rooms are added. */
+  ownerApi.post('/starter-pack', (req, res) => {
+    const p = owner(req);
+    const pack = getStarterPack(z.object({ id: z.string().max(40) }).parse(req.body).id);
+    if (!pack || pack.type !== p.type) {
+      res.status(400).json({ error: 'This starter pack is for another kind of property.' });
+      return;
+    }
+    const result = applyStarterPack(p, pack, { lang: currentLang() });
+    store.saveProperty(p);
+    res.json({ ...result, completeness: completeness(p) });
   });
 
   ownerApi.post('/units', (req, res) => {
