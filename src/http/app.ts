@@ -691,13 +691,14 @@ export function createApp(opts: AppOptions) {
     const p = owner(req);
     const patch = propertyPatchSchema.parse(req.body);
     // A rental company is shown to agents only once the owner confirmed what makes a rental insured and lawful.
-    if (patch.published === true && !p.published && isCamperRental(p)) {
-      const check = rentalReadiness(p, currentLang());
-      if (!check.ready) {
-        const open = check.items.filter((i) => i.required && i.state !== 'done');
-        res.status(400).json({ error: `${currentLang() === 'nl' ? 'Nog niet zichtbaar te maken. Bevestig eerst in je paspoort' : 'Not ready to be visible yet. First confirm in your passport'}: ${open.map((i) => i.what).join('; ')}.`, rentalReadiness: check });
-        return;
-      }
+    // Checked on what the property would become, so a new type and "visible" in one step cannot slip past.
+    const next = structuredClone(p);
+    applyPatch(next, patch);
+    const blocked = next.published && isCamperRental(next) ? rentalReadiness(next, currentLang()) : undefined;
+    if (blocked && !blocked.ready && patch.published === true) {
+      const open = blocked.items.filter((i) => i.required && i.state !== 'done');
+      res.status(400).json({ error: `${currentLang() === 'nl' ? 'Nog niet zichtbaar te maken. Bevestig eerst in je paspoort' : 'Not ready to be visible yet. First confirm in your passport'}: ${open.map((i) => i.what).join('; ')}.`, rentalReadiness: blocked });
+      return;
     }
     applyPatch(p, patch);
     store.saveProperty(p);
@@ -734,7 +735,8 @@ export function createApp(opts: AppOptions) {
   /** Camper rental: what has to be in order before renting out, and what is still open. */
   ownerApi.get('/rental-readiness', (req, res) => {
     const p = owner(req);
-    res.json(isCamperRental(p) ? rentalReadiness(p, currentLang()) : { ready: true, items: [], disclaimer: '' });
+    // `published` comes along: saving a rental company that is not ready hides it, and the dashboard has to show that.
+    res.json({ ...(isCamperRental(p) ? rentalReadiness(p, currentLang()) : { ready: true, items: [], disclaimer: '' }), published: p.published });
   });
 
   /** Fill an existing passport from a starter pack. Confirmed facts are left alone; no rooms are added. */

@@ -16,18 +16,26 @@ import type { Driver, Extra, Guests, Property, Quote, Unit } from './types.ts';
 
 export const isCamperRental = (property: Property) => property.type === 'camper_rental';
 
-/** Licence categories, lightest first. A heavier licence covers the lighter vehicles. */
-const LICENCE_ORDER = ['B', 'C1', 'C'];
-/** Names for an ordinary car licence outside Europe count as the lightest category. */
-const licenceRank = (category: string) => {
-  const c = category.trim().toUpperCase();
-  return /^(CAR|REGULAR|STANDARD|ORDINARY|CLASS ?1|CLASS ?C|CLASS ?D|CLASS ?5|G)$/.test(c) ? 0 : LICENCE_ORDER.indexOf(c);
+/**
+ * How heavy a vehicle a licence covers: 0 = a car (B), 1 = up to 7,500 kg (C1), 2 = heavier (C).
+ * -1 = a licence that does not cover a camper, or one INNLI does not recognise.
+ * Trailer variants (BE, C1E, CE) cover what the plain category covers; a bus licence (D) includes B.
+ * Names for an ordinary car licence outside Europe count as a car licence.
+ */
+export const licenceRank = (category: string): number => {
+  const c = category.trim().toUpperCase().replace(/[\s.-]/g, '');
+  if (/^(B|BE|B96|D1|D1E|D|DE|CAR|REGULAR|STANDARD|ORDINARY|CLASS1|CLASSC|CLASSD|CLASS5|G)$/.test(c)) return 0;
+  if (/^(C1|C1E)$/.test(c)) return 1;
+  if (/^(C|CE)$/.test(c)) return 2;
+  return -1;
 };
 
 type Known<T> = { value: T | null; status: 'confirmed' | 'unconfirmed' | 'unknown' };
 function fact<T>(facts: Property['facts'], key: string): Known<T> {
   const f = readFact(facts, key);
-  return { value: (f.value ?? null) as T | null, status: f.value === null || f.value === undefined ? 'unknown' : f.status === 'confirmed' ? 'confirmed' : 'unconfirmed' };
+  // An empty list says nothing: it is not "no country", it is not answered.
+  const empty = f.value === null || f.value === undefined || (Array.isArray(f.value) && f.value.length === 0);
+  return { value: (empty ? null : f.value) as T | null, status: empty ? 'unknown' : f.status === 'confirmed' ? 'confirmed' : 'unconfirmed' };
 }
 
 export interface RuleCheck {
@@ -41,7 +49,10 @@ export interface RuleCheck {
 export interface DriverCheck extends RuleCheck {
   /** Same as `ok`: kept under this name because agents read it as a question about the driver. */
   eligible: boolean | null;
+  /** The part of `needs` that only the guest can answer. A request is not sent while this is not empty. */
+  missingFromGuest: string[];
 }
+const countryOf = (property: Property) => (property.address?.country ?? '').toUpperCase();
 const verdict = (reasons: string[], needs: string[]) => (reasons.length ? false : needs.length ? null : true);
 
 /** Does this driver, with this party, fit this vehicle and this company's rules? */
@@ -55,30 +66,36 @@ export function checkDriver(property: Property, unit: Unit, driver: Driver | und
   const seats = fact<number>(unit.facts, 'vehicle.beltedSeats');
 
   const people = guests.adults + guests.children;
+  const missingFromGuest: string[] = [];
+  const ask = (text: string) => {
+    needs.push(text);
+    missingFromGuest.push(text);
+  };
   if (seats.value !== null && people > seats.value) reasons.push(`${unit.name} has ${seats.value} seats with a seat belt; the party is ${people}.`);
   else if (seats.value === null) needs.push('Ask the rental company how many seats have a seat belt.');
 
   if (!driver) {
-    needs.push("The driver's age and driving licence (category, years held, country of issue): pass them as `driver`.");
+    ask("The driver's age and driving licence (category, years held, country of issue): pass them as `driver`.");
   } else {
     if (minAge.value !== null && driver.age < minAge.value) reasons.push(`The driver must be at least ${minAge.value}; this driver is ${driver.age}.`);
     else if (minAge.value === null) needs.push('The company has not stated a minimum driver age: ask before booking.');
     if (maxAge.value !== null && driver.age > maxAge.value) reasons.push(`The driver may be at most ${maxAge.value}; this driver is ${driver.age}.`);
 
     if (minYears.value !== null) {
-      if (driver.licenceYears === undefined) needs.push(`How many years the driver has held a licence (at least ${minYears.value} are needed).`);
+      if (driver.licenceYears === undefined) ask(`How many years the driver has held a licence (at least ${minYears.value} are needed).`);
       else if (driver.licenceYears < minYears.value) reasons.push(`The driver must have held a licence for at least ${minYears.value} years; this driver has ${driver.licenceYears}.`);
     }
 
     if (category.value !== null) {
       const needed = licenceRank(String(category.value));
       const held = driver.licenceCategory ? licenceRank(driver.licenceCategory) : -1;
-      if (!driver.licenceCategory) needs.push(`Which licence the driver holds (this vehicle needs category ${category.value}).`);
-      else if (needed >= 0 && held < needed) reasons.push(`${unit.name} needs a category ${category.value} licence; the driver holds ${driver.licenceCategory}.`);
+      if (needed < 0) needs.push(`The company states "${category.value}" as the licence needed, which INNLI cannot compare: ask the company before booking.`);
+      else if (!driver.licenceCategory) ask(`Which licence the driver holds (this vehicle needs category ${category.value}).`);
+      else if (held < needed) reasons.push(`${unit.name} needs a category ${category.value} licence; the driver holds ${driver.licenceCategory}.`);
     } else needs.push('The company has not stated which driving licence this vehicle needs: ask before booking.');
 
     // A licence from another part of the world: accepted or not is the company's (and its insurer's) call.
-    const home = property.address.country;
+    const home = countryOf(property);
     if (driver.licenceCountry && isForeignLicence(driver.licenceCountry, home)) {
       const accepted = fact<boolean>(property.facts, 'rental.foreignLicencesAccepted');
       const idp = fact<boolean>(property.facts, 'rental.idpRequired');
@@ -87,20 +104,20 @@ export function checkDriver(property: Property, unit: Unit, driver: Driver | und
       else if (accepted.value === null) needs.push(`Ask the company whether a driving licence issued in ${from} is accepted.`);
       if (accepted.value !== false) {
         if (idp.value === true && driver.hasInternationalPermit === false) reasons.push(`With a licence issued in ${from} the company also needs an international driving permit.`);
-        else if (idp.value === true && driver.hasInternationalPermit === undefined) needs.push('Whether the driver has an international driving permit: the company needs one with this licence.');
+        else if (idp.value === true && driver.hasInternationalPermit === undefined) ask('Whether the driver has an international driving permit: the company needs one with this licence.');
         else if (idp.value === null && !driver.hasInternationalPermit) needs.push('Ask the company whether an international driving permit is needed with this licence.');
       }
     }
   }
   const ok = verdict(reasons, needs);
-  return { ok, eligible: ok, reasons, needs };
+  return { ok, eligible: ok, reasons, needs, missingFromGuest };
 }
 
 /** May the vehicle go where the guest wants to drive, and is it insured there? */
 export function checkTrip(property: Property, destinations: string[] | undefined): RuleCheck & { destinations: string[] } {
   const reasons: string[] = [];
   const needs: string[] = [];
-  const home = property.address.country.toUpperCase();
+  const home = countryOf(property);
   const wanted = [...new Set((destinations ?? []).map((c) => c.toUpperCase()))];
   const abroad = wanted.filter((c) => c !== home);
   const allowed = fact<boolean>(property.facts, 'rental.abroadAllowed');
@@ -121,10 +138,13 @@ export function checkTrip(property: Property, destinations: string[] | undefined
   return { ok: verdict(reasons, needs), reasons, needs, destinations: wanted };
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 /** Is the vehicle itself fit to be rented for these dates? */
 export function checkVehicle(unit: Unit, checkout: string): RuleCheck {
   const until = fact<string>(unit.facts, 'vehicle.inspectionValidUntil').value;
-  if (until && /^\d{4}-\d{2}-\d{2}$/.test(until) && until < checkout) {
+  if (until && !ISO_DATE.test(until)) return { ok: false, reasons: [`The roadworthiness inspection date of ${unit.name} cannot be read ("${until}"); the company has to correct it first.`], needs: [] };
+  if (until && until < checkout) {
     return { ok: false, reasons: [`The roadworthiness inspection of ${unit.name} is valid until ${until}; this rental ends on ${checkout}.`], needs: [] };
   }
   return { ok: true, reasons: [], needs: [] };
@@ -143,7 +163,7 @@ export function rentalTerms(property: Property, unit: Unit, quote: RentalQuote, 
   const p = property.facts;
   const u = unit.facts;
   const days = quote.nights;
-  const place = jurisdictionOf(property.address.country);
+  const place = jurisdictionOf(countryOf(property));
   const unlimited = fact<boolean>(p, 'rental.unlimitedKm');
   const perDay = fact<number>(p, 'rental.kmIncludedPerDay');
   const extraKm = fact<number>(p, 'rental.pricePerExtraKm');
@@ -225,7 +245,7 @@ export function rentalTerms(property: Property, unit: Unit, quote: RentalQuote, 
     },
     pricesIncludeVat: fact<boolean>(p, 'rental.pricesIncludeVat').value,
     // What is usual in this country. Never a substitute for the company's own answer.
-    jurisdiction: { country: property.address.country.toUpperCase(), distanceUnit: place.distanceUnit, carLicence: place.licenceNote, disclaimer: JURISDICTION_DISCLAIMER },
+    jurisdiction: { country: countryOf(property), distanceUnit: place.distanceUnit, carLicence: place.licenceNote, disclaimer: JURISDICTION_DISCLAIMER },
     // The honest part: which of these the company did not confirm, and which it did not state at all.
     notConfirmed: watched.filter(([, f]) => f.status === 'unconfirmed').map(([k]) => k),
     unknown: watched.filter(([, f]) => f.status === 'unknown').map(([k]) => k),
@@ -233,12 +253,20 @@ export function rentalTerms(property: Property, unit: Unit, quote: RentalQuote, 
 }
 
 /** Why a request for this quote cannot be sent, if it cannot. */
-export function rentalBlockers(property: Property, unit: Unit, quote: Quote): { code: 'DRIVER_NOT_ELIGIBLE' | 'RENTAL_NOT_POSSIBLE'; message: string } | undefined {
+export function rentalBlockers(property: Property, unit: Unit, quote: Quote): { code: 'DRIVER_NOT_ELIGIBLE' | 'RENTAL_NOT_POSSIBLE' | 'INVALID_INPUT'; message: string } | undefined {
   const driver = checkDriver(property, unit, quote.driver, quote.guests);
   if (driver.ok === false) return { code: 'DRIVER_NOT_ELIGIBLE', message: driver.reasons.join(' ') };
+  // "Cannot be said yet" because the guest did not say: ask the guest, do not send the request.
+  if (driver.missingFromGuest.length) return { code: 'INVALID_INPUT', message: `Before this can be requested, ask the guest: ${driver.missingFromGuest.join(' ')} Then get a fresh quote with the complete driver.` };
   const other = [...checkVehicle(unit, quote.checkout).reasons, ...checkTrip(property, quote.destinations).reasons];
   if (other.length) return { code: 'RENTAL_NOT_POSSIBLE', message: other.join(' ') };
   return undefined;
+}
+
+/** What only the company can answer for this rental; such a request is never confirmed automatically. */
+export function rentalOpenQuestions(property: Property, unit: Unit, quote: Pick<Quote, 'driver' | 'guests' | 'destinations'>): string[] {
+  const driver = checkDriver(property, unit, quote.driver, quote.guests);
+  return [...driver.needs.filter((n) => !driver.missingFromGuest.includes(n)), ...checkTrip(property, quote.destinations).needs];
 }
 
 /** One sentence for the consent summary: what the guest agrees to besides the price. */
@@ -307,13 +335,13 @@ const READINESS_NL: Record<string, string> = {
  * company to agents until the ones marked `required` are confirmed.
  */
 export function rentalReadiness(property: Property, lang: string = 'en', today = new Date().toISOString().slice(0, 10)): { ready: boolean; items: (ReadinessItem & { required: boolean })[]; disclaimer: string } {
-  const place = jurisdictionOf(property.address.country);
+  const place = jurisdictionOf(countryOf(property));
   const tr = (text: string) => (lang === 'nl' ? (READINESS_NL[text] ?? text) : text);
   const items: (ReadinessItem & { required: boolean })[] = [];
   const confirmed = (facts: Property['facts'], key: string) => readFact(facts, key).status === 'confirmed';
   const add = (required: boolean, key: string, facts: Property['facts'], what: string, why: string, problem?: (value: unknown) => boolean) => {
     const value = readFact(facts, key).value;
-    const state: ReadinessItem['state'] = !confirmed(facts, key) || value === null ? 'open' : problem?.(value) ? 'problem' : 'done';
+    const state: ReadinessItem['state'] = !confirmed(facts, key) || value === null || (Array.isArray(value) && value.length === 0) ? 'open' : problem?.(value) ? 'problem' : 'done';
     const [name, rest] = what.includes(': ') ? [what.slice(0, what.indexOf(': ') + 2), what.slice(what.indexOf(': ') + 2)] : ['', what];
     items.push({ key, state, what: name + tr(rest), why: tr(why), required });
   };
@@ -331,10 +359,13 @@ export function rentalReadiness(property: Property, lang: string = 'en', today =
   add(false, 'rental.pricesIncludeVat', p, 'Whether your prices include VAT', 'Consumers must see the price they will actually pay.');
   for (const unit of property.units) {
     const u = unit.facts;
-    add(true, 'vehicle.inspectionValidUntil', u, `${unit.name}: roadworthiness inspection valid`, 'A vehicle without a valid inspection may not be on the road, and is often not insured.', (v) => String(v) < today);
+    add(true, 'vehicle.inspectionValidUntil', u, `${unit.name}: roadworthiness inspection valid`, 'A vehicle without a valid inspection may not be on the road, and is often not insured.', (v) => !ISO_DATE.test(String(v)) || String(v) < today);
     add(true, 'vehicle.licenceCategory', u, `${unit.name}: driving licence needed`, 'Agents refuse a driver without the right licence.');
     add(true, 'vehicle.beltedSeats', u, `${unit.name}: seats with a seat belt`, 'No more people may travel than there are belted seats.');
     add(false, 'vehicle.maxMassKg', u, `${unit.name}: maximum authorised mass`, 'It decides which licence is needed.');
+    if (typeof readFact(u, 'vehicle.licenceCategory').value === 'string' && licenceRank(String(readFact(u, 'vehicle.licenceCategory').value)) < 0) {
+      items.push({ key: 'vehicle.licenceCategory', state: 'problem', required: true, what: `${unit.name}: ${tr('driving licence needed')}`, why: lang === 'nl' ? 'Gebruik B, C1 of C (of "car" buiten Europa), zonder extra woorden.' : 'Use B, C1 or C (or "car" outside Europe), without other words.' });
+    }
     // A stated licence that looks too light for the weight, by the usual rule in this country.
     const mass = readFact(u, 'vehicle.maxMassKg').value;
     const category = readFact(u, 'vehicle.licenceCategory').value;
@@ -342,5 +373,5 @@ export function rentalReadiness(property: Property, lang: string = 'en', today =
       items.push({ key: 'vehicle.licenceCategory', state: 'problem', required: false, what: `${unit.name}: ${tr('check the licence needed')}`, why: lang === 'nl' ? `Je noemt rijbewijs ${category} voor een voertuig van ${mass} kg. In dit land dekt een gewoon autorijbewijs meestal tot ${place.carLicenceMaxKg} kg.` : `You state a ${category} licence for a vehicle of ${mass} kg. ${place.licenceNote}` });
     }
   }
-  return { ready: items.every((i) => !i.required || i.state === 'done'), items, disclaimer: lang === 'nl' ? `INNLI kan dit niet controleren: jij bevestigt het. Deze lijst bevat wat in de meeste landen gebruikelijk is en is geen juridisch advies. Vraag je verzekeraar, en waar nodig een jurist, naar de regels in ${property.address.country.toUpperCase()}.` : `INNLI cannot check these: you confirm them. This list covers what is usual in most countries; it is not legal advice. Ask your insurer and, where needed, a lawyer about the rules in ${property.address.country.toUpperCase()}.` };
+  return { ready: items.every((i) => !i.required || i.state === 'done'), items, disclaimer: lang === 'nl' ? `INNLI kan dit niet controleren: jij bevestigt het. Deze lijst bevat wat in de meeste landen gebruikelijk is en is geen juridisch advies. Vraag je verzekeraar, en waar nodig een jurist, naar de regels in ${countryOf(property) || 'je land'}.` : `INNLI cannot check these: you confirm them. This list covers what is usual in most countries; it is not legal advice. Ask your insurer and, where needed, a lawyer about the rules in ${countryOf(property) || 'your country'}.` };
 }

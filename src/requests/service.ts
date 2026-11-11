@@ -4,7 +4,7 @@ import type { ErrorCode } from '../agentErrors.ts';
 import { track } from '../analytics/funnel.ts';
 import { CatalogError, stayPolicies, type Catalog } from '../catalog.ts';
 import { addDays, stayNights } from '../domain/dates.ts';
-import { isCamperRental, rentalBlockers } from '../domain/rental.ts';
+import { isCamperRental, rentalBlockers, rentalOpenQuestions } from '../domain/rental.ts';
 import { DEFAULT_BOOKING_RULES, type BookingRequest, type BookingRules, type Driver, type Language, type Property, type Quote } from '../domain/types.ts';
 import { currentLang, defaultLang, formatDate, LOCALE, money, ownerLang, t, type Lang } from '../i18n/index.ts';
 import type { Store } from '../store.ts';
@@ -270,7 +270,9 @@ export class RequestService {
       this.store.saveQuote(heldQuote);
     }
     track(this.store, 'booking_request', property.id, agentClient ?? 'verblijfspagina', { requestId: request.id, groupId: opts.groupId });
-    (request as BookingRequest & { _issues?: string[] })._issues = offer.quote.issues ?? [];
+    // Something only the company can answer (an unstated rule, a country it said nothing about): a person decides, never the instant-booking rule.
+    const open = driver ? rentalOpenQuestions(property, offer.unit, { driver, destinations, guests: offer.guests }) : [];
+    (request as BookingRequest & { _issues?: string[] })._issues = [...(offer.quote.issues ?? []), ...(open.length ? ['rental_open_questions'] : [])];
     return request;
   }
 

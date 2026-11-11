@@ -42,6 +42,8 @@ INNLI cannot check any of this: you confirm it. The list is what is usual in mos
 
 A rental that would end after a vehicle's inspection runs out is not accepted.
 
+The rule holds however a company got there. If a required answer is withdrawn later, or a stay is turned into a rental company, it is hidden from agents again until the list is complete. The inspection date is given as year-month-day, and the licence needed as B, C1 or C (or `car` outside Europe), so that the checks can read them.
+
 ## Insurance packages
 
 The basic cover is in the passport: insurance included or not, the deductible per claim, liability, roadside assistance and the countries where it is valid.
@@ -100,7 +102,9 @@ Campers and places to stay are never mixed in one search.
 - `unknown` lists rental rules the company did not state. Do not fill them in.
 
 4. **Consent**: `consent.summary` includes the kilometres, the deposit and the insurance. If the company changes one of them after the guest agreed, `request_booking` answers `TERMS_CHANGED`.
-5. **Request**: `request_booking` as for a stay. It is refused with `DRIVER_NOT_ELIGIBLE` when the driver or the party breaks a rule, with `RENTAL_NOT_POSSIBLE` for a country the vehicle may not go to or is not insured in (or an inspection that runs out), and with `INVALID_INPUT` when the quote has no driver. Never change the driver's details to make a vehicle fit.
+5. **Request**: `request_booking` as for a stay. It is refused with `DRIVER_NOT_ELIGIBLE` when the driver or the party breaks a rule, with `RENTAL_NOT_POSSIBLE` for a country the vehicle may not go to or is not insured in (or an inspection that runs out), and with `INVALID_INPUT` when the quote has no driver, or when the guest has not yet said something the company's rules need (which licence, how many years, an international permit). `rental.driver.missingFromGuest` lists exactly that.
+
+The same checks run on every way in: an agent, a changed request, and the form on the company's public page. When only the company can answer something (a rule it did not state), the request is sent, but it is never confirmed automatically. Never change the driver's details to make a vehicle fit.
 
 The company sees the driver's age and licence with the request. They are removed together with the guest's other personal data after the retention period.
 

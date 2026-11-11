@@ -197,7 +197,13 @@ export function coerceFactValue(key: string, raw: unknown): FactValue {
       break;
     }
     case 'string':
-      if (typeof raw === 'string' && raw.trim()) return raw.trim();
+      if (typeof raw === 'string' && raw.trim()) {
+        const text = raw.trim();
+        // Two answers are compared by the software, so they have to be in a form it can read.
+        if (key === 'vehicle.inspectionValidUntil' && !/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new FactValidationError(t('own.factDate'));
+        if (key === 'vehicle.licenceCategory' && !/^(B|C1|C|car)$/i.test(text)) throw new FactValidationError(t('own.factLicence'));
+        return key === 'vehicle.licenceCategory' && text.toLowerCase() !== 'car' ? text.toUpperCase() : text;
+      }
       break;
     case 'string[]': {
       const arr = typeof raw === 'string' ? raw.split(',') : raw;

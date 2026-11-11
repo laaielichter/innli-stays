@@ -48,7 +48,7 @@ Everything here can be reproduced from the repository.
 
 | Claim | How to check |
 |---|---|
-| 267 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
+| 274 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
 | Types are strict and clean | `npm run typecheck` |
 | The npm package installs and starts | `npm run smoke:npm` |
 | A running installation behaves as agents expect | `npx innli-conformance <address>`: 14 read-only checks |
@@ -59,7 +59,7 @@ Everything here can be reproduced from the repository.
 | The module map is kept: no new dependency between modules without a decision | `test/architecture.test.ts`, explained in [architecture.md](architecture.md) |
 | Removed personal data is gone from the data files | `test/privacy.test.ts` |
 
-The 2.1 changes went through a separate security review pass by an AI reviewer that had not written the code. Its findings and their fixes are in the [changelog](../CHANGELOG.md) under *Hardened after an independent review*; the security model is in [SECURITY.md](../SECURITY.md). There has been no audit by an outside security firm.
+The 2.1 changes, and camper rental in 2.2, each went through a separate review pass by an AI reviewer that had not written the code. Its findings and their fixes are in the [changelog](../CHANGELOG.md) under *Hardened after an independent review*; the security model is in [SECURITY.md](../SECURITY.md). There has been no audit by an outside security firm.
 
 ## What is not there
 

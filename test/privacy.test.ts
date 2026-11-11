@@ -25,13 +25,20 @@ describe('personal data really leaves the disk', () => {
       status: 'accepted', createdAt: '2019-12-01T10:00:00Z', decidedAt: '2019-12-02T10:00:00Z',
     } as unknown as BookingRequest);
     store.saveWaitlist({ id: 'w_old', publicToken: 'wt_old', propertyId: property.id, checkin: long, checkout: '2020-01-04', guests: { adults: 2, children: 0, dogs: 0 }, email: 'wachter@example.com', agentClient: 'Test', status: 'waiting', createdAt: '2019-12-01T10:00:00Z' } as WaitlistEntry);
+    // Copies of the same guest elsewhere: the quote, a checkout session, a question, a cancellation reason.
+    store.saveQuote({ id: 'q_old', propertyId: property.id, unitId: 'u', checkin: long, checkout: '2020-01-04', driver: { age: 41, licenceCategory: 'B' }, destinations: ['FR'], validUntil: '2020-01-01T00:00:00Z' } as never);
+    store.saveCheckoutSession({ id: 'cs_old', propertyId: property.id, items: [], quoteIds: ['q_old'], buyer: { first_name: 'Vera', last_name: 'Voorbeeld', email: 'vera.voorbeeld@example.com', phone_number: '+31600000001' }, agentClient: 'Test', createdAt: new Date().toISOString(), expiresAt: new Date().toISOString(), statusToken: 'tok_old' } as never);
+    store.saveQuestion({ id: 'qu_old', publicToken: 'qt_old', propertyId: property.id, question: 'Is er parkeerplek?', replyEmail: 'Vera.Voorbeeld@example.com', status: 'open', agentClient: 'Test', createdAt: new Date().toISOString() } as never);
+    store.getRequest('req_old')!.cancelReason = 'Mijn moeder Greet is ziek geworden';
+    store.saveRequest(store.getRequest('req_old')!);
     store.flush();
     assert.match(everythingOnDisk(), /vera\.voorbeeld@example\.com/);
 
     assert.equal(store.anonymiseRequests(180), 2);
+    assert.equal(store.getQuestion('qu_old')!.replyEmail, undefined);
     store.flush();
     const disk = everythingOnDisk();
-    for (const gone of ['Vera Voorbeeld', 'vera.voorbeeld@example.com', '+31600000001', 'trein uit Zwolle', 'wachter@example.com', '"licenceCategory"']) {
+    for (const gone of ['Vera Voorbeeld', 'vera.voorbeeld@example.com', '+31600000001', 'trein uit Zwolle', 'wachter@example.com', '"licenceCategory"', 'Vera.Voorbeeld', '"first_name"', 'Greet', '"destinations":["FR"]']) {
       assert.ok(!disk.includes(gone), `still on disk: ${gone}`);
     }
     // What the owner needs for the books stays: the stay itself, without the person.

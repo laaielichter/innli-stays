@@ -32,6 +32,7 @@ Stay wishes are anonymous: hosts see dates, party, wishes and budget, never who 
 
 - A guest's name, e-mail address, phone number, message and driver details are **removed automatically** 180 days after the stay ended, or after a request was declined. The owner can set another period with `INNLI_BEWAARTERMIJN_DAGEN` (at least 30 days).
 - The same goes for e-mail addresses on questions and on the waiting list.
+- Removal covers every copy an installation holds: the request, the quote it came from (with the driver), a checkout or booking session of an agent platform, questions sent with the same e-mail address, and a cancellation reason the guest wrote.
 - Removal rewrites the data files, so the details are gone from disk and not only hidden.
 - What remains is the booking without the person: dates, room, price. An owner usually needs that for the accounts.
 - **Backups** hold a copy. Automatic backups are kept 14 days by default (`INNLI_BACKUP_KEEP`), so removed details can exist in a backup for that long. Backups an owner downloads by hand are the owner's to remove.

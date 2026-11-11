@@ -147,6 +147,14 @@ async function renderRentalReady() {
   const r = await api('/rental-readiness').catch(() => null);
   if (!r) { card.hidden = true; return; }
   card.hidden = false;
+  // Withdrawing a required answer hides the company from agents: show that at once.
+  if (state.property.published && r.published === false) {
+    state.property.published = false;
+    $('#published').checked = false;
+    $('#prop-status').textContent = T('Niet gepubliceerd');
+    $('#prop-status').className = 'chip unknown';
+    toast(T('Je bent niet meer zichtbaar voor agents: er is een verplicht punt niet in orde.'), true);
+  }
   $('#rental-ready-intro').textContent = r.ready
     ? T('Alles wat nodig is om zichtbaar te zijn voor agents heb je bevestigd.')
     : T('Bevestig de verplichte punten in je paspoort. Pas daarna kun je zichtbaar worden voor agents.');
@@ -261,6 +269,7 @@ function applyResult(result, def, unitId) {
   const target = unitId ? state.property.units.find((u) => u.id === unitId).facts : state.property.facts;
   target[def.key] = result.fact;
   state.completeness = result.completeness;
+  renderRentalReady();
   renderCompleteness();
   if (unitId) renderUnits(); else renderPassport();
 }
@@ -904,7 +913,10 @@ $('#basics-form').addEventListener('submit', guard(async (e) => {
       website: val('website') || null, contactEmail: val('contactEmail') || null, phone: val('phone') || null,
     },
   });
+  const typeChanged = property.type !== state.property.type;
   state.property = property; state.completeness = completeness;
+  // Another kind of business has other passport questions.
+  if (typeChanged) state.catalog = await fetch(`/api/fact-catalog?lang=${LANG}&type=${encodeURIComponent(property.type || '')}`).then((r) => r.json());
   renderAll();
   toast('Gegevens opgeslagen');
 }));
@@ -1219,7 +1231,7 @@ function renderRequests() {
         r.destinations?.length ? T('wil rijden in {0}', r.destinations.join(', ')) : '',
       ].filter(Boolean).join(' · ')) : null,
       r.ownerNote ? h('div', { class: 'small muted', 'data-user-text': true }, T('Jouw bericht: {0}', r.ownerNote)) : null,
-      r.status !== 'new' && r.guest.email && !(r.status === 'accepted' && r.checkout >= new Date().toISOString().slice(0, 10)) ? h('div', { class: 'actions' },
+      state.me?.role !== 'reception' && r.status !== 'new' && r.guest.email && !(r.status === 'accepted' && r.checkout >= new Date().toISOString().slice(0, 10)) ? h('div', { class: 'actions' },
         h('button', { class: 'btn small', onclick: guard(async () => {
           if (!confirm(T('De naam en contactgegevens van deze gast nu verwijderen? Dit kan niet ongedaan worden gemaakt.'))) return;
           await api(`/requests/${encodeURIComponent(r.id)}/erase`, { method: 'POST', body: {} });

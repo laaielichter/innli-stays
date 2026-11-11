@@ -14,6 +14,10 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - **Where the guest drives**: `get_quote` takes `destinations`; a country the vehicle may not go to, or is not insured in, refuses the request (`RENTAL_NOT_POSSIBLE`).
 - **Different countries**: a licence from outside Europe follows the company's rule (accepted or not, international driving permit or not); kilometres are also given in miles where people use miles; the owner is warned when a car licence is stated for a vehicle too heavy for one by the usual rule of that country. These are rules of thumb, marked as not legal advice.
 - **Ready to rent out?**: a checklist in the dashboard of what must be in order (rental cover from the insurer, liability, rental terms, a valid inspection per vehicle and more). A rental company cannot be made visible to agents until the required points are confirmed. INNLI cannot check them and says so.
+- The checks run on **every way in**: an agent, a changed request and the form on the public page, which now asks for the driver. A request is not sent while the guest has not said what the rules need (`missingFromGuest`). When only the company can answer something, the request is never confirmed automatically.
+- The **public page** of a rental company shows the rental terms and vehicle facts, and speaks of vehicles, pick-up and return.
+- A rental company is **hidden again** as soon as a required point is no longer in order, also after a change of type or a restored backup.
+- Licence categories are read as they are (BE, C1E, CE and D cover what they cover); the licence needed and the inspection date have a fixed form.
 - No tourist tax line for campers. The sample data has a camper rental company with three vehicles.
 - Details: [docs/campers.md](docs/campers.md).
 
@@ -24,6 +28,7 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
 ### Privacy and legal
 - **Personal data now really leaves the disk.** Removing a guest's details after the retention period only changed the latest record; older lines in the data files still held them until the file happened to be rewritten. The files are now rewritten at once. E-mail addresses on the waiting list are removed too; they were kept before.
+- Removal now covers every copy: the quote with the driver, checkout and booking sessions of agent platforms, questions sent with the same e-mail address, and a cancellation reason.
 - **Remove one guest's details at once** (`POST /api/owner/requests/:id/erase`, and a button on the request) for a request that is no longer active.
 - The dashboard shows the **driver** of a camper request to the company.
 - The website no longer loads fonts from Google: they are served from the site itself. A **privacy page** says what the site does (no cookies, no tracking).

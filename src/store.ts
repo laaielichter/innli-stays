@@ -2,6 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeF
 import { dirname } from 'node:path';
 import type { AgentClient, AnalyticsEvent, BookingLink, BookingRequest, HostQuestion, Property, Quote, StaffMember, StayWish, WaitlistEntry, WishOffer } from './domain/types.ts';
 import type { CheckoutSessionRecord } from './acp/types.ts';
+import { isCamperRental, rentalReadiness } from './domain/rental.ts';
 import type { BookingSessionRecord } from './ucp/types.ts';
 
 /** Installation-wide settings for a self-hosted install. */
@@ -333,6 +334,9 @@ export class Store {
     return undefined;
   }
   saveProperty(property: Property): void {
+    // A rental company is never visible to agents while something required is not in order,
+    // whichever way it got there: a changed type, a withdrawn answer, a restored backup.
+    if (property.published && isCamperRental(property) && !rentalReadiness(property).ready) property.published = false;
     property.updatedAt = new Date().toISOString();
     const idx = this.snapshot.properties.findIndex((p) => p.id === property.id);
     if (idx >= 0) this.snapshot.properties[idx] = property;
@@ -454,6 +458,49 @@ export class Store {
     return [...(this.requestsByProperty.get(propertyId)?.values() ?? [])];
   }
   /**
+   * Takes one guest out of everything an installation holds about a request:
+   * the request itself, the quote it came from, protocol sessions that copied
+   * the guest's details, and questions sent with the same e-mail address.
+   * The booking stays, without the person.
+   */
+  private scrub(r: BookingRequest, now: Date): void {
+    const email = r.guest.email.toLowerCase();
+    r.guest = { name: '(verwijderd)', email: '' };
+    r.driver = undefined;
+    r.destinations = undefined;
+    // A cancellation reason is free text from the guest.
+    if (r.cancelReason && r.cancelReason !== 'changed') r.cancelReason = undefined;
+    r.anonymisedAt = now.toISOString();
+    this.requests.upsert(r);
+    for (const q of this.quotes.values()) {
+      if (q.driver && q.propertyId === r.propertyId && q.unitId === r.unitId && q.checkin === r.checkin && q.checkout === r.checkout) this.quotes.upsert({ ...q, driver: undefined, destinations: undefined });
+    }
+    for (const c of this.checkoutSessions.values()) {
+      if (c.statusToken === r.publicToken && (c.buyer || c.fulfillment_details)) this.checkoutSessions.upsert({ ...c, buyer: undefined, fulfillment_details: undefined });
+    }
+    for (const b of this.bookingSessions.values()) {
+      if (b.statusToken === r.publicToken && (b.guests || b.booker)) this.bookingSessions.upsert({ ...b, guests: undefined, booker: undefined });
+    }
+    if (email) {
+      for (const q of this.questions.values()) {
+        if (q.propertyId !== r.propertyId || q.replyEmail?.toLowerCase() !== email) continue;
+        q.replyEmail = undefined;
+        q.anonymisedAt = now.toISOString();
+        this.questions.upsert(q);
+      }
+    }
+  }
+
+  /** The logs are append-only: without rewriting them, removed details would stay on disk in older lines. */
+  private rewritePersonalData(): void {
+    for (const c of [this.requests, this.questions, this.waitlist, this.quotes, this.checkoutSessions, this.bookingSessions]) {
+      c.flush();
+      c.compact();
+    }
+    this.persist();
+  }
+
+  /**
    * Removes guests' personal data from requests whose stay ended more than
    * `days` ago (or that were declined that long ago). Returns how many were anonymised.
    */
@@ -464,10 +511,7 @@ export class Store {
       if (r.anonymisedAt) continue;
       const end = r.status === 'accepted' ? r.checkout : (r.decidedAt ?? r.createdAt).slice(0, 10);
       if (end >= cutoff) continue;
-      r.guest = { name: '(verwijderd)', email: '' };
-      r.driver = undefined;
-      r.anonymisedAt = now.toISOString();
-      this.requests.upsert(r);
+      this.scrub(r, now);
       count++;
     }
     for (const q of this.questions.values()) {
@@ -486,14 +530,7 @@ export class Store {
       this.waitlist.upsert(w);
       count++;
     }
-    if (count) {
-      // The log is append-only: without rewriting it, the removed details would stay on disk in older lines.
-      for (const c of [this.requests, this.questions, this.waitlist]) {
-        c.flush();
-        c.compact();
-      }
-      this.persist();
-    }
+    if (count) this.rewritePersonalData();
     return count;
   }
 
@@ -506,17 +543,10 @@ export class Store {
     for (const id of requestIds) {
       const r = this.requests.get(id);
       if (!r || r.anonymisedAt) continue;
-      r.guest = { name: '(verwijderd)', email: '' };
-      r.driver = undefined;
-      r.anonymisedAt = now.toISOString();
-      this.requests.upsert(r);
+      this.scrub(r, now);
       count++;
     }
-    if (count) {
-      this.requests.flush();
-      this.requests.compact();
-      this.persist();
-    }
+    if (count) this.rewritePersonalData();
     return count;
   }
 
@@ -588,13 +618,19 @@ export class Store {
   pruneBookingSessions(days = 30, now = new Date()): number {
     const cutoff = new Date(now.getTime() - days * 86_400_000).toISOString();
     let removed = 0;
+    let cleared = 0;
     for (const b of [...this.bookingSessions.values()]) {
       if (b.createdAt < cutoff) {
         this.bookingSessions.remove(b.id);
         removed++;
       } else if (!b.statusToken && b.expiresAt < now.toISOString() && (b.guests || b.booker)) {
         this.bookingSessions.upsert({ ...b, guests: undefined, booker: undefined });
+        cleared++;
       }
+    }
+    if (cleared) {
+      this.bookingSessions.flush();
+      this.bookingSessions.compact();
     }
     if (removed) this.persist();
     return removed;
@@ -611,13 +647,19 @@ export class Store {
   pruneCheckoutSessions(days = 30, now = new Date()): number {
     const cutoff = new Date(now.getTime() - days * 86_400_000).toISOString();
     let removed = 0;
+    let cleared = 0;
     for (const c of [...this.checkoutSessions.values()]) {
       if (c.createdAt < cutoff) {
         this.checkoutSessions.remove(c.id);
         removed++;
       } else if (!c.statusToken && c.expiresAt < now.toISOString() && (c.buyer || c.fulfillment_details)) {
         this.checkoutSessions.upsert({ ...c, buyer: undefined, fulfillment_details: undefined });
+        cleared++;
       }
+    }
+    if (cleared) {
+      this.checkoutSessions.flush();
+      this.checkoutSessions.compact();
     }
     if (removed) this.persist();
     return removed;

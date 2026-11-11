@@ -270,6 +270,7 @@ const EN = {
   'Je eerste kamer': 'Your first room',
   'Startpakket (optioneel)': 'Starter pack (optional)',
   'Klaar om te verhuren?': 'Ready to rent out?',
+  'Je bent niet meer zichtbaar voor agents: er is een verplicht punt niet in orde.': 'You are no longer visible to agents: a required point is not in order.',
   'Camper vastgehouden tot {0}; daarna vervalt de aanvraag.': 'Camper held until {0}; after that the request expires.',
   'Bestuurder: {0} jaar': 'Driver: {0} years old',
   'rijbewijs {0}': 'licence {0}',
