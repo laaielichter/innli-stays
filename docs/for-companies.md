@@ -48,7 +48,7 @@ Everything here can be reproduced from the repository.
 
 | Claim | How to check |
 |---|---|
-| 263 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
+| 267 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
 | Types are strict and clean | `npm run typecheck` |
 | The npm package installs and starts | `npm run smoke:npm` |
 | A running installation behaves as agents expect | `npx innli-conformance <address>`: 14 read-only checks |
@@ -56,6 +56,8 @@ Everything here can be reproduced from the repository.
 | The text guard catches the labelled injection cases | `npm run research:injection` |
 | Performance figures | `npm run bench` |
 | Continuous integration on every pull request | `.github/workflows/ci.yml` |
+| The module map is kept: no new dependency between modules without a decision | `test/architecture.test.ts`, explained in [architecture.md](architecture.md) |
+| Removed personal data is gone from the data files | `test/privacy.test.ts` |
 
 The 2.1 changes went through a separate security review pass by an AI reviewer that had not written the code. Its findings and their fixes are in the [changelog](../CHANGELOG.md) under *Hardened after an independent review*; the security model is in [SECURITY.md](../SECURITY.md). There has been no audit by an outside security firm.
 
@@ -65,7 +67,7 @@ The 2.1 changes went through a separate security review pass by an AI reviewer t
 - **Not tested against a live agent platform.** The ACP and UCP adapters are built against the specification texts. The UCP lodging capability is a draft, and ACP has no lodging objects, so INNLI encodes a stay in the item id.
 - **Card payments are not proven against a real provider.** The ACP adapter and the authorise, capture and release cycle are tested end to end against a stand-in for Stripe. The Stripe handler itself has not been run against Stripe, and 3D Secure is not supported.
 - **No hosted service.** Every installation is self-hosted. There is no multi-tenant control plane, billing or customer support.
-- **File storage only.** There is no database backend yet, though the store has a narrow interface for one.
+- **File storage only, one process.** There is no database backend yet, and rate limits and hold counters live in memory. What it takes to change that is in [architecture.md](architecture.md).
 - **One maintainer.** There is no team that comes with the project.
 - **The name is not registered** as a trade mark.
 
@@ -75,6 +77,7 @@ The 2.1 changes went through a separate security review pass by an AI reviewer t
 - **AI assistance.** Large parts of the code were written with an AI coding assistant, as the commit trailers show. A buyer should take its own advice on what that means for copyright in its jurisdiction.
 - **Future contributions** fall under the [contributor agreement](../CLA.md), which lets the maintainer license them under other terms as well.
 - **Dependencies.** 95 run-time packages, all under permissive licences (MIT, ISC, BSD); none is copyleft. The full list is in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md).
+- **Legal documents.** Licence, commercial agreement, contributor agreement, trade mark policy, privacy and third-party notices are listed in [legal/README.md](legal/README.md). None has been reviewed by a lawyer.
 - **No secrets in the repository.** Signing keys are created per installation and stay in its data folder.
 
 ## What the licence means for a new owner

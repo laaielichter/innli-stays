@@ -478,7 +478,45 @@ export class Store {
       this.questions.upsert(q);
       count++;
     }
-    if (count) this.persist();
+    // Waiting-list entries hold an e-mail address too: remove it once the dates have long passed.
+    for (const w of this.waitlist.values()) {
+      if (!w.email || w.checkout >= cutoff) continue;
+      w.email = '';
+      if (w.status === 'waiting') w.status = 'expired';
+      this.waitlist.upsert(w);
+      count++;
+    }
+    if (count) {
+      // The log is append-only: without rewriting it, the removed details would stay on disk in older lines.
+      for (const c of [this.requests, this.questions, this.waitlist]) {
+        c.flush();
+        c.compact();
+      }
+      this.persist();
+    }
+    return count;
+  }
+
+  /**
+   * Removes one guest's personal data now, at the guest's request (the right to
+   * erasure). The booking itself stays, without the person.
+   */
+  eraseGuest(requestIds: string[], now = new Date()): number {
+    let count = 0;
+    for (const id of requestIds) {
+      const r = this.requests.get(id);
+      if (!r || r.anonymisedAt) continue;
+      r.guest = { name: '(verwijderd)', email: '' };
+      r.driver = undefined;
+      r.anonymisedAt = now.toISOString();
+      this.requests.upsert(r);
+      count++;
+    }
+    if (count) {
+      this.requests.flush();
+      this.requests.compact();
+      this.persist();
+    }
     return count;
   }
 

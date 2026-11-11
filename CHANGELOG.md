@@ -22,6 +22,17 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - Everything a pack fills in is a **suggestion** (not confirmed, source `starter`). It never replaces a confirmed fact, and it never suggests a price, deposit or fee. The owner checks each one and presses "Correct".
 - An existing property can apply a pack of its own type from the Passport tab (`POST /api/owner/starter-pack`); the list is at `GET /api/starter-packs`.
 
+### Privacy and legal
+- **Personal data now really leaves the disk.** Removing a guest's details after the retention period only changed the latest record; older lines in the data files still held them until the file happened to be rewritten. The files are now rewritten at once. E-mail addresses on the waiting list are removed too; they were kept before.
+- **Remove one guest's details at once** (`POST /api/owner/requests/:id/erase`, and a button on the request) for a request that is no longer active.
+- The dashboard shows the **driver** of a camper request to the company.
+- The website no longer loads fonts from Google: they are served from the site itself. A **privacy page** says what the site does (no cookies, no tracking).
+- New: [PRIVACY.md](PRIVACY.md), [docs/legal/](docs/legal/README.md) with templates for a guest privacy notice and camper rental terms, and a [code of conduct](CODE_OF_CONDUCT.md). No lawyer has reviewed them; the documents say so.
+
+### Architecture
+- [docs/architecture.md](docs/architecture.md) describes the layers, the trust boundaries and what a larger operator would have to change.
+- `test/architecture.test.ts` holds the module map: a new dependency between modules fails the test.
+
 ### Licensing
 - A third fixed price: **Starter**, € 490 a year, for one maker or a team of up to 3. Three years paid at once cost two and a half.
 - Running INNLI for your own stay or rental company stays free, with every function.

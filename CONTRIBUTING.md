@@ -30,4 +30,5 @@ The core of INNLI is AGPL-3.0 and stays open: everything is here, for everyone. 
 
 - Keep unknown facts unknown: INNLI never makes anything up for an agent.
 - Write a test with every change (`test/`), and make sure `npm test` and `npm run typecheck` pass.
+- Everyone who takes part follows the [code of conduct](CODE_OF_CONDUCT.md).
 - By sending a pull request, you agree to the [contributor agreement](CLA.md). This allows your contribution to be used under both the AGPL and the commercial licence.

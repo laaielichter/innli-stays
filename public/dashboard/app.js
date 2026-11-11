@@ -1208,7 +1208,23 @@ function renderRequests() {
           await loadRequests();
         }) }, 'Ontvangen') : null,
       ) : null,
+      r.driver ? h('div', { class: 'small', 'data-user-text': true }, [
+        T('Bestuurder: {0} jaar', r.driver.age),
+        r.driver.licenceCategory ? T('rijbewijs {0}', r.driver.licenceCategory) : '',
+        r.driver.licenceYears !== undefined ? T('{0} jaar in bezit', r.driver.licenceYears) : '',
+        r.driver.licenceCountry ? T('afgegeven in {0}', r.driver.licenceCountry) : '',
+        r.driver.hasInternationalPermit ? T('internationaal rijbewijs') : '',
+        r.destinations?.length ? T('wil rijden in {0}', r.destinations.join(', ')) : '',
+      ].filter(Boolean).join(' · ')) : null,
       r.ownerNote ? h('div', { class: 'small muted', 'data-user-text': true }, T('Jouw bericht: {0}', r.ownerNote)) : null,
+      r.status !== 'new' && r.guest.email && !(r.status === 'accepted' && r.checkout >= new Date().toISOString().slice(0, 10)) ? h('div', { class: 'actions' },
+        h('button', { class: 'btn small', onclick: guard(async () => {
+          if (!confirm(T('De naam en contactgegevens van deze gast nu verwijderen? Dit kan niet ongedaan worden gemaakt.'))) return;
+          await api(`/requests/${encodeURIComponent(r.id)}/erase`, { method: 'POST', body: {} });
+          toast(T('Gegevens van de gast verwijderd'));
+          await loadRequests();
+        }) }, 'Gegevens van gast verwijderen'),
+      ) : null,
       r.status === 'new' ? h('div', { class: 'actions' },
         h('button', { class: 'btn primary small', onclick: decide('accept') }, 'Accepteren'),
         h('button', { class: 'btn small', onclick: decide('decline') }, 'Afwijzen'),

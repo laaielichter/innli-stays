@@ -1038,6 +1038,23 @@ export function createApp(opts: AppOptions) {
     res.json(handledBy(store, req, await requests.decline(owner(req), String(req.params.id), note)));
   });
 
+  /** A guest asked for their data to be removed: do it now instead of after the retention period. */
+  ownerApi.post('/requests/:id/erase', (req, res) => {
+    const p = owner(req);
+    const r = store.getRequest(String(req.params.id));
+    if (!r || r.propertyId !== p.id) {
+      res.status(404).json({ error: 'Request not found.' });
+      return;
+    }
+    const group = requests.members(p, r);
+    const today = new Date().toISOString().slice(0, 10);
+    if (group.some((m) => m.status === 'new' || (m.status === 'accepted' && m.checkout >= today))) {
+      res.status(409).json({ error: currentLang() === 'nl' ? 'Deze aanvraag loopt nog. Wijs haar af of annuleer de boeking eerst; daarna kun je de gegevens verwijderen.' : 'This request is still active. Decline it or cancel the booking first; then the details can be removed.' });
+      return;
+    }
+    res.json({ erased: store.eraseGuest(group.map((m) => m.id)) });
+  });
+
   // Questions agents asked on behalf of guests
   ownerApi.get('/questions', (req, res) => {
     const p = owner(req);
