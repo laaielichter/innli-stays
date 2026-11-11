@@ -1,185 +1,179 @@
+<div align="center">
+
 # INNLI
 
-AI-native booking infrastructure for B&Bs and independent stays — making properties discoverable, understandable and bookable by AI agents.
+**Your stay, bookable by AI agents.**
 
-> Maak jouw B&B toegankelijk voor AI-reisagents — met je eigen website, prijzen en boekingssysteem.
+Free, open-source software that makes B&Bs, guesthouses and small hotels findable, understandable and bookable by AI agents.<br>
+Self-hosted. Your own prices. No commission.
 
-English: [README.en.md](README.en.md).
+[![CI](https://github.com/laaielichter/innli-stays/actions/workflows/ci.yml/badge.svg)](https://github.com/laaielichter/innli-stays/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/innli-stays?color=d9643a)](https://www.npmjs.com/package/innli-stays)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-7a9a7e)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-server-17202a)](docs/agent-integration.md)
 
-INNLI is geen chatbot en geen nieuw hotelsysteem. Het is een **accommodatiepaspoort** dat de eigenaar zelf controleert, **één MCP-koppeling** waarmee aangesloten AI-agents dat paspoort kunnen doorzoeken, prijzen en beschikbaarheid kunnen opvragen en een boekingslink kunnen klaarzetten, plus een **WordPress-plugin** en een **dashboard** voor de eigenaar.
+[**Website**](https://laaielichter.github.io/innli-stays/) · [Quick start](#quick-start) · [For agent builders](docs/agent-integration.md) · [Owner guide](docs/owner-guide.md) · [Changelog](CHANGELOG.md) · [Nederlands](README.nl.md)
 
-Vindbaar zijn, door een agent begrepen worden en daadwerkelijk geboekt kunnen worden zijn drie verschillende dingen. INNLI ondersteunt de hele route.
+<a href="https://laaielichter.github.io/innli-stays/"><img src="site/og.png" alt="A guest's AI agent asks for a quiet, dog-friendly B&B. The stay answers through INNLI with confirmed facts and is booked direct." width="820"></a>
 
-**Gratis en open source (AGPL-3.0).** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server). De **INNLI-gids** is één gratis adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. Geen abonnement, geen licentiekosten. Het project leeft van donaties: zie [Steun INNLI](#steun-innli).
+</div>
 
-## Wat er in deze versie zit
+> Guests don't scroll anymore. Their agents do. INNLI makes your accommodation ready for them, with your own website, prices and booking system.
 
-| Onderdeel | Wat het doet |
+INNLI is not a chatbot and not another hotel system. It has four parts:
+- an **accommodation passport** that the owner checks and confirms;
+- **one MCP connection** through which AI agents search that passport, ask for prices and availability, and prepare a booking;
+- a **WordPress plugin**;
+- a **dashboard** for the owner.
+
+Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.
+
+**Free and open source (AGPL-3.0).** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. No subscription, no licence fees. The project runs on donations: see [Support INNLI](#support-innli).
+
+
+## What it does
+
+| Part | What it does |
 |---|---|
-| **Accommodatiepaspoort** (`src/domain`) | ~40 concrete gegevens (afgesloten tuin, bedlengte, treden naar de kamer, toeristenbelasting…). Ieder gegeven heeft een status (`bevestigd` / `niet bevestigd` / `onbekend`), een bron, bewijs en een controledatum. Onbekend blijft onbekend. Na een jaar vraagt INNLI om opnieuw te controleren. |
-| **Agentkoppeling (MCP + REST)** (`src/mcp`) | 19 tools in zes groepen:<br>• zoeken en vergelijken: `search_stays` met flexibele data, "in de buurt van" en groepen over 2–3 kamers; `compare_stays`; `get_stay_details` met foto's, omgeving, FAQ, beoordelingen en vertalingen;<br>• beschikbaarheid: `check_availability`, `find_available_dates`, `get_availability_calendar`;<br>• prijs: `get_quote`, met kortingen, meerdere kamers, tariefplannen en 15 minuten vasthouden;<br>• boeken: `prepare_booking`, `request_booking` (ook als groep, alles of niets), `modify_request`, `cancel_request`, `join_waitlist`;<br>• contact: `answer_question` (antwoord-assistent), `ask_host`, `report_data_issue`, `check_status` met ondertekend boekingsdossier en alternatieven;<br>• vraag en aanbod: `post_stay_wish`, `get_wish_offers`, `withdraw_stay_wish`.<br>Dezelfde tools zijn er als REST met OpenAPI 3.1 voor agents zonder MCP. Daarnaast MCP-resources (`innli://stay/{id}`) en een `plan_stay`-prompt. Rechten per agentsleutel (`read`/`act`). Zie [docs/agent-features.md](docs/agent-features.md) voor alle 300 agentfuncties en hun status. |
-| **Prijsberekening** (`src/domain/pricing.ts`) | Gespecificeerde totaalprijs inclusief verplichte toeslagen, met geldigheidsduur. Ontbreekt een verplichte post, dan staat `totalIncludesAllMandatoryCosts: false` erbij in plaats van een te lage prijs. |
-| **Agenda's en boekingssystemen** (`src/connectors`) | *Live API* (boekingssysteem): live beschikbaarheid en tarieven → directe boekingslink. *Agenda's*: meerdere iCal-feeds per kamer (Airbnb, Booking.com, Google Agenda) → beschikbaarheidsaanvraag. *Eigen kamerkalender*: open/dicht per nacht in het dashboard, met exportlink voor Airbnb/Booking.com. *Geen koppeling*: aanvraag per mail of formulier. |
-| **Boekingslinks & meting** (`src/booking`, `src/analytics`) | Getrackte doorverwijzing naar de eigen boekingsomgeving met datums en gasten ingevuld. Funnel houdt agentaanvragen, doorkliks en bevestigde boekingen strikt uit elkaar; een boeking telt alleen als website of boekingssysteem die ondertekend terugmeldt. |
-| **Vindbaarheidscheck** (`src/readiness/audit.ts`) | robots.txt per crawler, met onderscheid tussen **zoek**crawlers (OAI-SearchBot, Claude-SearchBot, PerplexityBot, Googlebot, Bingbot) en **trainings**crawlers (GPTBot, ClaudeBot, Google-Extended, CCBot); noindex, titel, sitemap, kamerpagina's, zichtbare prijzen/voorwaarden, schema.org en consistentie met het paspoort. Belooft nooit een ranking. |
-| **Website-import** (`src/readiness/extract.ts`) | Maakt van bestaande websitetekst een conceptpaspoort. Alles komt binnen als *niet bevestigd*, met het tekstfragment als bewijs, en overschrijft nooit iets wat de eigenaar al bevestigde. |
-| **Dashboard** (`public/dashboard`) | Nederlandstalig: paspoortkwaliteit, funnel, gegevens bevestigen, kamers, boekingskoppeling testen, vindbaarheid, en precies zien wat een agent te zien krijgt. |
-| **WordPress-plugin** (`wordpress-plugin/innli`) | schema.org uit bevestigde feiten + shortcode `[innli_facts]` om dezelfde feiten zichtbaar te tonen, AI-crawlerinstellingen (zoeken en training los), crawlerbezoeken apart tellen, en boekingen terugmelden met `[innli_conversion]`. |
-| **Betrouwbaar boeken** (`src/requests`) | Op basis van [onderzoek naar knelpunten](docs/onderzoek-knelpunten.md): kamer vasthouden tijdens een aanvraag met automatische vervaltijd, *direct bevestigen* volgens regels van de eigenaar, aanbetaling met eigen betaalinstructies/-link, annuleren met toestemming, boekingsdossier (prijs, voorwaarden, toestemming), logboek van agentacties, herinneringen (eigenaar, gast vóór aankomst), waarschuwing bij dubbele boeking met andere kanalen, reactietijd zichtbaar voor agents. |
-| **Inzichten** (`src/analytics/insights.ts`) | *Wat agents zoeken*: welke eisen gasten stellen, hoe vaak je getoond werd, en welke onbekende gegevens je gasten kostten, met wat je moet bevestigen. Plus een consistentiecheck tussen website en paspoort. |
-| **Aanvragen & inbox** (`src/requests`) | Voor B&B's zonder boekingssysteem: gasten (via een agent of de verblijfspagina) sturen een aanvraag met live prijs; de eigenaar accepteert of wijst af in het dashboard. Accepteren sluit de nachten in de kamerkalender (en via de exportlink op Airbnb/Booking.com) en telt als bevestigde boeking. Optioneel e-mail via de eigen mailbox (SMTP). Gastgegevens worden na de bewaartermijn automatisch gewist. |
-| **Verblijfspagina** (`src/web`) | Eigen publieke pagina per accommodatie met kamers, bevestigde feiten, schema.org, beschikbaarheidskalender, live prijsberekening en aanvraagformulier. In te sluiten op de eigen site (`?embed=1`, WordPress `[innli_request]`). |
-| **Hotels en drukke accommodaties** ([docs/hotels.md](docs/hotels.md)) | Kamertypes met meerdere kamers (beschikbaarheid per nacht geteld, stop-sell), tariefplannen (niet-restitueerbaar, met ontbijt), kamers 15 minuten vasthouden, wijzigen zonder eerst te annuleren, personeelssleutels (receptie/manager), ondertekende webhooks naar een PMS of channel manager, en hotelpakketten in de licentie. Gemeten: beschikbaarheid voor een hotel met 300 kamers en 10.000 boekingen in ~1 ms. |
-| **Nieuw in 2.1: weten welke agent er belt, vasthouden zonder misbruik, UCP** ([docs/agents-2.1.md](docs/agents-2.1.md)) | Wat we elders misten, ingebouwd:<br>• *agent-identiteit*: platforms die hun verzoeken ondertekenen (Web Bot Auth, RFC 9421) worden herkend zonder account, krijgen een eigen limiet en staan in het ondertekende boekingsdossier;<br>• *vasthouden zonder misbruik*: een limiet op open aanvragen per agent en per gast, zodat een script de kamers niet kan blokkeren;<br>• *boekingssessies volgens UCP* (concept) op `/ucp/v1`, met het profiel op `/.well-known/ucp`;<br>• een `Idempotency-Key`-header, zodat opnieuw proberen nooit dubbel boekt;<br>• `cancellation.refundability` bij elke offerte;<br>• per agent in het dashboard: wat een boeking werd en wat verviel;<br>• identiteit die de INNLI-gids ondertekend doorgeeft;<br>• `npx innli-conformance <adres>`: 13 controles van elke installatie, die alleen lezen. |
-| **Nieuw in 2.0: agents en accommodaties vinden elkaar** ([docs/agents-2.0.md](docs/agents-2.0.md)) | Tien knelpunten uit onderzoek, opgelost:<br>• *verblijfswensen*: agents laten een anonieme wens achter, en eigenaren doen er in het dashboard een aanbieding op, eventueel met korting;<br>• *core-profiel* en compacte antwoorden: ~49% minder context per beurt en ~70% kleinere antwoorden;<br>• `nextActions` met ingevulde argumenten en `freshness` bij elk antwoord;<br>• getypeerde fouten met `retryable` en `hint`, plus RateLimit-headers;<br>• toestemming met een hash over de voorwaarden;<br>• websiteverificatie (de WordPress-plugin doet het vanzelf), een vertrouwensblok en een ondertekend paspoort;<br>• bescherming tegen verborgen instructies in teksten;<br>• een tijdsbudget voor zoeken;<br>• agent-card, MCP-serverkaart, `llms.txt` en een Claude-plugin ([agent-kit](agent-kit/README.md)). |
-| **Nieuw in 1.1** | Opties met prijs (fiets, lunchpakket, late check-out), geheime kortingscodes, aankomstdagen en toeslag voor één nacht, annuleringskosten uitgerekend, alternatieven als het vol is, eerlijke schaarste ("nog 2 kamers"), beoordelingen per onderdeel, huisregels en duurzaamheid als gegevens, zoeken op "lang weekend" en prijs per nacht, foto's uploaden met controle op vage beschrijvingen, boekingsagenda (iCal), CSV-export, bezetting en omzet per kanaal, automatische back-ups en terugzetten, Beds24-koppeling, OAuth 2.1 voor agentplatforms en ondertekende statusberichten. Zie [CHANGELOG.md](CHANGELOG.md). |
-| **Antwoord-assistent** (`src/requests/answers.ts`) | Beantwoordt gastvragen meteen in vier talen, alleen uit bevestigde gegevens en de FAQ van de eigenaar; geen taalmodel, niets verzonnen. Wat onbekend is gaat naar de eigenaar, met een concept van wat al bekend is. Ook als *Vraag het ons* op de verblijfspagina. |
-| **Tarieven** (`src/domain/rates.ts`) | Seizoenen (ook over de jaargrens), weekendtoeslag, minimaal aantal nachten per seizoen, en kortingen voor lang verblijf, last minute en vroegboeken. |
-| **Gastervaring** (`src/requests`) | Wachtlijst met automatische mail bij een vrije kamer; beoordelingen alleen van gasten met een geaccepteerde boeking (met reactie van de eigenaar); antwoorden op gastvragen als openbare FAQ; foto's, plekken in de buurt en vertalingen (en/de/fr). |
-| **Eigenaar op de hoogte** | Pushmeldingen op de telefoon via ntfy; maandoverzicht per mail; export voor Google Bedrijfsprofiel. |
-| **Ondertekende dossiers** (`src/security`) | Ieder boekingsdossier is ondertekend met Ed25519. De publieke sleutel staat in `/.well-known/innli.json`, zodat agents prijs en voorwaarden zelf kunnen controleren. |
-| **Talen** (`src/i18n`) | Gasten: verblijfspagina, e-mails en statuspagina's in het Nederlands, Engels, Duits en Frans, met taalkeuze en hreflang. Agents: Engels (instelbaar). Eigenaren: dashboard, e-mails en maandoverzicht in het Nederlands of Engels. |
-| **Valuta** | Per accommodatie: EUR, GBP, CHF, DKK, SEK, NOK, PLN, CZK, HUF, RON, ISK, USD, CAD, AUD of NZD, standaard die van het land. INNLI rekent nooit om; een budget wordt alleen binnen één valuta vergeleken. |
-| **Snel** | Append-only opslag met indexen, en parallelle live controles. Gemeten tot 10.000× sneller schrijven en 9× sneller zoeken bij live boekingssystemen; zie [docs/prestaties.md](docs/prestaties.md) en `npm run bench`. |
-| **Installatiewizard** | Eerste start in de browser met een eenmalige installatiecode uit de console; stappenlijst *Aan de slag*; back-up downloaden. |
-| **Licentiesleutels (optioneel)** (`src/licensing`, `tools/license.ts`) | Niet nodig: de openbare gids is open. Wie zelf een gids draait met `GIDS_LICENTIE_VEREIST=1`, kan offline te controleren sleutels (Ed25519) uitgeven, bijvoorbeeld voor een besloten netwerk van verblijven. |
-| **INNLI-gids** (`src/directory`) | Eén MCP-adres voor agentpartners. Zelf-gehoste installaties melden zich gratis aan (de gids controleert dat ze echt op hun adres draaien); vragen worden live doorgestuurd. De gids bewaart geen prijzen, agenda's of gastgegevens. |
-| **Demo-boekingssysteem** (`src/demo`) | Een nep-boekingssysteem dat het live-contract implementeert, iCal-feeds en demo-websites serveert, en boekingen terugmeldt. Drie fictieve accommodaties tonen bevestigde, onbevestigde en onbekende gegevens. |
+| **Accommodation passport** | About 40 concrete facts: enclosed garden, bed length, steps to the room, tourist tax… Every fact has a status (confirmed / not confirmed / unknown), a source, evidence and a check date. Unknown stays unknown. After a year INNLI asks the owner to check it again. |
+| **Agent connection (MCP + REST)** | 19 tools in six groups: search and compare, availability, price, booking, contact with the host, and stay wishes (see the detailed list below). A core profile offers 8 of them, with brief answers. The same tools are available over REST with an OpenAPI 3.1 description. |
+| **Honest prices** | An itemised total including mandatory fees, discounts and tourist tax, with a validity period. If a mandatory cost is unknown, the result says `totalIncludesAllMandatoryCosts: false` instead of showing a price that is too low. |
+| **Calendars and booking systems** | Four ways to handle availability: <br>• **Live API:** a booking system checked live, with a direct booking link.<br>• **iCal:** calendars from Airbnb, Booking.com or Google Calendar, leading to an availability request.<br>• **Room calendar:** the owner opens and closes nights in INNLI.<br>• **None:** requests only. |
+| **Reliable booking** | <br>• Rooms are held during a request, with automatic expiry.<br>• Instant booking within the owner's rules.<br>• Deposits through the owner's own payment link or bank details.<br>• Cancellation with the guest's consent.<br>• A signed booking record.<br>• A double-booking guard against other channels. |
+| **Stay page** | A public page per property, with rooms, confirmed facts, schema.org data, an availability calendar, live prices and a request form. It can be embedded on the owner's site. |
+| **Languages** | Guests: English, Dutch, German and French. They see the stay page, e-mails and status pages in their own language, with hreflang for search engines.<br>Agents: English.<br>Owners: an English or Dutch dashboard, e-mails and monthly report. |
+| **Currencies** | Each property prices in its own currency: EUR, GBP, CHF, DKK, SEK, NOK, PLN, CZK, HUF, RON, ISK, USD, CAD, AUD or NZD. INNLI never converts; a budget is only compared within one currency. |
+| **Insights** | What agents search for in the owner's area, how often the property was shown, and which unknown facts cost guests. Also a funnel from agent request to click-through to confirmed booking, with each step counted separately. |
+| **Findability check** | <br>• robots.txt per crawler, keeping **search** crawlers and **training** crawlers apart.<br>• noindex, title, sitemap, room pages, visible prices and conditions, schema.org.<br>• Consistency with the passport.<br>It never promises a ranking. |
+| **WordPress plugin** | <br>• schema.org data from confirmed facts.<br>• The same facts shown visibly on the page.<br>• AI crawler settings.<br>• A crawler visit counter.<br>• Booking reports and the request form.<br>In English, with a Dutch translation. |
+| **Hotels and busy properties** | Room types with several rooms (availability counted per night, stop-sell), rate plans (non-refundable, with breakfast), 15-minute holds, changes without cancelling first, staff keys (reception/manager), signed webhooks to a PMS or channel manager, and hotel licence packages. Measured: availability for a 300-room hotel with 10,000 bookings in ~1 ms. See [docs/hotels.md](docs/hotels.md). |
+| **New in 2.1: know your agent, protected holds, UCP** ([docs/agents-2.1.md](docs/agents-2.1.md)) | What we found missing elsewhere, built in:<br>• *agent identity*: platforms that sign their requests (Web Bot Auth, RFC 9421) are recognised without an account, get their own rate limit, and are named in the signed booking record;<br>• *protected holds*: a limit on open requests per agent and per guest, so a script cannot block a property's rooms;<br>• *UCP lodging booking sessions* (draft) at `/ucp/v1`, with the profile at `/.well-known/ucp`;<br>• an `Idempotency-Key` header, so a retry never books twice;<br>• `cancellation.refundability` on every quote;<br>• per agent in the dashboard: what became a booking and what expired;<br>• identity passed on, signed, through the INNLI guide;<br>• `npx innli-conformance <address>`: 13 read-only checks of any installation. |
+| **New in 2.0: agents and stays find each other** ([docs/agents-2.0.md](docs/agents-2.0.md)) | Ten problems from research, solved:<br>• *stay wishes*: agents leave an anonymous wish, and hosts answer with an offer from the dashboard, optionally with a discount;<br>• a *core profile* and brief answers: ~49% less context per turn and ~70% smaller answers;<br>• `nextActions` with prefilled arguments and `freshness` on every answer;<br>• typed errors with `retryable` and `hint`, plus RateLimit headers;<br>• consent with a hash over the terms;<br>• website verification (automatic with the WordPress plugin), a trust block and a signed passport;<br>• a guard against hidden instructions in text;<br>• a time budget for search;<br>• an agent card, MCP server card, `llms.txt` and a Claude plugin ([agent-kit](agent-kit/README.md)). |
+| **New in 1.1** | Paid options (bikes, packed lunch, late check-out), private discount codes, arrival weekdays and a one-night supplement, calculated cancellation costs, alternatives when full, honest scarcity ("2 rooms left"), reviews per aspect, house rules and sustainability as facts, searching for "a long weekend" and a price per night, photo upload with checks for vague descriptions, a booking calendar (iCal), CSV export, occupancy and revenue per channel, automatic backups and restore, a Beds24 connection, OAuth 2.1 for agent platforms and signed status callbacks. See [CHANGELOG.md](CHANGELOG.nl.md). |
+| **Answer assistant** | Answers guest questions straight away in four languages, only from the owner's confirmed details and FAQ; no language model, nothing made up. What is unknown goes to the owner, with a draft of what is already known. Also as *Ask us* on the stay page. |
+| **Guide (and optional keys)** | The INNLI guide lists every installation for free, after checking it really runs at its address. Anyone running their own guide with `GIDS_LICENTIE_VEREIST=1` can issue offline-verifiable Ed25519 keys, for example for a closed network of stays. |
 
-## Snel starten
+## Agent tools
 
-Vereist Node.js ≥ 22.18 (TypeScript draait direct, zonder buildstap).
+- **Search and compare:**
+  - `search_stays`, with flexible dates, "near the station", groups over 2–3 rooms, and a budget in a given currency;
+  - `compare_stays`;
+  - `get_stay_details`, with photos, places nearby, FAQ, reviews and the description in the guest's language.
+- **Availability:** `check_availability`, `find_available_dates`, `get_availability_calendar`.
+- **Price:** `get_quote`, with several rooms, rate plans and a 15-minute hold.
+- **Booking:** `prepare_booking`, `request_booking` (with the guest's consent; for groups all or nothing), `modify_request`, `cancel_request`, `join_waitlist`.
+- **Contact:** `answer_question` (answer assistant), `ask_host`, `report_data_issue`, `check_status` (with a signed booking record).
+- **Stay wishes:** `post_stay_wish`, `get_wish_offers`, `withdraw_stay_wish`.
 
-**Eigen accommodatie, lokaal of op een server:**
+Details: [docs/agent-integration.md](docs/agent-integration.md).
+
+## Quick start
+
+Requires Node.js 22.18 or newer. TypeScript runs directly, without a build step.
 
 ```bash
 npm install --omit=dev
-npm start           # toont een installatiecode; open http://localhost:3000/dashboard/
+INNLI_LANG=en npm start      # shows an installation code; open http://localhost:3000/dashboard/
 ```
 
-De wizard in de browser vraagt de installatiecode, de naam en je eerste kamer, en geeft je eigenaarssleutel. (Liever de terminal: `npm run setup`.) Daarna: **[docs/handleiding.md](docs/handleiding.md)**.
+The browser wizard asks for the installation code, your name, the language of your texts and your first room. It then gives you your owner key. Next: [docs/owner-guide.md](docs/owner-guide.md). To make INNLI reachable for agents 24/7 at the lowest cost, see [docs/hosting.md](docs/hosting.md).
 
-Of met Docker: `docker compose up -d`, dan `docker compose logs innli` voor de installatiecode. Om agents erbij te laten moet INNLI 24/7 online bereikbaar zijn; zie **[docs/hosting.md](docs/hosting.md)** voor de goedkoopste opties (vanaf €0 aan hosting met een eigen pc/Raspberry Pi of Oracle Free + Cloudflare Tunnel) en hoe je agenda's koppelt.
-
-**Demo met drie fictieve accommodaties:**
+**Try it with sample properties.** Seven stays across Europe:
+- Tuscany, Provence, the Black Forest, Bruges, Tyrol, the Douro and Kerry;
+- live and synced calendars, confirmed, unconfirmed and unknown facts, reviews and a FAQ.
+- plus a 48-room city hotel in Haarlem with room types, rate plans and the answer assistant (see [docs/hotels.md](docs/hotels.md)).
 
 ```bash
 npm install
-npm run demo        # start met demodata op http://localhost:3000
+npm run demo:intl            # http://localhost:3000 — owner keys in data/demo-credentials.json
 ```
 
-- Dashboard: <http://localhost:3000/dashboard/> — eigenaarssleutels staan in `data/demo-credentials.json`
-- MCP-endpoint voor agents: `http://localhost:3000/mcp` (Streamable HTTP)
-
-Agent lokaal proberen met MCP Inspector:
-
-```bash
-npx @modelcontextprotocol/inspector     # kies Streamable HTTP → http://localhost:3000/mcp
-```
-
-Of in Claude Code:
+Connect an agent:
 
 ```bash
 claude mcp add --transport http innli http://localhost:3000/mcp
+npx @modelcontextprotocol/inspector     # or: Streamable HTTP → http://localhost:3000/mcp
 ```
 
-Vraag dan bijvoorbeeld: *"Zoek een kleinschalig verblijf op de Veluwe voor twee nachten, met ontbijt, een afgesloten tuin voor mijn hond en een slaapkamer op de begane grond. Maximaal €350 inclusief alle kosten."* De agent vindt B&B De Hooiberg (alles bevestigd, live prijs, directe boekingslink) en Logies Het Kraaiennest (tuin niet bevestigd door de eigenaar, schoonmaakkosten onbekend — en dat zegt hij erbij).
+Then ask, for example: *"Find a quiet farm stay in Tuscany for three nights in May with an enclosed garden for my dog and a ground-floor room with a walk-in shower."*
 
-## Ontwikkelen
+## Configuration
 
-```bash
-npm test            # unit- en end-to-endtests (MCP over HTTP, boekingsflow, eigenaar-API)
-npm run typecheck
-npm run lint:php    # WordPress-plugin
-npm run pakket -- --concept   # downloadpakket (zip) proberen in dist/
-npm run conformance -- http://localhost:3000   # 13 controles van wat agents verwachten (leest alleen)
-npm run bench       # prestaties meten (300 accommodaties, 200.000 gebeurtenissen)
-```
-
-### Configuratie
-
-| Variabele | Standaard | Betekenis |
+| Variable | Default | Meaning |
 |---|---|---|
 | `PORT` / `HOST` | `3000` / `0.0.0.0` | |
-| `INNLI_PUBLIC_URL` | `http://localhost:$PORT` | Basis voor boekingslinks (`/r/…`) |
-| `INNLI_LANG` | `nl` | Taal van de installatie: console, e-mails aan eigenaren zonder taal, pagina's zonder browservoorkeur (`nl`, `en`, `de`, `fr`) |
-| `INNLI_AGENT_LANG` | `en` | Taal van teksten voor agents |
-| `INNLI_DATA` | `data/innli.json` | Gegevensbestand; aanvragen, gebeurtenissen enz. staan ernaast in `innli.*.jsonl`. Back-up = de hele map. |
-| `INNLI_ADMIN_KEY` | – | Vereist voor `/api/admin` (accommodaties en agentsleutels aanmaken) |
-| `INNLI_REQUIRE_AGENT_KEY` | – | `1` = alleen agents met sleutel mogen de MCP-koppeling gebruiken |
-| `INNLI_DEMO` | – | `1` = Nederlandse demodata, `intl` = zeven Europese voorbeeldaccommodaties (`npm run demo:intl`); met demo-boekingssysteem, staat ook verzoeken naar lokale adressen toe |
-| `INNLI_ALLOW_PRIVATE_FETCH` | – | `1` = boekingssysteem of agenda op het eigen netwerk mag worden aangesproken |
-| `INNLI_GIDS_URL` | – | Adres van de INNLI-gids; de installatie meldt zich daar aan (bij start en elke 12 uur) |
-| `INNLI_SOURCE_URL` | – | Waar de broncode van deze versie staat (AGPL). Heb je INNLI aangepast en draait die online, zet hier dan de link naar jouw openbare code; die staat in `/health` en `/.well-known/innli.json` |
-| `INNLI_SMTP_URL` | – | E-mail voor aanvragen, bijv. `smtps://info%40mijnbnb.nl:wachtwoord@mail.provider.nl:465` |
-| `INNLI_MAIL_FROM` | SMTP-gebruiker | Afzender van e-mails |
-| `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Na hoeveel dagen na het verblijf gastgegevens worden gewist (min. 30) |
-| `INNLI_BACKUP_DIR` | – | Map buiten de datamap voor een dagelijkse automatische back-up (USB-schijf, NAS, gesynchroniseerde map) |
-| `INNLI_BACKUP_KEEP` | `14` | Aantal dagelijkse back-ups dat bewaard blijft |
-| `INNLI_UCP_VERSION` | `2026-08-25` | Versie in het UCP-profiel en de antwoorden; de standaard voor verblijven is een concept |
+| `INNLI_PUBLIC_URL` | `http://localhost:$PORT` | Base for booking links and pages |
+| `INNLI_LANG` | `nl` | Installation language: console, e-mails to owners without a language, pages without a browser preference (`nl`, `en`, `de`, `fr`) |
+| `INNLI_AGENT_LANG` | `en` | Language of agent-facing text |
+| `INNLI_DATA` | `data/innli.json` | Data file. Requests, events and so on sit next to it in `innli.*.jsonl`. Back up the whole folder. |
+| `INNLI_ADMIN_KEY` | – | Required for `/api/admin` |
+| `INNLI_REQUIRE_AGENT_KEY` | – | `1` = only agents with a key may use the MCP connection |
+| `INNLI_DEMO` | – | `1` = Dutch sample data; `intl` = European sample data |
+| `INNLI_ALLOW_PRIVATE_FETCH` | – | `1` = a booking system or calendar on the local network may be called |
+| `INNLI_GIDS_URL` | – | Address of the INNLI guide; the installation registers there (at start-up and every 12 hours) |
+| `INNLI_SOURCE_URL` | – | Where the source of this version is (AGPL). If you modified INNLI and run it online, link to your public code here; it appears in `/health` and `/.well-known/innli.json` |
+| `INNLI_SMTP_URL` / `INNLI_MAIL_FROM` | – | E-mail through the owner's own mailbox |
+| `INNLI_BEWAARTERMIJN_DAGEN` | `180` | Days after the stay before guest data is deleted (minimum 30) |
+| `INNLI_BACKUP_DIR` | – | Folder outside the data folder for a daily automatic backup (USB disk, NAS, synced folder) |
+| `INNLI_BACKUP_KEEP` | `14` | Number of daily backups kept |
+| `INNLI_UCP_VERSION` | `2026-08-25` | Version named in the UCP profile and responses; the lodging capability is a draft |
 
-Beheer via de commandoregel: `npm run innli -- lijst`, `npm run innli -- nieuwe-sleutel <id>`, `npm run innli -- agent "Naam"`, `npm run innli -- licentie <sleutel>` (Engels: `list`, `new-key`, `agent`, `license`). Stop de server eerst; die houdt zijn gegevens in het geheugen.
+Command line: `npm run innli -- list`, `npm run innli -- new-key <id>`, `npm run innli -- agent "Name"`, `npm run innli -- license <key>`. Stop the server first.
 
-### Een accommodatie of agentpartner toevoegen
+## Development
 
 ```bash
-curl -X POST localhost:3000/api/admin/properties -H "authorization: Bearer $INNLI_ADMIN_KEY" \
-  -H 'content-type: application/json' -d '{"name":"B&B Het Veerhuis","address":{"city":"Zwolle","country":"NL"}}'
-# → { property, ownerKey }  (sleutel wordt één keer getoond)
-
-curl -X POST localhost:3000/api/admin/agents -H "authorization: Bearer $INNLI_ADMIN_KEY" \
-  -H 'content-type: application/json' -d '{"name":"Reisplatform X"}'
-# → { key }  agent gebruikt: Authorization: Bearer <key> op /mcp
+npm test                     # unit and end-to-end tests
+npm run typecheck
+npm run lint:php             # WordPress plugin
+npm run conformance -- http://localhost:3000   # 13 read-only checks of what agents rely on
+npm run bench                # performance (300 properties, 200,000 events)
+npm run pakket -- --concept  # download package (zip) in dist/
 ```
 
-## Productprincipes in de code
+## Principles in the code
 
-1. **Onbekend blijft onbekend.** Agents krijgen per accommodatie een expliciete lijst `unknown`. Een onbevestigd "nee" telt niet als betrouwbaar nee; een onbevestigd "ja" heet `unverified`.
-2. **Alleen de eigenaar bevestigt.** Import en koppelingen leveren suggesties; die overschrijven nooit een bevestigd gegeven.
-3. **Geen boekingsbelofte op verouderde gegevens.** Een directe boekingslink alleen bij live gecontroleerde beschikbaarheid; iCal levert een aanvraag op.
-4. **Niets wordt via INNLI geboekt zonder de eigenaar.** `prepare_booking` geeft `status: "not_booked"`; de gast rondt af bij de accommodatie, of stuurt een aanvraag die de eigenaar accepteert. Gastgegevens staan alleen op de eigen installatie van de B&B en worden na de bewaartermijn gewist; agents en de gids krijgen ze nooit.
-5. **Meten wat echt is.** Crawlerbezoeken ≠ gasten; agentaanvragen ≠ doorkliks ≠ bevestigde boekingen.
-6. **Geen rankingbeloftes.** De vindbaarheidscheck gaat over technische toegankelijkheid en kwaliteit van gegevens.
+1. **Unknown stays unknown.** Agents get an explicit list of unknown facts. An unconfirmed "no" does not count as a reliable no.
+2. **Only the owner confirms.** Imports and connections produce suggestions; they never overwrite a confirmed fact.
+3. **No booking promise on stale data.** A direct booking link only comes with live-checked availability; iCal leads to a request.
+4. **Nothing is booked without the owner.** `booked: true` only after acceptance (or instant booking within the owner's rules). Guest data stays on the B&B's own installation and is deleted after the retention period.
+5. **Measure what is real.** Crawler visits are not guests. Agent requests, click-throughs and confirmed bookings are counted separately.
+6. **No ranking promises.** The findability check is about technical accessibility and data quality.
+7. **No hidden conversion.** Prices stay in the property's currency; agents are told the currency, never an estimate.
 
-## Documentatie
+## Documentation
 
-- English: [`README.en.md`](README.en.md), [`docs/en/`](docs/en/) (installatie, handleiding, hosting, agentintegratie)
-- [`CHANGELOG.md`](CHANGELOG.md) — wat er in elke versie zit
-- [`docs/installeren.md`](docs/installeren.md) — installeren voor kopers (zip of Docker)
-- [`docs/handleiding.md`](docs/handleiding.md) — handleiding voor de B&B-eigenaar
-- [`docs/hotels.md`](docs/hotels.md) — voor hotels: kamertypes, tariefplannen, antwoord-assistent, personeel, webhooks naar je PMS
-- [`docs/onderzoek-knelpunten.md`](docs/onderzoek-knelpunten.md) — knelpunten bij boeken via AI-agents en hoe INNLI ze oplost (met bronnen)
-- [`docs/agents-2.1.md`](docs/agents-2.1.md) — wat andere projecten en standaarden agents bieden, de vijf grootste open knelpunten, en hoe 2.1 ze oplost
-- [`docs/agents-2.0.md`](docs/agents-2.0.md) — de tien grootste knelpunten tussen agents en accommodaties, en hoe 2.0 ze oplost (met bronnen)
-- [`agent-kit/`](agent-kit/README.md) — Claude-plugin, MCP-register (`server.json`) en wat agents in 2.0 krijgen
-- [`docs/agent-features.md`](docs/agent-features.md) — 300 agentfuncties en hun status
-- [`docs/prestaties.md`](docs/prestaties.md) — benchmarks vóór en na 0.6
-- [`docs/hosting.md`](docs/hosting.md) — lokaal of online draaien, kosten, tunnel, agenda's koppelen
-- [`docs/agent-integration.md`](docs/agent-integration.md) — voor bouwers van reisagents
-- [`docs/connector-contract.md`](docs/connector-contract.md) — live-koppeling voor boekingssystemen, boekingslinks en terugmelding
+- [docs/install.md](docs/install.md): installing (zip or Docker)
+- [docs/owner-guide.md](docs/owner-guide.md): guide for the B&B owner
+- [docs/hotels.md](docs/hotels.md): for hotels: room types, rate plans, answer assistant, staff, webhooks to your PMS
+- [docs/hosting.md](docs/hosting.md): running locally or online, costs, tunnel, connecting calendars
+- [docs/agent-integration.md](docs/agent-integration.md): for builders of travel agents
+- [docs/agents-2.1.md](docs/agents-2.1.md): what other projects and standards offer agents, the five biggest open problems, and how 2.1 solves them
+- [docs/agents-2.0.md](docs/agents-2.0.md): the ten biggest problems between agents and accommodations, and how 2.0 solves them
+- [agent-kit/](agent-kit/README.md): Claude plugin, MCP registry entry and what agents get in 2.0
 
-## Bewust nog niet gebouwd
+- [docs/agent-features.md](docs/agent-features.md): every agent feature in detail
+- [docs/connector-contract.md](docs/connector-contract.md): the contract for connecting a booking system
+- [docs/performance.md](docs/performance.md): measured performance
+- [docs/research-booking-problems.md](docs/research-booking-problems.md): what goes wrong when AI agents book, with sources
 
-- Reserveringen rechtstreeks in een extern boekingssysteem (wel: elke boeking via een ondertekende webhook naar je PMS, zodat die hem kan overnemen). Via INNLI zelf kan het wel: aanvragen of direct bevestigen met toestemming van de gast, en `booked: true` pas na acceptatie.
-- Koppelingen met specifieke boekingssystemen; de live-API is het contract dat zo'n adapter moet implementeren.
-- Publicatie in ChatGPT/Claude-appdirectories: een werkende MCP-server is niet hetzelfde als een goedgekeurde, gepubliceerde koppeling.
-- Productie-opslag op een database: de bestandsopslag (JSON + JSONL met indexen) is gemeten met 300 accommodaties en 200.000 gebeurtenissen, en heeft een smalle interface om naar Postgres te verhuizen.
+In Dutch: [README.nl.md](README.nl.md) and [docs/nl/](docs/nl/).
 
-## Onderzoek
+## Research
 
-INNLI is een **open onderzoeksproject**: hoe vinden en boeken AI-agents kleine accommodaties eerlijk, veilig en zuinig, zonder tussenpersoon? De onderzoeksvragen, meetmethodes en eerste resultaten staan in [research/](research/README.md). Alles is reproduceerbaar met `npm run measure` en `npm run research:injection`. Het project wordt nu uit eigen middelen gefinancierd; fondsen en verdienen zijn opties voor later en houden het project open ([research/funding/](research/funding/overzicht.md)). Citeren: [CITATION.cff](CITATION.cff).
+INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.nl.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. It is self-funded for now; grants and monetisation are options for later and will keep the project open. To cite INNLI, see [CITATION.cff](CITATION.cff).
 
-## Steun INNLI
+## Support INNLI
 
-INNLI is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent mee? Steun het project:
-- **Doneren:** via de knop *Sponsor* bovenaan de GitHub-pagina (zodra die aan staat).
-- **Een ster geven** op GitHub, zodat anderen INNLI vinden.
-- **Bijdragen:** meld fouten, vertaal, of bouw een koppeling met een boekingssysteem.
+INNLI is free and stays free. Does it help your stay, or are you building an agent with it? Support the project:
+- **Donate:** with the *Sponsor* button at the top of the GitHub page (once it is switched on).
+- **Star it** on GitHub, so others find INNLI.
+- **Contribute:** report bugs, translate, or build a connection to a booking system.
 
-## Licentie
+## Licence
 
-- **Het programma:** [GNU AGPL-3.0](LICENSE). Gratis te gebruiken en aan te passen, ook voor je eigen bedrijf. Bied je een aangepaste versie aan via internet, dan deel je de broncode van die versie.
-- **Een commerciële licentie** is er voor wie INNLI in een eigen product wil bouwen zonder de eigen code te delen. Zie [COMMERCIAL.md](COMMERCIAL.md).
-- **De agent-kit:** [MIT](agent-kit/LICENSE), zodat agents zonder voorwaarden koppelen.
-- **De WordPress-plugin:** GPL-2.0-or-later.
-- **Bijdragen** vallen onder de [bijdragersovereenkomst](CLA.md).
+- **The program:** [GNU AGPL-3.0](LICENSE). Free to use and modify, also for your own business. If you offer a modified version over a network, you share that version's source code.
+- **A commercial licence** is available for building INNLI into your own product without sharing your code. See [COMMERCIAL.md](COMMERCIAL.nl.md).
+- **The agent kit:** [MIT](agent-kit/LICENSE), so agents connect without conditions.
+- **The WordPress plugin:** GPL-2.0-or-later.
+- **Contributions** fall under the [contributor agreement](CLA.nl.md).

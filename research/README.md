@@ -1,46 +1,44 @@
-# INNLI als open onderzoeksproject
+# INNLI as an open research project
 
-**Status (oktober 2026):** INNLI is een open onderzoeksproject onder de AGPL-3.0 (met een commerciële licentie voor wie die nodig heeft), gefinancierd uit eigen middelen van de maker. Er is geen externe financiering. Publieke fondsen zijn een optie voor later; verdienen ook, en alleen op manieren die het open karakter niet aantasten (zie [funding/overzicht.md](funding/overzicht.md)).
+Nederlands: [README.nl.md](README.nl.md).
 
-## De vraag
+**Status (October 2026):** INNLI is an open research project under the AGPL-3.0 (with a commercial licence for those who need one), funded from the maker's own means. There is no external funding. Public funds are an option for later; so is earning money, and only in ways that do not harm the open character (see [funding/overzicht.md](funding/overzicht.md) (in Dutch)).
 
-AI-agents gaan namens reizigers zoeken en boeken. Grote platforms zijn daar klaar voor. Kleine, onafhankelijke accommodaties zijn dat niet: ze worden onzichtbaar voor agents, of alleen bereikbaar via platforms die 15–22% commissie vragen.
+## The question
 
-**Hoofdvraag:** kan een open, zelf te hosten koppeling ervoor zorgen dat agents kleine accommodaties eerlijk, veilig en zuinig vinden en boeken, zonder tussenpartij die de gegevens of de klantrelatie bezit?
+AI agents are going to search and book on behalf of travellers. Large platforms are ready for that. Small, independent accommodations are not: they become invisible to agents, or reachable only through platforms that charge 15–22% commission.
 
-## Deelvragen, meetmethode en eerste resultaten
+**Main question:** can an open, self-hosted connection make sure that agents find and book small accommodations honestly, safely and efficiently, without an intermediary that owns the data or the customer relationship?
 
-Alles is reproduceerbaar met de scripts in deze repo. Gastgegevens komen nooit in een onderzoeksdataset.
+## Sub-questions, measurement method and first results
 
-| # | Vraag | Hoe we meten | Eerste resultaat | Volgende stap |
+Everything is reproducible with the scripts in this repo. Guest data never ends up in a research dataset.
+
+| # | Question | How we measure | First result | Next step |
 |---|---|---|---|---|
-| 1 | **Efficiëntie:** hoeveel context en tijd kost een agentkoppeling voor verblijven, en hoeveel kan eraf zonder informatieverlies? | `npm run measure`: tokens voor de tooldefinities per beurt en per antwoord, volledig tegenover compact | Core-profiel: 49% minder context per beurt. Compacte antwoorden: ~70% kleiner. Dezelfde feiten en statussen. | Meten met echte agentgesprekken (aantal stappen, kosten, fouten) bij drie agentplatforms |
-| 2 | **Veiligheid:** kan een eenvoudige, uitlegbare filter indirecte prompt-injectie in teksten van eigenaren en gasten tegenhouden, zonder gewone gastvrije tekst te knippen? | `npm run research:injection` op [data/injection-cases.json](data/injection-cases.json): 70 gelabelde zinnen in vier talen | 30/30 aanvallen gevangen, 0/40 gewone zinnen geknipt. De evaluatie vond en verhielp een fout met markdown-links. | De set uitbreiden naar 500+ zinnen: echte advertentieteksten, herformuleringen en aanvallen van buitenaf. Vergelijken met een taalmodel als detector. |
-| 3 | **Toestemming:** voorkomt een hash over de voorwaarden dat een agent boekt op voorwaarden die de gast niet zag? | Automatische tests waarin prijs, annulering of data veranderen tussen offerte en boeking | Elke wijziging stopt de aanvraag (`TERMS_CHANGED`) | Gebruikersonderzoek: begrijpen gasten de samenvatting, en kost de extra stap boekingen? |
-| 4 | **Vraag en aanbod:** leiden anonieme verblijfswensen tot aanbiedingen en boekingen bij kleine accommodaties? | Pilot met 5–10 accommodaties: wens → aanbieding → aanvraag → boeking, en de tijd tot een aanbieding | Werkt end-to-end in tests, ook via de gids | Pilot draaien en de trechter publiceren |
-| 5 | **Vertrouwen:** veranderen geverifieerde signalen (websitebewijs, ondertekend paspoort) welke verblijven agents kiezen? | Experiment: dezelfde zoekvraag aan meerdere agents/modellen, met en zonder vertrouwensblok | Nog niet gemeten | Experiment opzetten met 3+ modellen |
-| 6 | **Vindbaarheid:** welke documenten (agent-card, MCP-serverkaart, `llms.txt`) halen agents en crawlers echt op? | Toegangslog per user-agent op de openbare gids | Nog niet gemeten | Telling toevoegen aan de gids, zonder IP-adressen te bewaren |
+| 1 | **Efficiency:** how much context and time does an agent connection for stays cost, and how much can be cut without losing information? | `npm run measure`: tokens for the tool definitions per turn and per answer, full versus compact | Core profile: 49% less context per turn. Compact answers: ~70% smaller. The same facts and statuses. | Measure with real agent conversations (number of steps, costs, errors) on three agent platforms |
+| 2 | **Safety:** can a simple, explainable filter stop indirect prompt injection in texts by owners and guests, without cutting ordinary hospitable text? | `npm run research:injection` on [data/injection-cases.json](data/injection-cases.json): 70 labelled sentences in four languages | 30/30 attacks caught, 0/40 ordinary sentences cut. The evaluation found and fixed a bug with markdown links. | Extend the set to 500+ sentences: real listing texts, rephrasings and attacks from outside. Compare with a language model as detector. |
+| 3 | **Consent:** does a hash over the terms prevent an agent from booking on terms the guest did not see? | Automated tests in which price, cancellation or dates change between quote and booking | Every change stops the request (`TERMS_CHANGED`) | User research: do guests understand the summary, and does the extra step cost bookings? |
+| 4 | **Supply and demand:** do anonymous stay wishes lead to offers and bookings at small accommodations? | Pilot with 5–10 accommodations: wish → offer → request → booking, and the time until an offer | Works end-to-end in tests, also through the guide | Run the pilot and publish the funnel |
+| 5 | **Trust:** do verified signals (website proof, signed passport) change which stays agents choose? | Experiment: the same search query to several agents/models, with and without the trust block | Not measured yet | Set up an experiment with 3+ models |
+| 6 | **Discoverability:** which documents (agent card, MCP server card, `llms.txt`) do agents and crawlers actually fetch? | Access log per user agent on the public guide | Not measured yet | Add a count to the guide, without storing IP addresses |
 
-## Werkwijze
+## How we work
 
-- **Open:** code (AGPL-3.0, agent-kit MIT), datasets en scripts staan in deze repo. Resultaten publiceren we hier, ook als ze tegenvallen.
-- **Reproduceerbaar:** elk cijfer hierboven komt uit een script dat iedereen kan draaien.
-- **Privacy:** onderzoek gebruikt alleen geaggregeerde tellingen of zelfgemaakte voorbeeldteksten, nooit gastgegevens.
-- **Eerlijk over beperkingen:**
-  - de injectieset is klein en zelf samengesteld;
-  - de Beds24-koppeling is nog niet getest met een echt account;
-  - de pilot met accommodaties moet nog beginnen.
+- **Open:** code (AGPL-3.0, agent-kit MIT), datasets and scripts are in this repo. We publish results here, also when they are disappointing.
+- **Reproducible:** every number above comes from a script that anyone can run.
+- **Privacy:** research uses only aggregated counts or self-made sample texts, never guest data.
+- **Honest about limitations:**
+  - the injection set is small and compiled by ourselves;
+  - the Beds24 connection has not been tested with a real account yet;
+  - the pilot with accommodations has yet to start.
 
-## Achtergrond
+## Background
 
-- [../docs/agents-2.0.md](../docs/agents-2.0.md): de tien grootste knelpunten tussen agents en accommodaties, met bronnen.
-- [../docs/onderzoek-knelpunten.md](../docs/onderzoek-knelpunten.md): eerder onderzoek naar boeken via agents.
-- [funding/](funding/): fondsen, conceptaanvragen en het plan om later te verdienen.
+- [../docs/agents-2.0.md](../docs/agents-2.0.md): the ten biggest problems between agents and accommodations, with sources.
+- [../docs/research-booking-problems.md](../docs/research-booking-problems.md): earlier research into booking through agents.
+- [funding/](funding/) (partly in Dutch): funds, draft applications and the plan to earn money later.
 
-## Citeren
+## Citing
 
-Zie [../CITATION.cff](../CITATION.cff).
-
----
-
-**English summary.** INNLI is an open research project on how AI agents can find and book small independent accommodations honestly, safely and efficiently, without an intermediary owning the data or the customer. It has six questions: efficiency, prompt-injection safety, consent, matchmaking through stay wishes, trust signals and discoverability. The first results are reproducible with `npm run measure` and `npm run research:injection`. It is licensed under the AGPL-3.0 (with a commercial licence on request) and self-funded by its maker; there is no external funding. Grants and monetisation are options for later, and will keep the project open.
+See [../CITATION.cff](../CITATION.cff).

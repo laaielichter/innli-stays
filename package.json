@@ -38,8 +38,7 @@
     "build",
     "public",
     "agent-kit",
-    "CHANGELOG.md",
-    "README.en.md"
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=22.18"

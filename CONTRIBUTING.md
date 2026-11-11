@@ -1,31 +1,33 @@
-# Bijdragen aan INNLI
+# Contributing to INNLI
 
-Fijn dat je wilt helpen. English is welcome too.
+Nederlands: [CONTRIBUTING.nl.md](CONTRIBUTING.nl.md).
 
-## Snel beginnen
+Thanks for wanting to help. Dutch is welcome too.
+
+## Quick start
 
 ```bash
 npm install
-npm run demo        # demo met voorbeeldverblijven op http://localhost:3000
-npm test            # alle tests
+npm run demo        # demo with sample stays at http://localhost:3000
+npm test            # all tests
 npm run typecheck
 ```
 
-Node.js 22.18 of nieuwer. Er is geen build-stap: Node draait de TypeScript direct.
+Node.js 22.18 or newer. There is no build step: Node runs the TypeScript directly.
 
-## Waar hulp welkom is
+## Where help is welcome
 
-- **Koppelingen met boekingssystemen.** De live-API staat beschreven in [docs/connector-contract.md](docs/connector-contract.md); Beds24 is een voorbeeld.
-- **Vertalingen:** gastpagina's en e-mails in meer talen (`src/i18n`).
-- **Agents:** probeer INNLI met jouw agent en meld wat beter kan. Zie [agent-kit](agent-kit/README.md).
-- **Fouten:** open een issue met je versie (`/health`) en wat je deed.
+- **Connections to booking systems.** The live API is described in [docs/connector-contract.md](docs/connector-contract.md); Beds24 is an example.
+- **Translations:** guest pages and e-mails in more languages (`src/i18n`).
+- **Agents:** try INNLI with your agent and report what could be better. See [agent-kit](agent-kit/README.md).
+- **Bugs:** open an issue with your version (`/health`) and what you did.
 
-## Open source, ook in de toekomst
+## Open source, now and in the future
 
-De kern van INNLI is AGPL-3.0 en blijft open: alles staat hier, voor iedereen. Grote partijen die INNLI gesloten willen inbouwen, kunnen een commerciële licentie nemen ([COMMERCIAL.md](COMMERCIAL.md)). Daarmee blijft het project betaalbaar en onafhankelijk.
+The core of INNLI is AGPL-3.0 and stays open: everything is here, for everyone. Large parties that want to build INNLI into closed software can take a commercial licence ([COMMERCIAL.md](COMMERCIAL.md)). That keeps the project affordable and independent.
 
-## Afspraken
+## Agreements
 
-- Houd onbekende gegevens onbekend: INNLI verzint nooit iets voor een agent.
-- Schrijf een test bij elke wijziging (`test/`), en zorg dat `npm test` en `npm run typecheck` slagen.
-- Door een pull request te sturen, ga je akkoord met de [bijdragersovereenkomst](CLA.md). Daarmee kan je bijdrage zowel onder de AGPL als onder de commerciële licentie gebruikt worden.
+- Keep unknown facts unknown: INNLI never makes anything up for an agent.
+- Write a test with every change (`test/`), and make sure `npm test` and `npm run typecheck` pass.
+- By sending a pull request, you agree to the [contributor agreement](CLA.md). This allows your contribution to be used under both the AGPL and the commercial licence.

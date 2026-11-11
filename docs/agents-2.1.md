@@ -1,89 +1,89 @@
-# INNLI 2.1: weten welke agent er belt, vasthouden zonder misbruik, en UCP voor verblijven (onderzoek november 2026)
+# INNLI 2.1: know your agent, holds that cannot be abused, and UCP lodging (research, November 2026)
 
-Voor 2.1 keken we wat andere projecten en standaarden bieden aan AI-agents die accommodaties boeken, en wat er voor de sector nog niet is opgelost. Hier staat wat we vonden, wat INNLI 2.1 eraan doet, en wat het bewust nog niet doet.
+For 2.1 we looked at what other projects and standards give AI agents that book accommodation, and at what is still unsolved for the sector. This page says what we found, what INNLI 2.1 does about it, and what it deliberately does not do yet.
 
-## Wat anderen bieden
+## What others offer
 
-| Project of standaard | Wat een agent krijgt | Wat ontbreekt voor een kleine accommodatie |
+| Project or standard | What an agent gets | What is missing for a small property |
 |---|---|---|
-| Airbnb MCP-server (openbnb, community) | Zoeken en details, door de site uit te lezen | Geen boeking, geen toestemming van de eigenaar, geen bevestigde gegevens |
-| Koppelingen van Booking.com en Expedia | Zoeken; boeken gebeurt op hun site | De accommodatie betaalt commissie en heeft gast noch gegevens zelf |
-| 1Stay (Stayker) | `book_hotel` geeft een link naar een gehoste betaalpagina | Een tussenpartij die een vergoeding vraagt |
-| HemmaBo | Verhuur van eigenaren, met ondertekende aanbiedingen | Gehost, niet iets wat een accommodatie zelf draait |
-| Apaleo MCP | Taken voor hotelpersoneel (reserveringen, tarieven) | Niet bedoeld voor de agent van een gast |
-| UCP voor verblijven (concept, `dev.ucp.lodging.booking`) | Een protocol met boekingssessies: verblijven, totalen, voorwaarden, betaaltermijnen, afronden | Er moet bij de accommodatie een server staan die het spreekt |
-| ACP (OpenAI/Stripe) | Afrekensessies voor producten, met betaaltokens | Kent geen data, kamers of gezelschap |
-| AP2 (Google) | Ondertekende mandaten die bewijzen wat de koper goedkeurde | Vraagt een partij die bewijzen uitgeeft en een tweede soort sleutel |
-| Web Bot Auth (HTTP Message Signatures, RFC 9421) | Een agent bewijst wie hij is met een sleutel op zijn eigen domein | De server van de accommodatie moet dat controleren |
+| Airbnb MCP server (openbnb, community) | Search and listing details, by scraping | No booking, no host consent, no verified facts |
+| Booking.com and Expedia connectors | Search; the booking finishes on their site | The property pays commission and owns neither guest nor data |
+| 1Stay (Stayker) | `book_hotel` returns a hosted checkout link | A hosted intermediary with a fee |
+| HemmaBo | Host-owned rentals with signed offers | Hosted, not something a property runs itself |
+| Apaleo MCP | Operations for hotel staff (reservations, rates) | Not meant for a guest's agent |
+| UCP lodging (draft capability `dev.ucp.lodging.booking`) | A booking-session protocol for platforms: stays, totals, policies, payment terms, completion | Needs a server at the property that speaks it |
+| ACP (OpenAI/Stripe) | Checkout sessions for goods, with payment tokens | No lodging objects: dates, rooms and occupancy do not exist in it |
+| AP2 (Google) | Signed mandates that prove what the buyer authorised | Needs a credential provider and a second key type |
+| Web Bot Auth (HTTP Message Signatures, RFC 9421) | An agent proves who it is with a key on its own domain | The property's server has to verify it |
 
-Het gat: er is niets dat je zelf draait, open source, waarmee een onafhankelijke accommodatie op eigen voorwaarden aan deze protocollen meedoet. Alles wat boekt, loopt via een tussenpartij.
+The gap we found: nothing self-hosted and open source lets an independent property take part in these protocols on its own terms. Everything that books goes through an intermediary.
 
-## De vijf grootste open knelpunten, en wat 2.1 doet
+## The five biggest open problems, and what 2.1 does
 
-### 1. Een accommodatie weet niet welke agent er belt
-Een user-agent bewijst niets. En elk platform bij elke B&B een sleutel laten aanvragen is niet te doen.
+### 1. A property cannot tell which agent is calling
+A user-agent string proves nothing, and asking every platform to register for a key at every B&B does not scale.
 
-**INNLI 2.1** controleert handtekeningen van Web Bot Auth:
-- De agent stuurt `Signature-Agent`, `Signature-Input` en `Signature` mee (RFC 9421, Ed25519, `tag="web-bot-auth"`). Zijn sleutels staan als JWKS op `<zijn adres>/.well-known/http-message-signatures-directory`.
-- Een bewezen platform krijgt een eigen limiet (600 verzoeken per minuut in plaats van 120 per adres), zodat zijn gebruikers elkaar niet blokkeren.
-- Het bewezen domein komt in het ondertekende boekingsdossier (`consent.agentIdentity`, `consent.agentDomain`). Bij een geschil is duidelijk welk platform de aanvraag stuurde.
-- Een kapotte handtekening is geen fout: het verzoek wordt als anoniem behandeld, en de antwoordheader `x-innli-agent-identity` zegt waarom (`expired`, `bad_signature`, `replayed_nonce`, …).
-- Eigenaren kunnen in het dashboard *Alleen herkenbare agents* aanzetten. Anonieme agents kunnen dan nog zoeken en prijzen opvragen, maar voor een aanvraag is een sleutel of handtekening nodig (`AGENT_IDENTITY_REQUIRED`).
-- INNLI zet zijn eigen sleutels op dezelfde vaste plek en ondertekent statusberichten ook met RFC 9421 (`Content-Digest`, `Signature-Input`, `Signature`). Ontvangers kunnen ze met een standaardbibliotheek controleren.
+**INNLI 2.1** verifies Web Bot Auth signatures:
+- The agent sends `Signature-Agent`, `Signature-Input` and `Signature` (RFC 9421, Ed25519, `tag="web-bot-auth"`). Its keys are a JWKS at `<its origin>/.well-known/http-message-signatures-directory`.
+- A verified platform gets its own rate limit (600 requests a minute instead of 120 per address), so its users do not block each other.
+- The verified domain goes into the signed booking record (`consent.agentIdentity`, `consent.agentDomain`): in a dispute it is clear which platform sent the request.
+- A broken signature is not an error: the request is served as an anonymous one, and the `x-innli-agent-identity` response header says why (`expired`, `bad_signature`, `replayed_nonce`, …).
+- Owners can choose *Identified agents only* in the dashboard: anonymous agents can still search and quote, but requests need a key or a signature (`AGENT_IDENTITY_REQUIRED`).
+- INNLI publishes its own keys at the same well-known path and signs its status callbacks with RFC 9421 too (`Content-Digest`, `Signature-Input`, `Signature`), so receivers can verify them with a standard library.
 
-### 2. Kamers vasthouden zonder te boeken
-Een agent die elke kamer "aanvraagt", houdt echte gasten buiten zolang de kamer wordt vastgehouden. Voor een kleine accommodatie is dat de goedkoopste manier om schade te lijden. Vóór 2.1 deelden alle anonieme agents bovendien één limiet, zodat één drukke beller de rest blokkeerde.
+### 2. Speculative holds: the cheapest way to hurt a small property
+An agent that "requests" every room keeps real guests out for as long as the hold lasts. Before 2.1, all anonymous agents also shared one action limit, so one noisy caller blocked the rest.
 
 **INNLI 2.1:**
-- Open aanvragen zijn begrensd per houder en per accommodatie: 2 voor een anoniem adres, 25 voor een herkenbare agent, 3 per e-mailadres van een gast. De fout is `LIMIT_REACHED`, met `check_status` en `cancel_request` als volgende stap.
-- Een anonieme agent kan niet meer dan de helft van de kamers tegelijk vasthouden.
-- Anonieme agents worden per adres geteld, niet samen.
-- Het dashboard toont per agent hoeveel prijsopvragen en aanvragen een boeking werden, en hoeveel er vervielen of werden geannuleerd (`GET /api/owner/agents`).
-- Kort vasthouden telt ook mee: `get_quote({ hold: true })` en UCP-sessies houden kamers 15 minuten vast zonder gegevens van een gast. Een anoniem adres mag er 3 tegelijk hebben, een herkenbare agent 60.
-- Adressen worden alleen als hash bewaard.
+- Open requests are limited per holder and per property: 2 for an anonymous address, 25 for an identified agent, 3 per guest e-mail address. The error is `LIMIT_REACHED`, with `check_status` and `cancel_request` as next tools.
+- An anonymous agent cannot hold more than half of a property's rooms at once.
+- Anonymous agents are counted per address, not together.
+- The dashboard shows per agent how many quotes and requests became bookings, and how many expired or were cancelled (`GET /api/owner/agents`).
+- Short holds are counted as well: `get_quote({ hold: true })` and UCP booking sessions keep rooms for 15 minutes without any guest details. An anonymous address may have 3 at once, an identified agent 60.
+- Addresses are stored only as a hash.
 
-### 3. Geen boekingsprotocol dat een accommodatie zelf kan aanbieden
-Agentplatforms gaan naar afrekenen in sessies. UCP heeft een concept voor verblijven, met de onderdelen die een verblijf nodig heeft.
+### 3. No booking protocol a property can serve itself
+Agent platforms are converging on session-based checkout. UCP has a draft lodging capability with the objects a stay needs.
 
-**INNLI 2.1** voegt op elke installatie een UCP-adapter toe:
-- Profiel op `/.well-known/ucp`; REST-adres `/ucp/v1`; dezelfde handelingen als MCP-tools op `/ucp/mcp` (`create_booking_session`, `get_…`, `update_…`, `complete_…`, `cancel_…`).
-- `POST /booking-sessions`, `GET` en `PUT /booking-sessions/{id}`, `POST …/complete`, `POST …/cancel`.
-- Een sessie is één of meer INNLI-offertes waarbij de kamers 15 minuten worden vastgehouden (`expires_at`). Gelijke kamers en maximaal drie kamertypes passen in één sessie.
-- `totals[]` in de kleinste munteenheid, die precies optellen tot het ene `total`; toeristenbelasting en kosten als eigen regels.
-- `policies[]` met `refundability` (`refundable`, `partially_refundable`, `non_refundable`). Heeft de eigenaar alleen een tekst, dan raadt INNLI niet: de tekst gaat mee als mededeling.
-- `payment.terms[].schedules[]` zeggen wat er aan de accommodatie wordt betaald en wanneer (aanbetaling, rest ter plaatse). Er zijn geen betaalhandlers; platforms ronden af met `payment: {}`.
-- De status volgt de boeking: `incomplete` → `ready_for_complete` → `completed` bij direct bevestigen, of `complete_in_progress` zolang de eigenaar beslist. Een accommodatie met een eigen boekingssysteem geeft `requires_escalation` met een `continue_url`.
-- Afronden stuurt dezelfde aanvraag als `request_booking`: dezelfde toestemmingshash, limieten en hetzelfde ondertekende dossier.
+**INNLI 2.1** adds a UCP lodging adapter on every installation:
+- Profile at `/.well-known/ucp`; REST endpoint `/ucp/v1`; the same operations as MCP tools at `/ucp/mcp` (`create_booking_session`, `get_…`, `update_…`, `complete_…`, `cancel_…`).
+- `POST /booking-sessions`, `GET` and `PUT /booking-sessions/{id}`, `POST …/complete`, `POST …/cancel`.
+- A session is one or more INNLI quotes with a 15-minute hold (`expires_at`). Identical rooms and up to three room types fit in one session.
+- `totals[]` in minor units, adding up exactly to the one `total`; tourist tax and fees as their own lines.
+- `policies[]` with `refundability` (`refundable`, `partially_refundable`, `non_refundable`). When the host only wrote a text policy, INNLI does not guess: it sends the text as a disclosure instead.
+- `payment.terms[].schedules[]` say what is paid to the property and when (deposit, balance at the property). There are no payment handlers; platforms complete with `payment: {}`.
+- Status follows the booking: `incomplete` → `ready_for_complete` → `completed` with instant booking, or `complete_in_progress` while the host decides. A property with its own booking system returns `requires_escalation` with a `continue_url`.
+- Completing a session sends the same request as `request_booking`: same consent hash, hold limits and signed record.
 
-De standaard is een concept en zal nog veranderen. Zet `INNLI_UCP_VERSION` op de versie die je platform verwacht.
+The capability is a draft and will change. Set `INNLI_UCP_VERSION` to the version your platform expects.
 
-### 4. Opnieuw proberen en dan dubbel boeken
-Na een time-out weet een agent niet of de boeking is gelukt.
+### 4. Retries that book twice
+A timeout does not tell an agent whether the booking went through.
 
-**INNLI 2.1** accepteert een `Idempotency-Key`-header bij REST-tools en UCP:
-- dezelfde sleutel en dezelfde inhoud: het eerste antwoord, met `Idempotent-Replayed: true`;
-- dezelfde sleutel en andere inhoud: `409`;
-- antwoorden blijven 24 uur bewaard. Serverfouten en limieten worden niet bewaard, zodat opnieuw proberen kan;
-- bij `request_booking` wordt de header ook bij de aanvraag bewaard, zodat opnieuw proberen ook na een herstart veilig is.
+**INNLI 2.1** accepts an `Idempotency-Key` header on REST tool calls and UCP operations:
+- same key and same body: the first answer, with `Idempotent-Replayed: true`;
+- same key and another body: `409`;
+- answers are kept for 24 hours. Server errors and rate limits are not stored, so they can be retried;
+- for `request_booking` the header is also stored with the request, so a retry is safe after a restart too.
 
-### 5. Annuleringsvoorwaarden die een agent moet ontleden
-**INNLI 2.1** voegt aan elke offerte `cancellation` toe: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar geen regels in cijfers heeft.
+### 5. Cancellation terms an agent has to parse
+**INNLI 2.1** adds `cancellation` to every quote: `refundability`, `freeUntil`, and the cost of cancelling today. `unknown` when the host has no structured rules.
 
-### Via de INNLI-gids
-De gids geeft verzoeken van veel agents door vanaf één adres. Zonder maatregel zou elke agent erachter bij elke installatie één limiet delen.
-- De gids controleert zelf handtekeningen van Web Bot Auth en ondertekent elk verzoek dat hij doorgeeft met zijn eigen sleutel (te vinden op zijn `/.well-known/http-message-signatures-directory`).
-- De handtekening dekt wat de gids over de beller zegt: de naam, het domein dat de gids controleerde, en een gehasht kenmerk van de beller.
-- Een installatie vertrouwt dit alleen van de gids waarin ze is opgenomen (`INNLI_GIDS_URL`). Van ieder ander betekenen deze headers niets.
-- Een bewezen platform blijft dus bewezen via de gids, en limieten tellen per beller.
-- Draai je een eigen gids, zet dan `GIDS_PUBLIC_URL` op het openbare adres.
+### Through the INNLI guide
+The guide relays requests for many agents from one address. Without care, every agent behind it would share one limit at each installation.
+- The guide verifies Web Bot Auth signatures itself and signs every request it relays with its own key (published at its `/.well-known/http-message-signatures-directory`).
+- The signature covers what the guide says about the caller: its name, the domain the guide verified, and a hashed caller id.
+- An installation trusts this only from the guide it is listed in (`INNLI_GIDS_URL`). From anyone else these headers mean nothing.
+- So a verified platform stays verified through the guide, and limits count per caller.
+- Running your own guide: set `GIDS_PUBLIC_URL` to its public address.
 
-## Zelf een installatie controleren
-`npx innli-conformance https://verblijf.example` doet 13 controles die alleen lezen: vindbaarheidsdocumenten, sleutelmap, MCP-profielen, getypeerde fouten, controle van handtekeningen, idempotentie, het ondertekende paspoort en het UCP-profiel. Er wordt niets geboekt. Afsluitcode 1 als een controle faalt.
+## Check an installation yourself
+`npx innli-conformance https://stay.example` runs 13 read-only checks: discovery documents, key directory, MCP profiles, typed errors, signature checking, idempotency, the signed passport and the UCP profile. Nothing is booked. Exit code 1 when a check fails.
 
-## Wat 2.1 bewust niet doet
-- **Betalen met een kaart door agents (betaaltokens van ACP, mandaten van AP2).** Daar is een betaalprovider of een uitgever van bewijzen voor nodig. INNLI verwerkt geen geld: de gast betaalt de accommodatie. De sessie en het dossier zijn zo opgezet dat er later een betaalhandler bij kan.
-- **Ondertekende UCP-antwoorden.** Verzoeken worden gecontroleerd; antwoorden worden nog niet ondertekend.
-- **De nieuwste MCP-revisie.** INNLI volgt de officiële SDK.
+## What 2.1 deliberately does not do
+- **Card payments by agents (ACP payment tokens, AP2 mandates).** They need a payment provider or a credential provider. INNLI moves no money: the guest pays the property. The session and the signed record are shaped so that a payment handler can be added later.
+- **Signed UCP responses.** Requests are verified; responses are not signed yet.
+- **The newest MCP revision.** INNLI follows the official SDK.
 
-## Bronnen
-Specificaties, gelezen in hun openbare repositories (november 2026): Universal-Commerce-Protocol/ucp (lodging booking, cancellation policy, signatures), agentic-commerce-protocol/agentic-commerce-protocol, google-agentic-commerce/AP2, cloudflare/web-bot-auth, visa/trusted-agent-protocol, modelcontextprotocol/modelcontextprotocol. Projecten: openbnb-org/mcp-server-airbnb, STAYKER-COM/1Stay-mcp, HemmaBo-se/hemmabo-mcp-server. RFC 9421 (HTTP Message Signatures), RFC 9530 (Digest Fields), RFC 7638 (JWK Thumbprint).
+## Sources
+Specifications read in their public repositories (November 2026): Universal-Commerce-Protocol/ucp (lodging booking, cancellation policy, signatures), agentic-commerce-protocol/agentic-commerce-protocol, google-agentic-commerce/AP2, cloudflare/web-bot-auth, visa/trusted-agent-protocol, modelcontextprotocol/modelcontextprotocol. Projects: openbnb-org/mcp-server-airbnb, STAYKER-COM/1Stay-mcp, HemmaBo-se/hemmabo-mcp-server. RFC 9421 (HTTP Message Signatures), RFC 9530 (Digest Fields), RFC 7638 (JWK Thumbprint).

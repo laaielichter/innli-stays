@@ -1,25 +1,27 @@
-# Commerciële licentie
+# Commercial licence
 
-INNLI is open source onder de [GNU AGPL-3.0](LICENSE). Daarnaast is er een commerciële licentie (dubbele licentie).
+Nederlands: [COMMERCIAL.nl.md](COMMERCIAL.nl.md).
 
-## Wanneer heb je wat nodig?
+INNLI is open source under the [GNU AGPL-3.0](LICENSE). In addition there is a commercial licence (dual licensing).
 
-| Situatie | Licentie |
+## When do you need which?
+
+| Situation | Licence |
 |---|---|
-| Je draait INNLI voor je eigen B&B, pension of hotel, aangepast of niet | AGPL, gratis |
-| Je installeert INNLI voor klanten als webbouwer | AGPL, gratis |
-| Je biedt INNLI aan als dienst en publiceert je aanpassingen onder de AGPL | AGPL, gratis |
-| Je bouwt INNLI in een eigen product of dienst en wilt je code **niet** openbaar maken (een platform, PMS, channel manager of agentplatform) | **Commerciële licentie** |
-| Je wilt garanties, ondersteuning of afspraken die de AGPL niet geeft | **Commerciële licentie** |
+| You run INNLI for your own B&B, guesthouse or hotel, modified or not | AGPL, free |
+| You install INNLI for clients as a web developer | AGPL, free |
+| You offer INNLI as a service and publish your modifications under the AGPL | AGPL, free |
+| You build INNLI into your own product or service and do **not** want to make your code public (a platform, PMS, channel manager or agent platform) | **Commercial licence** |
+| You want warranties, support or arrangements that the AGPL does not give | **Commercial licence** |
 
-De AGPL vraagt dat wie een aangepaste versie via een netwerk aanbiedt, de gebruikers de broncode van die versie geeft (artikel 13). Een ongewijzigde versie gebruiken is altijd gratis: de broncode staat hier.
+The AGPL requires that anyone who offers a modified version over a network gives the users the source code of that version (section 13). Using an unmodified version is always free: the source code is here.
 
-## Wat altijd open en ruim blijft
+## What always stays open and permissive
 
-- **De agent-kit** (`agent-kit/`): MIT. Agents en platforms koppelen zonder voorwaarden.
-- **De WordPress-plugin** (`wordpress-plugin/`): GPL-2.0-or-later.
-- **De koppeling zelf:** MCP, REST, het paspoort, de toestemmings-hash en de verblijfswensen. Iedereen mag ze implementeren in eigen software.
+- **The agent-kit** (`agent-kit/`): MIT. Agents and platforms connect without conditions.
+- **The WordPress plugin** (`wordpress-plugin/`): GPL-2.0-or-later.
+- **The connection itself:** MCP, REST, the passport, the consent hash and the stay wishes. Anyone may implement them in their own software.
 
-## Aanvragen
+## Requesting a licence
 
-Neem contact op via het profiel van de eigenaar van deze GitHub-repository, of open een issue met de titel "Commerciële licentie". Zet daar geen vertrouwelijke gegevens in.
+Get in touch through the profile of the owner of this GitHub repository, or open an issue with the title "Commercial licence". Do not put confidential information in it.

@@ -1,71 +1,71 @@
-# INNLI draaien: lokaal of online, zo goedkoop mogelijk
+# Running INNLI: locally or online, as cheaply as possible
 
-## Eerst het belangrijkste
+## The most important point first
 
-INNLI is gratis en open source. De B&B draait de software zelf. Daarnaast draait er één kleine **INNLI-gids**: het ene adres waarmee agents alle zelf-gehoste B&B's vinden.
+INNLI is free and open source. The B&B runs the software itself. Next to that runs one small **INNLI guide**: the single address agents use to find all self-hosted B&Bs.
 
-AI-agents moeten de installatie van de B&B **24 uur per dag** via internet kunnen bereiken. Staat die computer uit, dan is de accommodatie op dat moment onvindbaar. Lokaal draaien kan dus prima, zolang de computer aan blijft en via een tunnel bereikbaar is.
+AI agents must be able to reach the B&B's installation over the internet **24 hours a day**. If that computer is switched off, the accommodation cannot be found at that moment. Running it locally is perfectly fine, as long as the computer stays on and can be reached through a tunnel.
 
-## Opties en kosten
+## Options and costs
 
-Dit geldt zowel voor de installatie van een B&B als voor jouw gids. Prijzen gecontroleerd in oktober 2026; Hetzner-prijzen zijn exclusief btw.
+This applies both to a B&B's installation and to your guide. Prices checked in October 2026; Hetzner prices exclude VAT.
 
-| Optie | Kosten per maand | Voordelen | Nadelen |
+| Option | Cost per month | Advantages | Disadvantages |
 |---|---|---|---|
-| **A. Eigen pc of Raspberry Pi + Cloudflare Tunnel** | €0 aan hosting; stroom van een Pi ±€1 per maand; domeinnaam ±€10 per jaar | Geen serverkosten, data blijft bij de eigenaar, geen poorten openzetten in de router | Moet altijd aan staan; thuisinternet of stroom weg = onvindbaar |
-| **B. Oracle Cloud Always Free + Cloudflare Tunnel** | €0 + domeinnaam | Echte server in een datacenter, gratis | Creditcard nodig voor aanmelding; gratis capaciteit is niet altijd beschikbaar en kan veranderen (in juni 2026 halveerde Oracle de gratis ARM-capaciteit naar 2 cores / 12 GB, nog steeds ruim genoeg) |
-| **C. Hetzner CX23 (2 vCPU, 4 GB)** | €5,49 + €0,50 voor IPv4 | Betrouwbaar, in de EU, simpel | Kost geld vanaf dag één (Hetzner verhoogde de prijzen in juni 2026) |
+| **A. Own PC or Raspberry Pi + Cloudflare Tunnel** | €0 for hosting; electricity for a Pi about €1 per month; domain name about €10 per year | No server costs, data stays with the owner, no ports to open in the router | Must always be on; no home internet or power = cannot be found |
+| **B. Oracle Cloud Always Free + Cloudflare Tunnel** | €0 + domain name | A real server in a data centre, free | Credit card needed to sign up; free capacity is not always available and can change (in June 2026 Oracle halved the free ARM capacity to 2 cores / 12 GB, which is still plenty) |
+| **C. Hetzner CX23 (2 vCPU, 4 GB)** | €5.49 + €0.50 for IPv4 | Reliable, in the EU, simple | Costs money from day one (Hetzner raised its prices in June 2026) |
 
-Een vast adres is nodig: agents en gasten moeten een betrouwbaar adres zien (bijv. `innli.jouw-bnb.nl`). Een *Cloudflare named tunnel* vereist een domein waarvan de DNS bij Cloudflare staat; een B&B met een eigen website kan daar een subdomein van gebruiken. De gratis *Quick Tunnel* (`*.trycloudflare.com`) werkt zonder domein, maar het adres verandert bij iedere herstart: alleen geschikt om te testen.
+You need a fixed address: agents and guests must see an address they can trust (e.g. `innli.your-bnb.com`). A *Cloudflare named tunnel* needs a domain whose DNS is at Cloudflare; a B&B with its own website can use a subdomain of it. The free *Quick Tunnel* (`*.trycloudflare.com`) works without a domain, but the address changes every time it restarts: only suitable for testing.
 
-### Advies zonder startkapitaal
+### Advice if you have no starting capital
 
-- **Jouw gids:** op optie A of B. Hij is klein (een lijst installaties, geen gastgegevens) en kost dus €0 plus je domeinnaam. Pas naar optie C als er veel installaties zijn.
-- **De B&B:** een Raspberry Pi of oude pc die altijd aan staat (optie A) is voor de meeste B&B's het goedkoopst. Wie dat niet wil, neemt optie B of C op eigen rekening. Bied eventueel betaalde installatiehulp aan.
+- **Your guide:** on option A or B. It is small (a list of installations, no guest data), so it costs €0 plus your domain name. Only move to option C once there are many installations.
+- **The B&B:** a Raspberry Pi or old PC that is always on (option A) is the cheapest for most B&Bs. Anyone who does not want that can choose option B or C at their own expense. You could offer paid installation help.
 
-## Installatie
+## Installation
 
-### Zonder Docker (Windows, Mac, Linux, Raspberry Pi)
+### Without Docker (Windows, Mac, Linux, Raspberry Pi)
 
-Vereist [Node.js](https://nodejs.org) 22.18 of nieuwer.
+Requires [Node.js](https://nodejs.org) 22.18 or newer.
 
 ```bash
 npm install --omit=dev
-npm start            # toont een installatiecode; open http://localhost:3000/dashboard/ en volg de wizard
+npm start            # shows an installation code; open http://localhost:3000/dashboard/ and follow the wizard
 ```
 
-Zet `INNLI_GIDS_URL` op het adres van de gids, dan meldt de installatie zich automatisch aan (bij start en elke 12 uur). Een licentiesleutel is niet nodig.
+Set `INNLI_GIDS_URL` to the address of the guide, and the installation registers itself automatically (at start-up and every 12 hours). No licence key is needed.
 
-### Met Docker (aanbevolen op een server of Raspberry Pi)
+### With Docker (recommended on a server or Raspberry Pi)
 
 ```bash
-cp .env.example .env                                  # vul INNLI_PUBLIC_URL in
+cp .env.example .env                                  # fill in INNLI_PUBLIC_URL
 docker compose up -d
-docker compose logs innli                             # installatiecode voor de wizard
+docker compose logs innli                             # installation code for the wizard
 ```
 
-Het image werkt op gewone pc's en ARM (Raspberry Pi 4/5, Oracle Ampere). Gegevens staan in het Docker-volume `innli-data`.
+The image works on ordinary PCs and on ARM (Raspberry Pi 4/5, Oracle Ampere). Data is stored in the Docker volume `innli-data`.
 
-### Bereikbaar maken met Cloudflare Tunnel (gratis)
+### Making it reachable with Cloudflare Tunnel (free)
 
-1. Zet je domein op Cloudflare (gratis abonnement).
+1. Move your domain to Cloudflare (free plan).
 2. Cloudflare Zero Trust → *Networks → Tunnels* → *Create a tunnel* (type Cloudflared).
-3. Voeg een *public hostname* toe, bijv. `innli.jouwdomein.nl`, met service `http://innli:3000` (Docker) of `http://localhost:3000` (zonder Docker).
-4. Zet het token in `.env` als `TUNNEL_TOKEN` en zet `INNLI_PUBLIC_URL=https://innli.jouwdomein.nl`.
+3. Add a *public hostname*, e.g. `innli.yourdomain.com`, with service `http://innli:3000` (Docker) or `http://localhost:3000` (without Docker).
+4. Put the token in `.env` as `TUNNEL_TOKEN` and set `INNLI_PUBLIC_URL=https://innli.yourdomain.com`.
 5. `docker compose --profile tunnel up -d`
 
-Zonder Docker: installeer `cloudflared` en voer `cloudflared tunnel run --token <token>` uit.
+Without Docker: install `cloudflared` and run `cloudflared tunnel run --token <token>`.
 
-Even testen zonder domein: `cloudflared tunnel --url http://localhost:3000` geeft een tijdelijk `trycloudflare.com`-adres.
+To test quickly without a domain: `cloudflared tunnel --url http://localhost:3000` gives you a temporary `trycloudflare.com` address.
 
-### Back-up
+### Backup
 
-Alles staat in de map `data/` (of in het Docker-volume):
+Everything is in the `data/` folder (or in the Docker volume):
 
-- `innli.json`: instellingen, accommodaties, agentsleutels en de ondertekeningssleutel;
-- `innli.*.jsonl`: aanvragen, vragen, gebeurtenissen, offertes, wachtlijst en zoekstatistieken.
+- `innli.json`: settings, accommodations, agent keys and the signing key;
+- `innli.*.jsonl`: requests, questions, events, quotes, waiting list and search statistics.
 
-Kopieer altijd **de hele map**, niet alleen `innli.json`. Het veiligst is dat terwijl INNLI stil staat, of vlak na een uur. Bestanden worden alleen aangevuld, dus een kopie tijdens het draaien mist hooguit de laatste seconden. Bijvoorbeeld met een dagelijkse taak:
+Always copy **the whole folder**, not just `innli.json`. It is safest to do this while INNLI is stopped, or just after the hour. Files are only ever added to, so a copy made while it is running misses at most the last few seconds. For example, with a daily task:
 
 ```bash
 tar czf backup-$(date +%F).tgz data/
@@ -73,26 +73,26 @@ tar czf backup-$(date +%F).tgz data/
 docker compose cp innli:/app/data ./backup-$(date +%F)
 ```
 
-Terugzetten: stop INNLI, zet de map terug, start INNLI.
+To restore: stop INNLI, put the folder back, start INNLI.
 
-**Automatisch:** zet `INNLI_BACKUP_DIR=/pad/naar/back-ups`, bijvoorbeeld een USB-schijf of een map die Dropbox, OneDrive of iCloud synchroniseert. INNLI kopieert dan elke dag de datamap, inclusief geüploade foto's, naar `innli-JJJJ-MM-DD`, en bewaart er `INNLI_BACKUP_KEEP` (standaard 14). De map moet buiten de datamap liggen. Met Docker koppel je die map als extra volume. De geheime licentiesleutel van de verkoper wordt nooit meegekopieerd.
+**Automatic:** set `INNLI_BACKUP_DIR=/path/to/backups`, for example a USB disk or a folder synced by Dropbox, OneDrive or iCloud. INNLI then copies the data folder, including uploaded photos, to `innli-YYYY-MM-DD` every day, and keeps `INNLI_BACKUP_KEEP` of them (default 14). The folder must be outside the data folder. With Docker, mount it as an extra volume. The seller's secret licence key is never copied.
 
-## Agenda's en boekingssystemen koppelen
+## Connecting calendars and booking systems
 
-In het dashboard onder **Boeking & gegevens**:
+In the dashboard under **Booking & details**:
 
-| Situatie van de B&B | Kies | Wat agents de gast aanbieden |
+| The B&B's situation | Choose | What agents offer the guest |
 |---|---|---|
-| Houdt open kamers in een schrift, Excel of in het hoofd | *Ik houd open kamers zelf bij in INNLI*: sluit nachten per kamer onder **Kamers → Kamerkalender** | Beschikbaarheidsaanvraag |
-| Verhuurt (ook) via Airbnb, Booking.com of gebruikt Google Agenda | *Mijn agenda's*: plak per kamer de iCal-exportlinks, één per regel | Beschikbaarheidsaanvraag |
-| Heeft een boekingssysteem met API | *Boekingssysteem met live koppeling* (zie [koppelcontract](connector-contract.md)) | Directe boekingslink met live prijs |
+| Keeps track of open rooms in a notebook, in Excel or in their head | *I keep track of open rooms in INNLI myself*: close nights per room under **Rooms → Room calendar** | Availability request |
+| Also lets rooms through Airbnb or Booking.com, or uses Google Calendar | *My calendars*: paste the iCal export links for each room, one per line | Availability request |
+| Has a booking system with an API | *Booking system with a live connection* (see the [connector contract](nl/connector-contract.md) (Dutch)) | Direct booking link with a live price |
 
-Nachten die je in de kamerkalender sluit, gelden altijd, ook bovenop gekoppelde agenda's. Via de exportlink onder de kamerkalender kun je die gesloten nachten ook in Airbnb of Booking.com laten overnemen.
+Nights you close in the room calendar always apply, also on top of connected calendars. With the export link under the room calendar, Airbnb or Booking.com can pick up those closed nights too.
 
-Draait het boekingssysteem op hetzelfde netwerk als INNLI (bijv. op dezelfde pc)? Zet dan `INNLI_ALLOW_PRIVATE_FETCH=1`. Standaard weigert INNLI verzoeken naar interne netwerkadressen, uit veiligheid.
+Does the booking system run on the same network as INNLI (e.g. on the same PC)? Then set `INNLI_ALLOW_PRIVATE_FETCH=1`. By default INNLI refuses requests to internal network addresses, for security.
 
-## Bronnen
+## Sources
 
-- [Hetzner-prijsverhoging juni 2026 (CX23 €5,49)](https://privatedevops.com/news/hetzner-june-2026-cloud-price-increase-what-to-do)
+- [Hetzner price increase June 2026 (CX23 €5.49)](https://privatedevops.com/news/hetzner-june-2026-cloud-price-increase-what-to-do)
 - [Oracle Cloud Free Tier in 2026](https://macmyths.com/oracle-cloud-free-tier-whats-actually-free-in-2026/)
-- [Cloudflare Tunnel: named tunnels vereisen een domein, Quick Tunnels niet](https://flaviocopes.com/cloudflare-tunnel/)
+- [Cloudflare Tunnel: named tunnels need a domain, Quick Tunnels do not](https://flaviocopes.com/cloudflare-tunnel/)

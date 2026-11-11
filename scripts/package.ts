@@ -35,13 +35,13 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(stage, { recursive: true });
 
 // What a user downloads. Developer material (licence tool, tests, bench) stays out.
-for (const entry of ['src', 'public', 'wordpress-plugin', 'agent-kit', 'docs', 'LICENSE', 'README.md', 'README.en.md', 'CHANGELOG.md', 'Dockerfile', 'docker-compose.yml', 'package-lock.json']) {
+for (const entry of ['src', 'public', 'wordpress-plugin', 'agent-kit', 'docs', 'LICENSE', 'README.md', 'README.nl.md', 'CHANGELOG.md', 'Dockerfile', 'docker-compose.yml', 'package-lock.json']) {
   cpSync(join(root, entry), join(stage, entry), { recursive: true });
 }
-cpSync(join(root, 'docs/installeren.md'), join(stage, 'INSTALLEREN.md'));
-// The English install guide also sits at the top of the zip; its links then point into docs/en/.
-if (existsSync(join(root, 'docs/en/install.md'))) {
-  writeFileSync(join(stage, 'INSTALL.md'), readFileSync(join(root, 'docs/en/install.md'), 'utf8').replace(/\]\((?!https?:|#|\/)([^)]+)\)/g, '](docs/en/$1)'));
+writeFileSync(join(stage, 'INSTALLEREN.md'), readFileSync(join(root, 'docs/nl/installeren.md'), 'utf8').replace(/\]\((?!https?:|#|\/)([^)]+)\)/g, '](docs/nl/$1)'));
+// The English install guide also sits at the top of the zip; its links then point into docs/.
+if (existsSync(join(root, 'docs/install.md'))) {
+  writeFileSync(join(stage, 'INSTALL.md'), readFileSync(join(root, 'docs/install.md'), 'utf8').replace(/\]\((?!https?:|#|\/)([^)]+)\)/g, '](docs/$1)'));
 }
 const { licentie: _l, gids: _g, bench: _b, pakket: _p, ...scripts } = pkg.scripts;
 writeFileSync(join(stage, 'package.json'), `${JSON.stringify({ ...pkg, scripts }, null, 2)}\n`);

@@ -1,8 +1,8 @@
-## Wat verandert er
+## What changes
 
-<!-- Kort: wat en waarom. -->
+<!-- Briefly: what and why. -->
 
-## Gecontroleerd
+## Checked
 
-- [ ] `npm test` en `npm run typecheck` slagen
-- [ ] Ik ga akkoord met de [bijdragersovereenkomst (CLA.md)](../CLA.md)
+- [ ] `npm test` and `npm run typecheck` pass
+- [ ] I agree to the [contributor agreement (CLA.md)](../CLA.md)

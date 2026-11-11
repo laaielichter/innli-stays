@@ -41,7 +41,7 @@ claude --plugin-dir ./agent-kit/claude-plugin
 - **Through the INNLI guide too.** The guide verifies your signature and passes it on, signed, to each installation: you stay verified and your limits are your own.
 - **Conformance check.** `npx innli-conformance https://stay.example` runs 13 read-only checks against any installation.
 
-Details: [docs/en/agents-2.1.md](../docs/en/agents-2.1.md).
+Details: [docs/agents-2.1.md](../docs/agents-2.1.md).
 
 ## What agents get in 2.0
 
