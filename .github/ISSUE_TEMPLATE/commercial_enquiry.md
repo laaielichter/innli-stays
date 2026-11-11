@@ -13,4 +13,4 @@ labels: commercial
 
 **Your company** (name, website, what you make)
 
-**How can we reach you?** A website or a public contact page is enough.
+**How can we reach you in writing?** A website or a public contact page is enough. Contact is in writing only; expect an answer within a week.

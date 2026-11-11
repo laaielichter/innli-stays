@@ -12,6 +12,7 @@ Everything an agent platform or developer needs to connect an agent to INNLI. Th
 | Plain-text overview for LLMs | `/llms.txt` |
 | Signing key (records, callbacks, passports) | `/.well-known/innli.json` |
 | OAuth 2.1 metadata | `/.well-known/oauth-protected-resource` |
+| ACP checkout sessions (item = a quoteId or a stay id) | `/.well-known/acp.json`, `/acp/checkout_sessions` |
 | UCP profile and lodging booking sessions (draft), REST and MCP | `/.well-known/ucp`, `/ucp/v1/booking-sessions`, `/ucp/mcp` |
 | Key directory (RFC 9421; INNLI also verifies yours) | `/.well-known/http-message-signatures-directory` |
 
@@ -51,7 +52,7 @@ node agent-kit/examples/book-a-stay.mjs "Tuscany"   # add --book to send the req
 - **Signed callbacks, the standard way.** Status callbacks carry `Content-Digest`, `Signature-Input` and `Signature` (RFC 9421) next to the signature in the body.
 
 - **Through the INNLI guide too.** The guide verifies your signature and passes it on, signed, to each installation: you stay verified and your limits are your own.
-- **Conformance check.** `npx innli-conformance https://stay.example` runs 13 read-only checks against any installation.
+- **Conformance check.** `npx innli-conformance https://stay.example` runs 14 read-only checks against any installation.
 
 Details: [docs/agents-2.1.md](../docs/agents-2.1.md).
 

@@ -4,7 +4,15 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
 ## Unreleased
 
+### ACP checkout sessions and card guarantees
+- **Agentic Commerce Protocol** (OpenAI and Stripe) at `/acp`, with discovery at `/.well-known/acp.json`: create, update, retrieve, complete and cancel a checkout session. An item id is a `quoteId`, or a stay written out as `property:unit:checkin:checkout:adults`.
+- Completing a session sends the same request as `request_booking`, with the same consent hash, hold limits and signed record.
+- **Card guarantees** through a payment handler: the card is authorised at completion, captured only when the host confirms, and released when the host declines or the request expires. A declined card makes no request. INNLI holds no money and stores no card data.
+- An experimental **Stripe** handler (`INNLI_STRIPE_SECRET_KEY`). It is tested against a stand-in, not against Stripe itself. Without a handler nothing changes: the guest pays the property.
+- Details: [docs/acp.md](docs/acp.md).
+
 ### Licensing and ownership
+- Commercial licences have **fixed prices** (€ 2,500 or € 9,500 a year) and a short agreement in plain language. A takeover of the whole project goes by written offer. Contact is in writing.
 - The licence does not change: AGPL-3.0, with a commercial licence for companies.
 - The README and website no longer say the project "runs on donations" or make promises about the future. They state what is true now: free to run yourself, no commission, no selling data, no paid places in search results.
 - New: [TRADEMARK.md](TRADEMARK.md) (the licences cover the code; the name and logo have their own rules), [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (every run-time dependency and its licence) and [docs/for-companies.md](docs/for-companies.md) (what the project consists of, for a company that wants to license it or take it over).

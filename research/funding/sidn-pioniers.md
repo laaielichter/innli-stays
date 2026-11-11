@@ -17,7 +17,7 @@ AI-agents gaan namens reizigers zoeken en boeken. Kleine B&B's en pensions dreig
 - één open koppeling (MCP en REST) waarmee elke agent kan zoeken, prijzen opvragen en met toestemming van de gast een aanvraag doen;
 - een gratis gids die alle installaties vindbaar maakt.
 
-In dit project testen we INNLI met 5–10 echte accommodaties. We maken de beveiliging tegen manipulatie van agents sterker en publiceren alle resultaten en datasets openlijk.
+In dit project testen we INNLI met 3–5 echte accommodaties. We maken de beveiliging tegen manipulatie van agents sterker en publiceren alle resultaten en datasets openlijk.
 
 ## Probleem
 
@@ -28,7 +28,8 @@ In dit project testen we INNLI met 5–10 echte accommodaties. We maken de bevei
 
 ## Aanpak en innovatie
 
-INNLI 2.0 bestaat al en is openbaar. Alle onderdelen zijn getest (158 automatische tests):
+INNLI 2.1 bestaat al en is openbaar. Alle onderdelen zijn getest (188 automatische tests):
+- **Eén installatie spreekt alle open agentprotocollen** (MCP, REST, ACP en UCP), en herkent agents die hun verzoeken ondertekenen;
 - **Eén open koppeling** voor alle agents, met een zuinig profiel: 49% minder context per stap, en antwoorden die 70% kleiner zijn;
 - **een filter tegen verborgen instructies:** in onze eerste test werden 30 van de 30 aanvallen gevangen en 0 van de 40 gewone zinnen ten onrechte geknipt;
 - **toestemming met een vingerafdruk van de voorwaarden:** verandert er iets tussen offerte en boeking, dan gaat er niets door;
@@ -36,7 +37,7 @@ INNLI 2.0 bestaat al en is openbaar. Alle onderdelen zijn getest (158 automatisc
 - **"verblijfswensen":** agents laten een anonieme wens achter, en eigenaren kunnen zelf een aanbieding doen. Zo vinden vraag en aanbod elkaar zonder platform ertussen.
 
 Met dit project gaan we van werkende software naar bewezen in de praktijk:
-1. **Pilot:** 5–10 accommodaties (B&B, pension, klein hotel) installeren INNLI, met hulp. We meten de hele route: gevonden, wens, aanbieding, aanvraag, boeking.
+1. **Pilot:** 3–5 accommodaties (B&B, pension, klein hotel) installeren INNLI, met schriftelijke hulp. We meten de hele route: gevonden, wens, aanbieding, aanvraag, boeking.
 2. **Beveiliging:** de testset uitbreiden naar 500+ zinnen in vier talen: echte advertenties, herformuleringen en aanvallen van buitenaf. We vergelijken het filter met een taalmodel als detector en publiceren de set.
 3. **Agents:** testen met minstens drie agentplatforms. Hoeveel stappen, tijd en fouten kost een boeking?
 4. **Kennis delen:** de resultaten publiceren in de repo en in een openbaar verslag. Daarnaast een korte handleiding voor accommodaties: "vindbaar voor AI-agents zonder platform".
@@ -56,8 +57,8 @@ Met dit project gaan we van werkende software naar bewezen in de praktijk:
 
 ## Na de financiering
 
-- **De software blijft gratis en open.** De gids is klein en draait voor bijna niets.
-- **Verder werken:** met donaties, een NLnet-aanvraag (zodra die weer open is) en later betaalde installatiehulp of hosting voor wie dat wil.
+- **Alles uit dit project blijft open beschikbaar** onder de AGPL-3.0. De gids is klein en draait voor bijna niets.
+- **Verder werken:** met een NLnet-aanvraag (zodra die weer open is) en commerciële licenties voor bedrijven die INNLI in een eigen product bouwen.
 - **Wat we niet doen:** commissie per boeking of gegevens verkopen.
 
 ## Begroting (voorbeeld, aan te passen)
@@ -65,9 +66,8 @@ Met dit project gaan we van werkende software naar bewezen in de praktijk:
 | Post | Bedrag |
 |---|---:|
 | Ontwikkeling en onderzoek, 100 uur × € 60 | € 6.000 |
-| Pilot: installatiehulp en hardware voor 5 accommodaties (Raspberry Pi, voeding, behuizing) | € 1.000 |
-| Uitbreiding van de beveiligingstestset en externe review | € 1.500 |
-| Interviews met eigenaren en gasten (vergoedingen) | € 500 |
+| Pilot: hardware voor 5 accommodaties (Raspberry Pi, voeding, behuizing) en een vergoeding voor deelname | € 1.000 |
+| Uitbreiding van de beveiligingstestset en externe review | € 2.000 |
 | Domeinnaam, hosting van de gids (1 jaar), vertaling en verslag | € 1.000 |
 | **Totaal** | **€ 10.000** |
 
@@ -85,4 +85,4 @@ Met dit project gaan we van werkende software naar bewezen in de praktijk:
 
 - Code: de openbare GitHub-repo `innli-stays`
 - Onderzoek: `research/README.md`
-- Knelpunten met bronnen: `docs/agents-2.0.md`
+- Knelpunten met bronnen: `docs/nl/agents-2.0.md` en `docs/nl/agents-2.1.md`

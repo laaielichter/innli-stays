@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { AgentClient, AnalyticsEvent, BookingLink, BookingRequest, HostQuestion, Property, Quote, StaffMember, StayWish, WaitlistEntry, WishOffer } from './domain/types.ts';
+import type { CheckoutSessionRecord } from './acp/types.ts';
 import type { BookingSessionRecord } from './ucp/types.ts';
 
 /** Installation-wide settings for a self-hosted install. */
@@ -165,6 +166,7 @@ export class Store {
   private wishesByToken = new Map<string, StayWish>();
   private wishOffers: LogCollection<WishOffer>;
   private bookingSessions: LogCollection<BookingSessionRecord>;
+  private checkoutSessions: LogCollection<CheckoutSessionRecord>;
 
   // Indexes
   private propertyIndex = new Map<string, Property>();
@@ -197,10 +199,11 @@ export class Store {
     this.wishes = new LogCollection(logFile('wishes'), (w) => w.id);
     this.wishOffers = new LogCollection(logFile('wish-offers'), (o) => o.id);
     this.bookingSessions = new LogCollection(logFile('booking-sessions'), (b) => b.id);
+    this.checkoutSessions = new LogCollection(logFile('checkout-sessions'), (c) => c.id);
     if (!path) return;
 
     if (writable) mkdirSync(dirname(writable), { recursive: true });
-    for (const [c, name] of [[this.quotes, 'quotes'], [this.links, 'links'], [this.requests, 'requests'], [this.questions, 'questions'], [this.events, 'events'], [this.demand, 'demand'], [this.waitlist, 'waitlist'], [this.wishes, 'wishes'], [this.wishOffers, 'wish-offers'], [this.bookingSessions, 'booking-sessions']] as const) {
+    for (const [c, name] of [[this.quotes, 'quotes'], [this.links, 'links'], [this.requests, 'requests'], [this.questions, 'questions'], [this.events, 'events'], [this.demand, 'demand'], [this.waitlist, 'waitlist'], [this.wishes, 'wishes'], [this.wishOffers, 'wish-offers'], [this.bookingSessions, 'booking-sessions'], [this.checkoutSessions, 'checkout-sessions']] as const) {
       (c as LogCollection<unknown>).load(logPath(name));
     }
     let migrated = false;
@@ -226,7 +229,7 @@ export class Store {
   }
 
   private collections(): LogCollection<unknown>[] {
-    return [this.quotes, this.links, this.requests, this.questions, this.events, this.demand, this.waitlist, this.wishes, this.wishOffers, this.bookingSessions] as LogCollection<unknown>[];
+    return [this.quotes, this.links, this.requests, this.questions, this.events, this.demand, this.waitlist, this.wishes, this.wishOffers, this.bookingSessions, this.checkoutSessions] as LogCollection<unknown>[];
   }
 
   private reindex(): void {
@@ -552,6 +555,29 @@ export class Store {
         removed++;
       } else if (!b.statusToken && b.expiresAt < now.toISOString() && (b.guests || b.booker)) {
         this.bookingSessions.upsert({ ...b, guests: undefined, booker: undefined });
+      }
+    }
+    if (removed) this.persist();
+    return removed;
+  }
+
+  // Checkout sessions (ACP): the same idea for platforms that speak the Agentic Commerce Protocol
+  saveCheckoutSession(session: CheckoutSessionRecord): void {
+    this.checkoutSessions.upsert(session);
+    this.persist();
+  }
+  getCheckoutSession(id: string): CheckoutSessionRecord | undefined {
+    return this.checkoutSessions.get(id);
+  }
+  pruneCheckoutSessions(days = 30, now = new Date()): number {
+    const cutoff = new Date(now.getTime() - days * 86_400_000).toISOString();
+    let removed = 0;
+    for (const c of [...this.checkoutSessions.values()]) {
+      if (c.createdAt < cutoff) {
+        this.checkoutSessions.remove(c.id);
+        removed++;
+      } else if (!c.statusToken && c.expiresAt < now.toISOString() && (c.buyer || c.fulfillment_details)) {
+        this.checkoutSessions.upsert({ ...c, buyer: undefined, fulfillment_details: undefined });
       }
     }
     if (removed) this.persist();

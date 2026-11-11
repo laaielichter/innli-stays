@@ -78,10 +78,10 @@ De gids geeft verzoeken van veel agents door vanaf één adres. Zonder maatregel
 - Draai je een eigen gids, zet dan `GIDS_PUBLIC_URL` op het openbare adres.
 
 ## Zelf een installatie controleren
-`npx innli-conformance https://verblijf.example` doet 13 controles die alleen lezen: vindbaarheidsdocumenten, sleutelmap, MCP-profielen, getypeerde fouten, controle van handtekeningen, idempotentie, het ondertekende paspoort en het UCP-profiel. Er wordt niets geboekt. Afsluitcode 1 als een controle faalt.
+`npx innli-conformance https://verblijf.example` doet 14 controles die alleen lezen: vindbaarheidsdocumenten, sleutelmap, MCP-profielen, getypeerde fouten, controle van handtekeningen, idempotentie, het ondertekende paspoort en het UCP-profiel. Er wordt niets geboekt. Afsluitcode 1 als een controle faalt.
 
 ## Wat 2.1 bewust niet doet
-- **Betalen met een kaart door agents (betaaltokens van ACP, mandaten van AP2).** Daar is een betaalprovider of een uitgever van bewijzen voor nodig. INNLI verwerkt geen geld: de gast betaalt de accommodatie. De sessie en het dossier zijn zo opgezet dat er later een betaalhandler bij kan.
+- **Mandaten van AP2.** Daar is een uitgever van bewijzen en een tweede soort sleutel voor nodig. Kaartgaranties via betaaltokens van ACP zijn na 2.1 toegevoegd: zie [acp.md](../acp.md) (Engels).
 - **Ondertekende UCP-antwoorden.** Verzoeken worden gecontroleerd; antwoorden worden nog niet ondertekend.
 - **De nieuwste MCP-revisie.** INNLI volgt de officiële SDK.
 

@@ -26,17 +26,35 @@ De AGPL vraagt dat wie een aangepaste versie via een netwerk aanbiedt, de gebrui
 
 - Het recht om INNLI in een gesloten product of dienst te bouwen, zonder de plicht uit de AGPL om je eigen code te publiceren.
 - Dezelfde code als de open versie: er is geen aparte gesloten editie van de software die een verblijf zelf draait.
+- Elke versie die tijdens de licentieperiode uitkomt. Die versies mag je blijven gebruiken nadat de periode is afgelopen.
 
-De prijs hangt af van het gebruik (één product of meer, het aantal verblijven dat je bedient) en wordt per klant afgesproken.
+Niet inbegrepen: ondersteuning, maatwerk, hosting en garanties. De software wordt geleverd zoals ze is, net als de open versie.
+
+## Prijzen
+
+Vaste prijzen, voor iedereen gelijk. Er valt niets te onderhandelen.
+
+| | Voor | Prijs |
+|---|---|---|
+| **Klein bedrijf** | Een bedrijf met hooguit 10 mensen, voor één product of dienst | € 2.500 per jaar |
+| **Bedrijf** | Een groter bedrijf, of meer dan één product of dienst | € 9.500 per jaar |
+
+Prijzen zijn in euro's, exclusief btw, vooraf te betalen op factuur. De overeenkomst is kort en in gewone taal: [docs/commercial-licence-agreement.md](docs/commercial-licence-agreement.md) (Engels).
 
 ## Het hele project
 
-INNLI is gebouwd door en eigendom van één maker. Een bedrijf dat het hele project wil overnemen (code, naam, pakketnamen en de gids) vindt in [docs/for-companies.md](docs/for-companies.md) (Engels) wat daarbij hoort.
+INNLI is gebouwd door en eigendom van één maker. Een bedrijf kan het hele project overnemen: het auteursrecht, de naam, de pakketnamen en de gids. Wat daarbij hoort, en wat wel en niet is aangetoond, staat in [docs/for-companies.md](docs/for-companies.md) (Engels). Een overname gaat via een schriftelijk bod.
+
+## Hoe contact werkt
+
+- **Schriftelijk.** Alles gaat per bericht of e-mail. Bellen of afspreken is niet nodig en wordt niet aangeboden.
+- **Zonder haast.** Reken op een antwoord binnen een week.
+- **Ter zake.** Zeg wie je bent, welke van de opties hierboven je wilt, en bij een overname wat je biedt. Dat is genoeg om te beginnen.
 
 ## De naam
 
 De licenties gaan over de code, niet over de naam. "INNLI" en het logo mogen alleen worden gebruikt zoals in [TRADEMARK.md](TRADEMARK.md) staat.
 
-## Aanvragen
+## Contact opnemen
 
-Neem contact op via het profiel van de eigenaar van deze GitHub-repository, of open een issue met de titel "Commerciële licentie". Zet daar geen vertrouwelijke gegevens in.
+Via het profiel van de eigenaar van deze GitHub-repository, of open een issue met het sjabloon *Commercial*. Een issue is openbaar: zeg alleen wie je bent en hoe je schriftelijk te bereiken bent.

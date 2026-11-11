@@ -18,6 +18,7 @@ INNLI runs at the accommodation itself and holds guest names, e-mail addresses a
 | A booking nobody agreed to | A request needs the guest's consent, and a hash over the exact terms. If the terms changed, nothing is sent. The result is a signed record. |
 | A retry that books twice | `Idempotency-Key`, scoped to the caller and stored with the request. |
 | The server is used to reach an internal network | Owner-supplied URLs and key directories are fetched through a filter that refuses private addresses, also after redirects. |
+| A card is charged for a stay the host did not confirm | With a payment handler the card is only authorised at checkout. It is captured when the host confirms and released otherwise. INNLI stores the provider's reference, never card data. |
 | Look-alike listings | Website verification, a trust block in every result and an Ed25519-signed passport. |
 | Guest data kept too long | Personal data is removed after the retention period (`INNLI_BEWAARTERMIJN_DAGEN`, default 180 days). |
 
@@ -31,4 +32,4 @@ INNLI runs at the accommodation itself and holds guest names, e-mail addresses a
 
 ## Checking an installation
 
-`npx innli-conformance https://your-address` runs 13 read-only checks of what agents rely on, including whether signatures are verified. Nothing is booked.
+`npx innli-conformance https://your-address` runs 14 read-only checks of what agents rely on, including whether signatures are verified. Nothing is booked.
