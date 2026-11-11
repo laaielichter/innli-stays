@@ -125,6 +125,8 @@
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
   @media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 36px; } }
 
+  .demo { display: block; width: 100%; max-width: 960px; aspect-ratio: 16 / 9; margin-top: 36px; border: 2px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 var(--ink); background: var(--night); }
+
   /* Code */
   pre { font-family: var(--mono); font-size: 14px; line-height: 1.65; background: #0b1118; color: #dbe4ec; border-radius: 16px; padding: 22px 24px; overflow-x: auto; border: 1px solid #2c3a48; }
   pre .c { color: #7f8c99; } pre .g { color: var(--glow); } pre .t { color: #f08a63; } pre .s { color: #9cc3a1; }
@@ -172,6 +174,7 @@
     <a class="logo" href="#top" aria-label="INNLI home">INN<span>LI</span></a>
     <nav aria-label="Main">
       <a href="#how">How it works</a>
+      <a href="#demo">Demo</a>
       <a href="#hosts">For hosts</a>
       <a href="#agents">For agent builders</a>
       <a href="#plans">Licensing</a>
@@ -246,6 +249,21 @@
       <div class="card"><span class="step-n">01 · PASSPORT</span><h3>Confirm your facts once</h3><p>About 40 concrete facts: enclosed garden, bed length, steps to the room, tourist tax. Each one is confirmed, unconfirmed or unknown. Only you confirm.</p></div>
       <div class="card"><span class="step-n">02 · CONNECTION</span><h3>One address for every agent</h3><p>Agents search your passport, check live availability and get an itemised total with every mandatory cost. Over MCP, REST, ACP or UCP.</p></div>
       <div class="card"><span class="step-n">03 · BOOKING</span><h3>Booked with you, not through a middleman</h3><p>The guest agrees to exact terms, the room is held, and you confirm, or it books instantly within your rules. Signed record included.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="demo">
+  <div class="wrap">
+    <p class="hook">// see it work</p>
+    <h2>An AI agent books a stay, <em>start to finish</em>.</h2>
+    <p class="sub">87 seconds, no sound. The calls and answers are real, made on the sample stays that come with INNLI. The guest is an example. Watch what the agent does when the host has not confirmed something.</p>
+    <video class="demo" controls muted playsinline preload="none" poster="demo-poster.jpg" aria-label="Recording of an AI agent searching, quoting and booking a stay through INNLI, and the host accepting in the dashboard">
+      <source src="demo.mp4" type="video/mp4">
+      <a href="demo.mp4">Download the recording</a>
+    </video>
+    <div class="cta-row">
+      <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/demo.md">Do it yourself in five minutes <span aria-hidden="true">→</span></a>
     </div>
   </div>
 </section>

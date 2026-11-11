@@ -4,7 +4,7 @@ Two ways to see INNLI work from start to finish, on the sample stays that come w
 
 ## Watch it
 
-[marketing/video/innli-booking-demo-1080p.mp4](../marketing/video/innli-booking-demo-1080p.mp4) (87 seconds, silent).
+[site/demo.mp4](../site/demo.mp4) (87 seconds, silent), also on the [website](https://laaielichter.github.io/innli-stays/#demo). A vertical cut for stories (57 seconds) is in [marketing/video/](../marketing/video/).
 
 What you see is real: the tool calls and the answers were made against a running INNLI installation with the sample stays, by an AI agent connected with an agent key named "Claude". The guest and the guest's words are an example.
 
