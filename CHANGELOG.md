@@ -38,6 +38,9 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - [docs/architecture.md](docs/architecture.md) describes the layers, the trust boundaries and what a larger operator would have to change.
 - `test/architecture.test.ts` holds the module map: a new dependency between modules fails the test.
 
+### Fixed
+- An ACP checkout session made from a quote dropped the quote's paid options and discount code, so the session could cost something else than the guest was shown. They now come along, as does the driver of a camper quote.
+
 ### Licensing
 - A third fixed price: **Starter**, € 490 a year, for one maker or a team of up to 3. Three years paid at once cost two and a half.
 - Running INNLI for your own stay or rental company stays free, with every function.

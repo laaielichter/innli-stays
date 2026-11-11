@@ -111,6 +111,8 @@ The company sees the driver's age and licence with the request. They are removed
 ## What is not there
 
 - No check of the actual driving licence or identity: the company does that at pick-up.
+- A camper cannot be booked through a UCP booking session: that draft has no place for a driver. Through an ACP checkout session it can, with a quote that has the driver as the item.
+- The reasons a request is refused are in English, also on the company's public page in another language.
 - No one-way rentals (pick-up and return at different places).
 - No payment of the deposit through INNLI.
 - INNLI does not sell or arrange insurance: it passes on what the company states about its own policy.

@@ -289,6 +289,30 @@ describe('camper rental', () => {
     assert.equal((await fetch(`${server.url}/api/owner/property`, { method: 'PATCH', headers: auth, body: JSON.stringify({ published: true }) })).status, 200);
     assert.equal(await visible(), true);
   });
+  it('can be completed through an ACP checkout session, with the driver from the quote', async () => {
+    const acp = async (method: string, path: string, body?: Json) => {
+      const res = await fetch(`${server.url}/acp${path}`, { method, headers: { 'content-type': 'application/json', 'api-version': '2026-04-17', authorization: `Bearer ${server.creds.agentKey}`, ...(method === 'POST' ? { 'idempotency-key': `k-${Math.random()}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      return { status: res.status, body: (await res.json()) as Json };
+    };
+    const buyer = { first_name: 'Ada', last_name: 'Reiziger', email: 'ada@example.com' };
+    const withDriver = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: goodDriver, extras: [{ id: 'verzekering-plus' }] });
+    const made = await acp('POST', '/checkout_sessions', { items: [{ id: withDriver.body.quoteId, quantity: 1 }], buyer });
+    assert.equal(made.status, 201, JSON.stringify(made.body));
+    // The paid options of the quote come along: the session costs what the guest was shown.
+    assert.equal(made.body.totals.at(-1).amount, Math.round(withDriver.body.total * 100));
+    const done = await acp('POST', `/checkout_sessions/${made.body.id}/complete`, { buyer });
+    assert.equal(done.status, 200, JSON.stringify(done.body));
+    const req = server.store.requestsFor('prop_veluwecampers').find((r) => r.guest.email === 'ada@example.com')!;
+    assert.deepEqual(req.driver, goodDriver);
+    assert.deepEqual(req.extras, [{ id: 'verzekering-plus', qty: 1 }]);
+
+    // Without a driver on the quote the session cannot be completed.
+    const noDriver = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 } });
+    const s2 = await acp('POST', '/checkout_sessions', { items: [{ id: noDriver.body.quoteId, quantity: 1 }], buyer: { ...buyer, email: 'ada2@example.com' } });
+    const fail = await acp('POST', `/checkout_sessions/${s2.body.id}/complete`, { buyer: { ...buyer, email: 'ada2@example.com' } });
+    assert.ok(fail.status >= 400, JSON.stringify(fail.body));
+    assert.equal(server.store.requestsFor('prop_veluwecampers').some((r) => r.guest.email === 'ada2@example.com'), false);
+  });
 });
 
 describe('starter packs', () => {

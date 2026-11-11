@@ -4,7 +4,7 @@ import { consentFor } from '../agent/consent.ts';
 import type { Catalog } from '../catalog.ts';
 import { refundability } from '../domain/cancellation.ts';
 import { DateRangeError } from '../domain/dates.ts';
-import type { BookingRequest, Property, Quote, QuoteLine } from '../domain/types.ts';
+import type { BookingRequest, Driver, Property, Quote, QuoteLine } from '../domain/types.ts';
 import { money } from '../i18n/index.ts';
 import { PaymentError, type PaymentHandler } from '../payments/handlers.ts';
 import { holderId, type AgentActions, type AgentContext } from '../requests/agentActions.ts';
@@ -65,6 +65,11 @@ interface StayParams {
   rooms: number;
   ratePlanId?: string;
   breakfast: boolean;
+  /** Carried over from the quote an item names, so the session costs and means what the quote did. */
+  extras?: { id: string; qty: number }[];
+  discountCode?: string;
+  driver?: Driver;
+  destinations?: string[];
 }
 
 export class AcpCheckout {
@@ -298,7 +303,7 @@ export class AcpCheckout {
     if (item.id.startsWith('q_')) {
       const q = this.store.getQuote(item.id);
       if (!q) throw new AcpError(400, 'invalid', 'Unknown or expired quote. Get a quote first with get_quote or search_stays.', { param });
-      return { propertyId: q.propertyId, unitId: q.unitId, checkin: q.checkin, checkout: q.checkout, guests: q.guests, rooms: item.quantity > 1 ? item.quantity : (q.rooms ?? 1), ratePlanId: q.ratePlanId, breakfast: q.breakfast };
+      return { propertyId: q.propertyId, unitId: q.unitId, checkin: q.checkin, checkout: q.checkout, guests: q.guests, rooms: item.quantity > 1 ? item.quantity : (q.rooms ?? 1), ratePlanId: q.ratePlanId, breakfast: q.breakfast, extras: q.extras, discountCode: q.discountCode, driver: q.driver, destinations: q.destinations };
     }
     const [propertyId, unitId, checkin, checkout, adults, children, dogs, ratePlanId] = item.id.split(':');
     if (!propertyId || !unitId || !DATE.test(checkin ?? '') || !DATE.test(checkout ?? '') || !(Number(adults) >= 1)) {
@@ -346,7 +351,7 @@ export class AcpCheckout {
     try {
       for (const s of stays) {
         this.actions.reserveQuoteHold(agent, s.rooms);
-        const q = await this.catalog.quote(property.id, s.unitId, s.checkin, s.checkout, s.guests, s.breakfast, session.agentClient, { rooms: s.rooms, ratePlanId: s.ratePlanId, hold: true });
+        const q = await this.catalog.quote(property.id, s.unitId, s.checkin, s.checkout, s.guests, s.breakfast, session.agentClient, { rooms: s.rooms, ratePlanId: s.ratePlanId, hold: true, extras: s.extras, discountCode: s.discountCode, driver: s.driver, destinations: s.destinations });
         quoteIds.push(q.quoteId);
       }
     } catch (err) {

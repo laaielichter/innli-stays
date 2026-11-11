@@ -48,7 +48,7 @@ Everything here can be reproduced from the repository.
 
 | Claim | How to check |
 |---|---|
-| 274 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
+| 275 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
 | Types are strict and clean | `npm run typecheck` |
 | The npm package installs and starts | `npm run smoke:npm` |
 | A running installation behaves as agents expect | `npx innli-conformance <address>`: 14 read-only checks |
