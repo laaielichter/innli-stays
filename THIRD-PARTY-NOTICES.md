@@ -123,4 +123,4 @@ Generated from `package-lock.json` for version 2.1.0. Regenerate after changing 
 | zod | 4.6.7 | MIT |
 | zod-to-json-schema | 3.25.2 | ISC |
 
-The website (`site/`) and the marketing poster load the fonts Fraunces, Inter and JetBrains Mono from Google Fonts; all three are under the SIL Open Font License 1.1.
+The website (`site/`) contains the fonts Fraunces, Inter and JetBrains Mono in `site/fonts/`, each under the SIL Open Font License 1.1 (the licence texts are in that folder). The marketing poster, a file for printing that is not part of the website, loads the same fonts from Google Fonts when opened.

@@ -11,7 +11,7 @@ import { rateLimiter } from '../http/safeFetch.ts';
 import type { Store } from '../store.ts';
 import { signRecord } from '../security/signing.ts';
 import { cancellationCost } from '../domain/cancellation.ts';
-import { checkDriver, isCamperRental } from '../domain/rental.ts';
+import { isCamperRental, rentalBlockers } from '../domain/rental.ts';
 import type { QuestionService } from './questions.ts';
 import type { WaitlistService } from './waitlist.ts';
 import { RequestError, rulesOf, type RequestService } from './service.ts';
@@ -158,8 +158,8 @@ export class AgentActions {
       for (const q of quotes as Quote[]) {
         const unit = property.units.find((u) => u.id === q.unitId);
         if (!unit) continue;
-        const check = checkDriver(property, unit, q.driver, q.guests);
-        if (check.eligible === false) throw new CatalogError(check.reasons.join(' '), { code: 'DRIVER_NOT_ELIGIBLE' });
+        const blocker = rentalBlockers(property, unit, q);
+        if (blocker) throw new CatalogError(blocker.message, { code: blocker.code });
         if (!q.driver) throw new CatalogError("A camper rental needs the main driver's age and driving licence. Ask the guest, then get a fresh quote with driver.", { code: 'INVALID_INPUT', nextTools: ['get_quote'] });
       }
     }
@@ -192,6 +192,8 @@ export class AgentActions {
       discountCode: q.discountCode,
       callbackUrl: args.callbackUrl,
       quoteId: q.id,
+      driver: q.driver,
+      destinations: q.destinations,
       name: args.guest.name,
       email: args.guest.email,
       phone: args.guest.phone,
@@ -218,13 +220,6 @@ export class AgentActions {
         m.holder = holder;
         if (m.consent) Object.assign(m.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
         this.store.saveRequest(m);
-      }
-    }
-    if (isCamperRental(property) && !replay) {
-      // The company needs to know who drives; it is removed with the guest's other personal data.
-      for (const m of this.requests.members(property, members[0])) {
-        const driver = (quotes as Quote[]).find((q) => q.unitId === m.unitId)?.driver;
-        if (driver) this.store.saveRequest(Object.assign(m, { driver }));
       }
     }
     const request = this.requests.members(property, members[0])[0];
@@ -386,7 +381,6 @@ export class AgentActions {
     try {
       created = await this.requests.create(property, raw, { agentClient: agent.name, language: old.language, replaces: old });
       created.holder = holder;
-      if (old.driver) created.driver = old.driver;
       if (created.consent) Object.assign(created.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
       this.store.saveRequest(created);
     } catch (err) {

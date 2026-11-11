@@ -112,6 +112,19 @@ export const FACT_CATALOG: FactDefinition[] = [
   { key: 'rental.abroadAllowed', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Naar het buitenland toegestaan', agentDescription: 'The vehicle may be taken abroad', critical: false, appliesTo: 'camper' },
   { key: 'rental.countriesAllowed', scope: 'property', type: 'string[]', category: 'Verhuur', label: 'Toegestane landen', agentDescription: 'Countries the vehicle may be driven in', critical: false, appliesTo: 'camper' },
   { key: 'rental.fuelPolicy', scope: 'property', type: 'string', category: 'Verhuur', label: 'Brandstofafspraak', agentDescription: 'Fuel policy, e.g. return with a full tank', critical: false, appliesTo: 'camper' },
+  { key: 'rental.maxDriverAge', scope: 'property', type: 'number', category: 'Verhuur', label: 'Maximumleeftijd bestuurder', agentDescription: 'Maximum age of the driver', critical: false, hint: 'Laat leeg of zet op onbekend als je geen maximum hebt.', appliesTo: 'camper' },
+  { key: 'rental.foreignLicencesAccepted', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Rijbewijs van buiten Europa geaccepteerd', agentDescription: 'Licences issued outside the company\'s own licence area are accepted', critical: false, hint: 'Rijbewijzen uit de EU, EER, Zwitserland en het VK tellen niet als buitenlands.', appliesTo: 'camper' },
+  { key: 'rental.idpRequired', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Internationaal rijbewijs nodig bij buitenlands rijbewijs', agentDescription: 'A driver with a licence from outside the licence area must also carry an international driving permit', critical: false, appliesTo: 'camper' },
+  { key: 'rental.creditCardRequired', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Borg alleen met creditcard op naam van de bestuurder', agentDescription: 'The deposit can only be paid with a credit card in the main driver\'s name', critical: true, hint: 'Veel huurders staan zonder creditcard aan de balie. Zeg het vooraf.', appliesTo: 'camper' },
+  { key: 'rental.liabilityIncluded', scope: 'property', type: 'boolean', category: 'Verzekering en regels', label: 'Aansprakelijkheidsverzekering (WA) inbegrepen', agentDescription: 'Third-party liability insurance is included', critical: true, appliesTo: 'camper' },
+  { key: 'rental.rentalUseInsured', scope: 'property', type: 'boolean', category: 'Verzekering en regels', label: 'Je verzekeraar dekt verhuur aan anderen', agentDescription: 'The company states its insurer covers renting the vehicle out to others', critical: true, hint: 'Een gewone camperverzekering dekt verhuur meestal niet. Vraag je verzekeraar om een schriftelijke bevestiging.', appliesTo: 'camper' },
+  { key: 'rental.insuranceCountries', scope: 'property', type: 'string[]', category: 'Verzekering en regels', label: 'Landen waar de verzekering geldt', agentDescription: 'Countries where the insurance is valid', critical: false, hint: 'Landcodes, bijvoorbeeld NL, BE, DE, FR.', appliesTo: 'camper' },
+  { key: 'rental.roadsideAssistance', scope: 'property', type: 'boolean', category: 'Verzekering en regels', label: 'Pechhulp inbegrepen', agentDescription: 'Roadside assistance is included', critical: false, appliesTo: 'camper' },
+  { key: 'rental.emergencyPhone', scope: 'property', type: 'string', category: 'Verzekering en regels', label: 'Telefoonnummer bij pech of schade', agentDescription: 'Phone number for breakdown or damage during the rental', critical: false, appliesTo: 'camper' },
+  { key: 'rental.termsUrl', scope: 'property', type: 'string', category: 'Verzekering en regels', label: 'Link naar je huurvoorwaarden', agentDescription: 'URL of the rental terms the guest agrees to', critical: true, hint: 'De volledige voorwaarden die de huurder tekent. Agents geven deze link door.', appliesTo: 'camper' },
+  { key: 'rental.idCheckAtPickup', scope: 'property', type: 'boolean', category: 'Verzekering en regels', label: 'Rijbewijs en identiteit gecontroleerd bij ophalen', agentDescription: 'Driving licence and identity are checked at pick-up', critical: false, appliesTo: 'camper' },
+  { key: 'rental.handoverReport', scope: 'property', type: 'boolean', category: 'Verzekering en regels', label: 'Schaderapport bij ophalen en inleveren', agentDescription: 'A damage report is made together at pick-up and return', critical: false, appliesTo: 'camper' },
+  { key: 'rental.pricesIncludeVat', scope: 'property', type: 'boolean', category: 'Verzekering en regels', label: 'Prijzen zijn inclusief btw', agentDescription: 'Prices include VAT or sales tax', critical: false, appliesTo: 'camper' },
   { key: 'vehicle.type', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Type voertuig', agentDescription: 'Vehicle type, e.g. campervan, motorhome, caravan', critical: false, appliesTo: 'camper' },
   { key: 'vehicle.beltedSeats', scope: 'unit', type: 'number', category: 'Voertuig', label: 'Zitplaatsen met gordel', agentDescription: 'Seats with a seat belt: the most people who may travel', critical: true, appliesTo: 'camper' },
   { key: 'vehicle.licenceCategory', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Vereist rijbewijs', agentDescription: 'Driving licence category the vehicle needs (B, C1 or C)', critical: true, appliesTo: 'camper' },
@@ -127,6 +140,8 @@ export const FACT_CATALOG: FactDefinition[] = [
   { key: 'vehicle.winterReady', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Geschikt voor de winter', agentDescription: 'Suitable for winter: insulated, winter tyres, frost-proof water', critical: true, appliesTo: 'camper' },
   { key: 'vehicle.bikeRack', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Fietsendrager', agentDescription: 'Bike rack', critical: false, appliesTo: 'camper' },
   { key: 'vehicle.awning', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Luifel', agentDescription: 'Awning', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.maxMassKg', scope: 'unit', type: 'number', category: 'Voertuig', label: 'Toegestane maximummassa', agentDescription: 'Maximum authorised mass of the vehicle', unit: 'kg', critical: true, hint: 'Staat op het kentekenbewijs. Bepaalt welk rijbewijs nodig is.', appliesTo: 'camper' },
+  { key: 'vehicle.inspectionValidUntil', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Keuring (APK) geldig tot', agentDescription: 'Date until which the periodic roadworthiness inspection is valid (YYYY-MM-DD)', critical: true, hint: 'Datum als 2027-05-31. Een verhuur die later eindigt wordt niet aangenomen.', appliesTo: 'camper' },
 ];
 
 const BY_KEY = new Map(FACT_CATALOG.map((d) => [d.key, d]));
@@ -146,7 +161,8 @@ export function factApplies(def: FactDefinition, propertyType: string | undefine
 }
 
 export function factDefinitionsFor(scope: FactScope, propertyType?: string): FactDefinition[] {
-  return FACT_CATALOG.filter((d) => d.scope === scope && factApplies(d, propertyType));
+  // Without a type every fact counts: a public page shows whatever the owner confirmed.
+  return FACT_CATALOG.filter((d) => d.scope === scope && (propertyType === undefined || factApplies(d, propertyType)));
 }
 
 export function unknownFact(now = new Date()): Fact {
@@ -181,7 +197,13 @@ export function coerceFactValue(key: string, raw: unknown): FactValue {
       break;
     }
     case 'string':
-      if (typeof raw === 'string' && raw.trim()) return raw.trim();
+      if (typeof raw === 'string' && raw.trim()) {
+        const text = raw.trim();
+        // Two answers are compared by the software, so they have to be in a form it can read.
+        if (key === 'vehicle.inspectionValidUntil' && !/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new FactValidationError(t('own.factDate'));
+        if (key === 'vehicle.licenceCategory' && !/^(B|C1|C|car)$/i.test(text)) throw new FactValidationError(t('own.factLicence'));
+        return key === 'vehicle.licenceCategory' && text.toLowerCase() !== 'car' ? text.toUpperCase() : text;
+      }
       break;
     case 'string[]': {
       const arr = typeof raw === 'string' ? raw.split(',') : raw;

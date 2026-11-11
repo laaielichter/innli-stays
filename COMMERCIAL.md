@@ -11,7 +11,7 @@ INNLI is open source under the [GNU AGPL-3.0](LICENSE). In addition there is a c
 | You run INNLI for your own B&B, guesthouse or hotel, modified or not | AGPL, free |
 | You install INNLI for clients as a web developer | AGPL, free |
 | You offer INNLI as a service and publish your modifications under the AGPL | AGPL, free |
-| You build INNLI into your own product or service and do **not** want to make your code public (a platform, PMS, channel manager or agent platform) | **Commercial licence** |
+| You build INNLI into your own product or service and do **not** want to make your code public (a platform, PMS, channel manager, camper rental platform or agent platform) | **Commercial licence** |
 | You want warranties, support or arrangements that the AGPL does not give | **Commercial licence** |
 
 The AGPL requires that anyone who offers a modified version over a network gives the users the source code of that version (section 13). Using an unmodified version is always free: the source code is here.
@@ -38,10 +38,19 @@ Fixed prices, the same for everyone. There is nothing to negotiate.
 
 | | For | Price |
 |---|---|---|
+| **Starter** | One maker or a team of up to 3 people, for one product or service | € 490 a year |
 | **Small company** | A company with up to 10 people, for one product or service | € 2,500 a year |
 | **Company** | A larger company, or more than one product or service. Includes INNLI Pro | € 9,500 a year |
 
+The size is the number of people working for the company on the day the period starts. You state it yourself; it is part of the agreement.
+
+Three years paid at once cost the price of two and a half.
+
 Prices are in euros, excluding VAT, paid in advance by invoice. The agreement is short and in plain language: [docs/commercial-licence-agreement.md](docs/commercial-licence-agreement.md).
+
+## What stays free
+
+Running INNLI for your own stay or rental company is free and stays free, with every function in this repository. There is no paid edition for owners, no commission on bookings, no selling of data and no paid places in search results. Money comes from companies that build INNLI into their own closed product.
 
 ## The whole project
 

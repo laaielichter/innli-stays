@@ -32,6 +32,8 @@ export function seedCampers(store: Store): { property: string; id: string; owner
   p.extras = [
     { id: 'fietsen', name: 'Twee fietsen op de drager', price: 8, per: 'night', max: 1 },
     { id: 'extra-bestuurder', name: 'Extra bestuurder', description: 'Een tweede bestuurder meeverzekerd.', price: 35, per: 'stay', max: 2 },
+    { id: 'verzekering-plus', name: 'Verzekering Plus', description: 'Verlaagt je eigen risico naar € 500 per schade. Dekt ook ruiten en banden.', price: 12, per: 'night', max: 1, insurance: { deductible: 500, covers: ['collision', 'theft', 'glass', 'tyres'] } },
+    { id: 'verzekering-top', name: 'Verzekering Top', description: 'Eigen risico € 250 per schade en een lagere borg.', price: 22, per: 'night', max: 1, insurance: { deductible: 250, securityDeposit: 500, covers: ['collision', 'theft', 'glass', 'tyres', 'interior'] } },
     { id: 'eindschoonmaak-toilet', name: 'Toilet laten legen bij inleveren', price: 45, per: 'stay', max: 1 },
   ];
   p.cancellationRules = [
@@ -58,6 +60,19 @@ export function seedCampers(store: Store): { property: string; id: string; owner
     'rental.abroadAllowed': true,
     'rental.countriesAllowed': ['NL', 'BE', 'DE', 'FR', 'LU', 'DK'],
     'rental.fuelPolicy': 'Ophalen en inleveren met een volle tank.',
+    'rental.maxDriverAge': 75,
+    'rental.foreignLicencesAccepted': true,
+    'rental.idpRequired': true,
+    'rental.creditCardRequired': true,
+    'rental.liabilityIncluded': true,
+    'rental.rentalUseInsured': true,
+    'rental.insuranceCountries': ['NL', 'BE', 'DE', 'FR', 'LU', 'DK'],
+    'rental.roadsideAssistance': true,
+    'rental.emergencyPhone': '+31 55 555 01 23',
+    'rental.termsUrl': 'https://veluwecampers.example/huurvoorwaarden',
+    'rental.idCheckAtPickup': true,
+    'rental.handoverReport': true,
+    'rental.pricesIncludeVat': true,
     'pets.dogsAllowed': true,
     'pets.maxDogs': 1,
     'pets.feePerDogPerNight': 5,
@@ -78,17 +93,17 @@ export function seedCampers(store: Store): { property: string; id: string; owner
     unit(
       'buscamper',
       { name: 'Buscamper voor twee', externalRef: 'VAN', description: 'Compacte buscamper met vast bed, keukenblok en buitendouche. Rijdt als een grote auto.', maxGuests: 2, includedGuests: 2, baseRatePerNight: 95, inventory: 2 },
-      { 'vehicle.type': 'campervan', 'vehicle.beltedSeats': 2, 'vehicle.licenceCategory': 'B', 'vehicle.transmission': 'automatic', 'vehicle.fuel': 'diesel', 'vehicle.lengthM': 5.4, 'vehicle.heightM': 2.6, 'vehicle.year': 2024, 'vehicle.toilet': true, 'vehicle.shower': false, 'vehicle.kitchen': true, 'vehicle.heating': true, 'vehicle.winterReady': true, 'vehicle.bikeRack': true, 'vehicle.awning': true, 'bed.lengthCm': 195, 'bed.widthCm': 140 },
+      { 'vehicle.type': 'campervan', 'vehicle.beltedSeats': 2, 'vehicle.licenceCategory': 'B', 'vehicle.maxMassKg': 3300, 'vehicle.inspectionValidUntil': '2099-12-31', 'vehicle.transmission': 'automatic', 'vehicle.fuel': 'diesel', 'vehicle.lengthM': 5.4, 'vehicle.heightM': 2.6, 'vehicle.year': 2024, 'vehicle.toilet': true, 'vehicle.shower': false, 'vehicle.kitchen': true, 'vehicle.heating': true, 'vehicle.winterReady': true, 'vehicle.bikeRack': true, 'vehicle.awning': true, 'bed.lengthCm': 195, 'bed.widthCm': 140 },
     ),
     unit(
       'gezinscamper',
       { name: 'Gezinscamper voor vier', externalRef: 'FAM', description: 'Halfintegraal met een vast bed achterin en een hefbed. Vier zitplaatsen met gordel, twee met isofix.', maxGuests: 4, includedGuests: 4, baseRatePerNight: 135, inventory: 1 },
-      { 'vehicle.type': 'motorhome', 'vehicle.beltedSeats': 4, 'vehicle.licenceCategory': 'B', 'vehicle.transmission': 'manual', 'vehicle.fuel': 'diesel', 'vehicle.lengthM': 6.9, 'vehicle.heightM': 2.9, 'vehicle.year': 2023, 'vehicle.toilet': true, 'vehicle.shower': true, 'vehicle.kitchen': true, 'vehicle.heating': true, 'vehicle.winterReady': false, 'vehicle.bikeRack': true, 'vehicle.awning': true, 'bed.lengthCm': 200, 'bed.widthCm': 150 },
+      { 'vehicle.type': 'motorhome', 'vehicle.beltedSeats': 4, 'vehicle.licenceCategory': 'B', 'vehicle.maxMassKg': 3500, 'vehicle.inspectionValidUntil': '2099-12-31', 'vehicle.transmission': 'manual', 'vehicle.fuel': 'diesel', 'vehicle.lengthM': 6.9, 'vehicle.heightM': 2.9, 'vehicle.year': 2023, 'vehicle.toilet': true, 'vehicle.shower': true, 'vehicle.kitchen': true, 'vehicle.heating': true, 'vehicle.winterReady': false, 'vehicle.bikeRack': true, 'vehicle.awning': true, 'bed.lengthCm': 200, 'bed.widthCm': 150 },
     ),
     unit(
       'grote-camper',
       { name: 'Grote camper voor zes', externalRef: 'XL', description: 'Alkoofcamper van 4.250 kg met zes slaapplaatsen en een grote garage. Hiervoor is rijbewijs C1 nodig.', maxGuests: 6, includedGuests: 6, baseRatePerNight: 175, inventory: 1 },
-      { 'vehicle.type': 'motorhome', 'vehicle.beltedSeats': 6, 'vehicle.licenceCategory': 'C1', 'vehicle.transmission': 'automatic', 'vehicle.fuel': 'diesel', 'vehicle.lengthM': 7.4, 'vehicle.heightM': 3.2, 'vehicle.year': 2022, 'vehicle.toilet': true, 'vehicle.shower': true, 'vehicle.kitchen': true, 'vehicle.heating': true, 'vehicle.winterReady': true, 'vehicle.bikeRack': false, 'vehicle.awning': true, 'bed.lengthCm': 200, 'bed.widthCm': 140 },
+      { 'vehicle.type': 'motorhome', 'vehicle.beltedSeats': 6, 'vehicle.licenceCategory': 'C1', 'vehicle.maxMassKg': 4250, 'vehicle.inspectionValidUntil': '2099-12-31', 'vehicle.transmission': 'automatic', 'vehicle.fuel': 'diesel', 'vehicle.lengthM': 7.4, 'vehicle.heightM': 3.2, 'vehicle.year': 2022, 'vehicle.toilet': true, 'vehicle.shower': true, 'vehicle.kitchen': true, 'vehicle.heating': true, 'vehicle.winterReady': true, 'vehicle.bikeRack': false, 'vehicle.awning': true, 'bed.lengthCm': 200, 'bed.widthCm': 140 },
     ),
   );
   store.saveProperty(p);

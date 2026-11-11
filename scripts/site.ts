@@ -53,7 +53,7 @@ export function translate(lang: string, dictionary: Record<string, string>): { h
   });
   html = html
     .replace('<html lang="en" data-root="./">', `<html lang="${lang}" data-root="../">`)
-    .replace(/\b(href|src|poster)="(favicon\.svg|demo\.mp4|demo-poster\.jpg|og\.png)"/g, '$1="../$2"');
+    .replace(/\b(href|src|poster)="(favicon\.svg|demo\.mp4|demo-poster\.jpg|og\.png|fonts\/fonts\.css|privacy\.html)"/g, '$1="../$2"');
   return { html, missing };
 }
 

@@ -23,9 +23,7 @@
 <link rel="alternate" hreflang="zh" href="https://laaielichter.github.io/innli-stays/zh/">
 <link rel="alternate" hreflang="x-default" href="https://laaielichter.github.io/innli-stays/">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="../fonts/fonts.css" rel="stylesheet">
 <style>
   :root {
     --cream: #f5efe4; --paper: #fbf7ef; --ink: #17202a; --terra: #d9643a; --terra-deep: #b84e28;
@@ -337,7 +335,7 @@
       <div class="card"><h3>WordPress 插件</h3><p>把你确认过的事实以 schema.org 数据的形式放到你的网站上，为智能体验证你的域名，并管理 AI 爬虫的访问权限。</p></div>
       <div class="card"><h3>小型酒店也适用</h3><p>带库存的房型、价格方案、15 分钟保留、员工密钥，以及发往你 PMS 的签名 Webhook。</p></div>
       <div class="card"><h3>防范机器人</h3><p>限制智能体可保留的房间数量，按智能体、按客人分别计算。你也可以只接受已识别身份的智能体发来的请求。</p></div>
-      <div class="card"><h3>房车租赁</h3><p>露营车和自行式房车也能用同样的方式出租：铺位和带安全带的座位、车辆所需的驾照、包含的公里数、押金、取车与还车。智能体会先核对驾驶人，再发出请求。</p></div>
+      <div class="card"><h3>房车租赁</h3><p>以同样的方式出租房车：谁可以驾驶、里程、押金、保险套餐以及车辆可以前往的国家。智能体在提出请求前会核对驾驶人和路线，检查清单会告诉车主哪些事项必须先准备好。</p></div>
       <div class="card"><h3>住宿心愿</h3><p>客人什么都没找到时，智能体会留下一条匿名心愿。你能看到与你的住宿相符的心愿，并用一份报价来回应。</p></div>
       <div class="card"><h3>银行卡担保</h3><p>可选功能：通过你自己的 Stripe 账户做银行卡担保，预订时预授权，只有你确认后才扣款。</p></div>
       <div class="card"><h3>答复助手</h3><p>根据你确认过的信息和常见问题，立即回答客人的提问。不用语言模型，绝不编造。其余的问题会转给你。</p></div>
@@ -404,7 +402,7 @@ claude mcp add --transport http innli <span class="s">https://your-stay.example/
     <p class="sub">INNLI 不从预订中抽成，也不出售数据。房东免费运行；企业可以购买授权，或者接手整个项目继续发展。</p>
     <div class="three">
       <div class="card"><span class="step-n">面向房东</span><h3>自己运行，免费</h3><p>仓库里的一切，毫无限制，遵循 AGPL。可运行在 Raspberry Pi、你自己的电脑或一台小型服务器上。</p><p><a href="#start"><b>快速开始 →</b></a></p></div>
-      <div class="card"><span class="step-n">面向平台</span><h3>商业授权</h3><p>把 INNLI 集成进你的 PMS、渠道管理系统或智能体平台，而无需公开你自己的代码。固定价格，每年 € 2,500 起。更高一级的授权还支持跨多处住宿、要么全订上要么全不订的整段行程。</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md"><b>了解详情 →</b></a></p></div>
+      <div class="card"><span class="step-n">面向平台</span><h3>商业授权</h3><p>把 INNLI 集成进你的 PMS、渠道管理系统或智能体平台，而无需公开你自己的代码。固定价格，每年 € 490 起。更高一级的授权还支持跨多处住宿、要么全订上要么全不订的整段行程。</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md"><b>了解详情 →</b></a></p></div>
       <div class="card"><span class="step-n">面向企业</span><h3>接手项目</h3><p>INNLI 由一位开发者独立打造。版权、名称、软件包和指南可以转让给愿意把它继续做下去的公司。以书面要约方式进行。</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/docs/for-companies.md"><b>包含哪些内容 →</b></a></p></div>
     </div>
   </div>
@@ -457,6 +455,7 @@ npm run demo:intl
       <a href="https://github.com/laaielichter/innli-stays/blob/main/CHANGELOG.md">更新日志</a>
       <a href="https://www.npmjs.com/package/innli-stays">npm</a>
       <a href="https://github.com/laaielichter/innli-stays/blob/main/LICENSE">AGPL-3.0</a>
+      <a href="../privacy.html">隐私</a>
     </nav>
   </div>
 </footer>

@@ -14,6 +14,7 @@ import type { Fetcher } from '../connectors/availability.ts';
 import { bookingsToken, calendarToken, exportIcs } from '../connectors/export.ts';
 import { bookingsIcs, monthlyStats, requestsCsv } from '../analytics/bookings.ts';
 import { addDays, DateRangeError, stayNights } from '../domain/dates.ts';
+import { isCamperRental, rentalReadiness } from '../domain/rental.ts';
 import { applyStarterPack, getStarterPack, STARTER_PACKS } from '../starters.ts';
 import { completeness, FACT_CATALOG, factApplies, FactValidationError, getFactDefinition, ownerConfirmFact, ownerMarkUnknown, ownerSetFact, suggestFact } from '../domain/facts.ts';
 import { LANGUAGES, PROPERTY_TYPES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
@@ -689,6 +690,16 @@ export function createApp(opts: AppOptions) {
   ownerApi.patch('/property', (req, res) => {
     const p = owner(req);
     const patch = propertyPatchSchema.parse(req.body);
+    // A rental company is shown to agents only once the owner confirmed what makes a rental insured and lawful.
+    // Checked on what the property would become, so a new type and "visible" in one step cannot slip past.
+    const next = structuredClone(p);
+    applyPatch(next, patch);
+    const blocked = next.published && isCamperRental(next) ? rentalReadiness(next, currentLang()) : undefined;
+    if (blocked && !blocked.ready && patch.published === true) {
+      const open = blocked.items.filter((i) => i.required && i.state !== 'done');
+      res.status(400).json({ error: `${currentLang() === 'nl' ? 'Nog niet zichtbaar te maken. Bevestig eerst in je paspoort' : 'Not ready to be visible yet. First confirm in your passport'}: ${open.map((i) => i.what).join('; ')}.`, rentalReadiness: blocked });
+      return;
+    }
     applyPatch(p, patch);
     store.saveProperty(p);
     res.json({ property: ownerView(p), completeness: completeness(p) });
@@ -719,6 +730,13 @@ export function createApp(opts: AppOptions) {
     const fact = ownerMarkUnknown(unitFacts(p, unitId), req.params.key);
     store.saveProperty(p);
     res.json({ fact, completeness: completeness(p) });
+  });
+
+  /** Camper rental: what has to be in order before renting out, and what is still open. */
+  ownerApi.get('/rental-readiness', (req, res) => {
+    const p = owner(req);
+    // `published` comes along: saving a rental company that is not ready hides it, and the dashboard has to show that.
+    res.json({ ...(isCamperRental(p) ? rentalReadiness(p, currentLang()) : { ready: true, items: [], disclaimer: '' }), published: p.published });
   });
 
   /** Fill an existing passport from a starter pack. Confirmed facts are left alone; no rooms are added. */
@@ -1020,6 +1038,23 @@ export function createApp(opts: AppOptions) {
   ownerApi.post('/requests/:id/decline', async (req, res) => {
     const { note } = z.object({ note: z.string().max(2000).optional() }).parse(req.body ?? {});
     res.json(handledBy(store, req, await requests.decline(owner(req), String(req.params.id), note)));
+  });
+
+  /** A guest asked for their data to be removed: do it now instead of after the retention period. */
+  ownerApi.post('/requests/:id/erase', (req, res) => {
+    const p = owner(req);
+    const r = store.getRequest(String(req.params.id));
+    if (!r || r.propertyId !== p.id) {
+      res.status(404).json({ error: 'Request not found.' });
+      return;
+    }
+    const group = requests.members(p, r);
+    const today = new Date().toISOString().slice(0, 10);
+    if (group.some((m) => m.status === 'new' || (m.status === 'accepted' && m.checkout >= today))) {
+      res.status(409).json({ error: currentLang() === 'nl' ? 'Deze aanvraag loopt nog. Wijs haar af of annuleer de boeking eerst; daarna kun je de gegevens verwijderen.' : 'This request is still active. Decline it or cancel the booking first; then the details can be removed.' });
+      return;
+    }
+    res.json({ erased: store.eraseGuest(group.map((m) => m.id)) });
   });
 
   // Questions agents asked on behalf of guests

@@ -50,7 +50,15 @@ describe('camper rental', () => {
     const r = res.body.rental;
     assert.deepEqual(r.kilometres, { unlimited: false, includedPerDay: 150, includedForThisRental: 750, pricePerExtraKm: 0.3 });
     assert.equal(r.securityDeposit, 1000);
-    assert.deepEqual(r.insurance, { included: true, deductiblePerClaim: 1000 });
+    assert.equal(r.insurance.included, true);
+    assert.equal(r.insurance.liabilityIncluded, true);
+    assert.equal(r.insurance.deductiblePerClaim, 1000);
+    assert.equal(r.insurance.chosen, null);
+    assert.deepEqual(r.insurance.options.map((o: Json) => [o.id, o.deductiblePerClaim, o.securityDeposit]), [['verzekering-plus', 500, 1000], ['verzekering-top', 250, 500]]);
+    assert.equal(r.depositByCreditCardOnly, true);
+    assert.equal(r.jurisdiction.country, 'NL');
+    assert.match(r.jurisdiction.carLicence, /3,500 kg/);
+    assert.match(r.jurisdiction.disclaimer, /not legal advice/);
     assert.equal(r.driver.eligible, true);
     assert.deepEqual(r.unknown, []);
     // No tourist tax line, and the price is complete without one.
@@ -124,6 +132,187 @@ describe('camper rental', () => {
     const p = server.store.getProperty('prop_veluwecampers')!;
     assert.deepEqual(completeness(p, new Date(), 'en').unknownCritical, []);
   });
+  it('lowers the deductible and the deposit when the guest takes an insurance package', async () => {
+    const d = dates(5);
+    const base = await tool('get_quote', { ...camper, unitId: 'buscamper', ...d, guests: { adults: 2 }, driver: goodDriver });
+    const top = await tool('get_quote', { ...camper, unitId: 'buscamper', ...d, guests: { adults: 2 }, driver: goodDriver, extras: [{ id: 'verzekering-top' }] });
+    assert.equal(top.status, 200, JSON.stringify(top.body));
+    assert.equal(top.body.rental.insurance.chosen, 'verzekering-top');
+    assert.equal(top.body.rental.insurance.deductiblePerClaim, 250);
+    assert.equal(top.body.rental.securityDeposit, 500);
+    assert.ok(Math.abs(top.body.total - base.body.total - 5 * 22) < 0.01);
+    assert.match(top.body.consent.summary, /insurance "Verzekering Top" with a deductible of .*250/);
+    assert.match(top.body.consent.summary, /credit card in the driver's name/);
+    assert.notEqual(top.body.consent.hash, base.body.consent.hash);
+    const both = await tool('get_quote', { ...camper, unitId: 'buscamper', ...d, guests: { adults: 2 }, extras: [{ id: 'verzekering-top' }, { id: 'verzekering-plus' }] });
+    assert.equal(both.status, 400);
+  });
+
+  it('checks where the guest wants to drive against what the company and its insurance allow', async () => {
+    const d = dates();
+    const ok = await tool('get_quote', { ...camper, unitId: 'buscamper', ...d, guests: { adults: 2 }, driver: goodDriver, destinations: ['fr', 'BE'] });
+    assert.deepEqual(ok.body.rental.trip, { ok: true, reasons: [], needs: [], destinations: ['FR', 'BE'] });
+    const no = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: goodDriver, destinations: ['FR', 'GB'] });
+    assert.equal(no.body.rental.trip.ok, false);
+    assert.match(no.body.rental.trip.reasons.join(' '), /may not be driven in GB/);
+    assert.match(no.body.rental.trip.reasons.join(' '), /insurance is not valid in GB/);
+    const sent = await tool('request_booking', { quoteId: no.body.quoteId, guest, guestConsent: true });
+    assert.equal(sent.status, 400);
+    assert.equal(sent.body.code, 'RENTAL_NOT_POSSIBLE');
+  });
+
+  it('treats a licence from outside Europe by the rules of the company', async () => {
+    const q = (driver: Json) => tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: { age: 40, licenceCategory: 'B', licenceYears: 10, ...driver } });
+    // A German licence is not foreign for a Dutch company.
+    assert.equal((await q({ licenceCountry: 'DE' })).body.rental.driver.eligible, true);
+    const us = await q({ licenceCountry: 'US', licenceCategory: 'regular' });
+    assert.equal(us.body.rental.driver.eligible, null);
+    assert.match(us.body.rental.driver.needs.join(' '), /international driving permit/);
+    assert.equal((await q({ licenceCountry: 'US', licenceCategory: 'regular', hasInternationalPermit: true })).body.rental.driver.eligible, true);
+    const without = await q({ licenceCountry: 'US', licenceCategory: 'regular', hasInternationalPermit: false });
+    assert.equal(without.body.rental.driver.eligible, false);
+    assert.equal((await q({ age: 80 })).body.rental.driver.eligible, false);
+  });
+
+  it('does not rent out a vehicle whose inspection runs out before it is back', async () => {
+    const key = ownerKey(server, 'prop_veluwecampers');
+    const auth = { 'content-type': 'application/json', authorization: `Bearer ${key}` };
+    const d = dates();
+    const set = (value: string) => fetch(`${server.url}/api/owner/facts/vehicle.inspectionValidUntil`, { method: 'PUT', headers: auth, body: JSON.stringify({ value, unitId: 'gezinscamper' }) });
+    assert.equal((await set(addDays(d.checkin, 1))).status, 200);
+    const q = await tool('get_quote', { ...camper, unitId: 'gezinscamper', ...d, guests: { adults: 2 }, driver: goodDriver });
+    assert.match(q.body.rental.vehicle.notRentable[0], /inspection/);
+    const sent = await tool('request_booking', { quoteId: q.body.quoteId, guest, guestConsent: true });
+    assert.equal(sent.body.code, 'RENTAL_NOT_POSSIBLE');
+    await set('2099-12-31');
+  });
+
+  it('tells the owner what must be in order, and keeps the company hidden until it is', async () => {
+    const key = ownerKey(server, 'prop_veluwecampers');
+    const auth = { 'content-type': 'application/json', authorization: `Bearer ${key}` };
+    const ready = (await (await fetch(`${server.url}/api/owner/rental-readiness`, { headers: auth })).json()) as Json;
+    assert.equal(ready.ready, true, JSON.stringify(ready.items.filter((i: Json) => i.state !== 'done')));
+    assert.match(ready.disclaimer, /geen juridisch advies/);
+
+    // Hide the company, withdraw the statement about rental cover, and try to show it again.
+    const patch = (body: Json) => fetch(`${server.url}/api/owner/property`, { method: 'PATCH', headers: auth, body: JSON.stringify(body) });
+    assert.equal((await patch({ published: false })).status, 200);
+    await fetch(`${server.url}/api/owner/facts/rental.rentalUseInsured`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: false }) });
+    const refused = await patch({ published: true });
+    assert.equal(refused.status, 400);
+    const body = (await refused.json()) as Json;
+    assert.match(body.error, /insurer covers renting out|verzekeraar dekt verhuur/);
+    assert.equal(body.rentalReadiness.items.find((i: Json) => i.key === 'rental.rentalUseInsured').state, 'problem');
+    await fetch(`${server.url}/api/owner/facts/rental.rentalUseInsured`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: true }) });
+    assert.equal((await patch({ published: true })).status, 200);
+
+    // A car licence stated for a vehicle too heavy for one is pointed out.
+    await fetch(`${server.url}/api/owner/facts/vehicle.licenceCategory`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: 'B', unitId: 'grote-camper' }) });
+    const odd = (await (await fetch(`${server.url}/api/owner/rental-readiness`, { headers: auth })).json()) as Json;
+    assert.ok(odd.items.some((i: Json) => i.state === 'problem' && /4250 kg/.test(i.why)));
+    await fetch(`${server.url}/api/owner/facts/vehicle.licenceCategory`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: 'C1', unitId: 'grote-camper' }) });
+  });
+
+  it('checks the driver on every way in, also the form on the public page', async () => {
+    const page = await (await fetch(`${server.url}/verblijf/veluwe-campers?lang=en`)).text();
+    assert.match(page, /name="driverAge"/);
+    assert.match(page, /Security deposit/);
+    assert.doesNotMatch(page, />Rooms</);
+    const d = dates();
+    const post = (extra: Json) =>
+      fetch(`${server.url}/verblijf/veluwe-campers/aanvraag?lang=en`, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ unitId: 'buscamper', ...d, adults: '2', name: 'Piet Proef', email: 'piet@example.com', ...extra }) });
+    const none = await post({});
+    assert.equal(none.status, 400);
+    assert.match(await none.text(), /age and driving licence/);
+    const young = await post({ driverAge: '20', driverLicence: 'B', driverLicenceYears: '2' });
+    assert.equal(young.status, 400);
+    assert.match(await young.text(), /at least 23/);
+    const ok = await post({ driverAge: '30', driverLicence: 'B', driverLicenceYears: '8' });
+    assert.equal(ok.status, 303);
+    const made = server.store.requestsFor('prop_veluwecampers').find((r) => r.guest.email === 'piet@example.com')!;
+    assert.deepEqual(made.driver, { age: 30, licenceCategory: 'B', licenceYears: 8, licenceCountry: undefined });
+  });
+
+  it('keeps the checks when a request is changed to a larger party', async () => {
+    const q = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: goodDriver });
+    const sent = await tool('request_booking', { quoteId: q.body.quoteId, guest: { name: 'Mo Wissel', email: 'mo@example.com' }, guestConsent: true });
+    assert.equal(sent.status, 200, JSON.stringify(sent.body));
+    const changed = await tool('modify_request', { statusToken: sent.body.statusToken, guestConsent: true, unitId: 'grote-camper', guests: { adults: 4 } });
+    assert.equal(changed.status, 400, JSON.stringify(changed.body));
+    assert.equal(changed.body.code, 'DRIVER_NOT_ELIGIBLE');
+  });
+  it('does not send a request while the guest has not said which licence the driver holds', async () => {
+    const q = await tool('get_quote', { ...camper, unitId: 'grote-camper', ...dates(), guests: { adults: 4 }, driver: { age: 30 } });
+    assert.equal(q.body.rental.driver.eligible, null);
+    assert.ok(q.body.rental.driver.missingFromGuest.length >= 2);
+    const sent = await tool('request_booking', { quoteId: q.body.quoteId, guest, guestConsent: true });
+    assert.equal(sent.status, 400, JSON.stringify(sent.body));
+    assert.equal(sent.body.code, 'INVALID_INPUT');
+    assert.match(sent.body.error ?? sent.body.message, /ask the guest/);
+  });
+
+  it('reads licence categories as they are: trailers and buses cover a car, a moped licence does not', async () => {
+    const elig = async (unitId: string, licenceCategory: string, adults = 2) => (await tool('get_quote', { ...camper, unitId, ...dates(), guests: { adults }, driver: { age: 40, licenceYears: 10, licenceCategory } })).body.rental.driver.eligible;
+    assert.equal(await elig('buscamper', 'BE'), true);
+    assert.equal(await elig('buscamper', 'd'), true);
+    assert.equal(await elig('buscamper', 'AM'), false);
+    assert.equal(await elig('grote-camper', 'C1E', 4), true);
+    assert.equal(await elig('grote-camper', 'CE', 4), true);
+    assert.equal(await elig('grote-camper', 'BE', 4), false);
+  });
+
+  it('only accepts answers the checks can read', async () => {
+    const auth = { 'content-type': 'application/json', authorization: `Bearer ${ownerKey(server, 'prop_veluwecampers')}` };
+    const put = (key: string, value: unknown, unitId?: string) => fetch(`${server.url}/api/owner/facts/${key}`, { method: 'PUT', headers: auth, body: JSON.stringify({ value, unitId }) });
+    assert.equal((await put('vehicle.inspectionValidUntil', '31-12-2030', 'buscamper')).status, 400);
+    assert.equal((await put('vehicle.licenceCategory', 'Rijbewijs B', 'buscamper')).status, 400);
+    assert.equal((await put('vehicle.licenceCategory', 'b', 'buscamper')).status, 200);
+    assert.equal(server.store.getProperty('prop_veluwecampers')!.units[0].facts['vehicle.licenceCategory'].value, 'B');
+    // An empty list of countries is "not answered", not "nowhere".
+    assert.equal((await put('rental.countriesAllowed', '')).status, 200);
+    const q = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: goodDriver, destinations: ['DE'] });
+    assert.equal(q.body.rental.trip.ok, true, JSON.stringify(q.body.rental.trip));
+    assert.equal((await put('rental.countriesAllowed', ['NL', 'BE', 'DE', 'FR', 'LU', 'DK'])).status, 200);
+  });
+
+  it('hides a rental company the moment a required point is no longer in order, whichever way that happens', async () => {
+    const auth = { 'content-type': 'application/json', authorization: `Bearer ${ownerKey(server, 'prop_veluwecampers')}` };
+    const visible = async () => (await tool('search_stays', { kind: 'camper', country: 'NL' })).body.results.length === 1;
+    assert.equal(await visible(), true);
+    // The owner withdraws a required answer.
+    await fetch(`${server.url}/api/owner/facts/rental.liabilityIncluded/unknown`, { method: 'POST', headers: auth, body: '{}' });
+    assert.equal(server.store.getProperty('prop_veluwecampers')!.published, false);
+    assert.equal(await visible(), false);
+    const ready = (await (await fetch(`${server.url}/api/owner/rental-readiness`, { headers: auth })).json()) as Json;
+    assert.deepEqual([ready.ready, ready.published], [false, false]);
+    await fetch(`${server.url}/api/owner/facts/rental.liabilityIncluded`, { method: 'PUT', headers: auth, body: JSON.stringify({ value: true }) });
+    assert.equal((await fetch(`${server.url}/api/owner/property`, { method: 'PATCH', headers: auth, body: JSON.stringify({ published: true }) })).status, 200);
+    assert.equal(await visible(), true);
+  });
+  it('can be completed through an ACP checkout session, with the driver from the quote', async () => {
+    const acp = async (method: string, path: string, body?: Json) => {
+      const res = await fetch(`${server.url}/acp${path}`, { method, headers: { 'content-type': 'application/json', 'api-version': '2026-04-17', authorization: `Bearer ${server.creds.agentKey}`, ...(method === 'POST' ? { 'idempotency-key': `k-${Math.random()}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      return { status: res.status, body: (await res.json()) as Json };
+    };
+    const buyer = { first_name: 'Ada', last_name: 'Reiziger', email: 'ada@example.com' };
+    const withDriver = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 }, driver: goodDriver, extras: [{ id: 'verzekering-plus' }] });
+    const made = await acp('POST', '/checkout_sessions', { items: [{ id: withDriver.body.quoteId, quantity: 1 }], buyer });
+    assert.equal(made.status, 201, JSON.stringify(made.body));
+    // The paid options of the quote come along: the session costs what the guest was shown.
+    assert.equal(made.body.totals.at(-1).amount, Math.round(withDriver.body.total * 100));
+    const done = await acp('POST', `/checkout_sessions/${made.body.id}/complete`, { buyer });
+    assert.equal(done.status, 200, JSON.stringify(done.body));
+    const req = server.store.requestsFor('prop_veluwecampers').find((r) => r.guest.email === 'ada@example.com')!;
+    assert.deepEqual(req.driver, goodDriver);
+    assert.deepEqual(req.extras, [{ id: 'verzekering-plus', qty: 1 }]);
+
+    // Without a driver on the quote the session cannot be completed.
+    const noDriver = await tool('get_quote', { ...camper, unitId: 'buscamper', ...dates(), guests: { adults: 2 } });
+    const s2 = await acp('POST', '/checkout_sessions', { items: [{ id: noDriver.body.quoteId, quantity: 1 }], buyer: { ...buyer, email: 'ada2@example.com' } });
+    const fail = await acp('POST', `/checkout_sessions/${s2.body.id}/complete`, { buyer: { ...buyer, email: 'ada2@example.com' } });
+    assert.ok(fail.status >= 400, JSON.stringify(fail.body));
+    assert.equal(server.store.requestsFor('prop_veluwecampers').some((r) => r.guest.email === 'ada2@example.com'), false);
+  });
 });
 
 describe('starter packs', () => {
@@ -168,5 +357,22 @@ describe('starter packs', () => {
     // A pack for another kind of property is refused.
     const wrong = await fetch(`${server.url}/api/owner/starter-pack`, { method: 'POST', headers: auth, body: JSON.stringify({ id: 'bnb-two-rooms' }) });
     assert.equal(wrong.status, 400);
+  });
+
+  it('cannot become a visible rental company by changing the type of a published stay', async () => {
+    const setup = await fetch(`${server.url}/api/setup`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...base, name: 'Tweede' }) });
+    // Only one set-up per installation: make the second property directly.
+    assert.equal(setup.status, 409);
+    const { createProperty } = await import('../src/properties.ts');
+    const { property, ownerKey: key } = createProperty({ name: 'B&B Wissel', address: { city: 'Ede', country: 'NL' } });
+    property.published = true;
+    server.store.saveProperty(property);
+    const auth = { 'content-type': 'application/json', authorization: `Bearer ${key}` };
+    const both = await fetch(`${server.url}/api/owner/property`, { method: 'PATCH', headers: auth, body: JSON.stringify({ type: 'camper_rental', published: true }) });
+    assert.equal(both.status, 400);
+    const typeOnly = await fetch(`${server.url}/api/owner/property`, { method: 'PATCH', headers: auth, body: JSON.stringify({ type: 'camper_rental' }) });
+    assert.equal(typeOnly.status, 200);
+    const after = server.store.getProperty(property.id)!;
+    assert.deepEqual([after.type, after.published], ['camper_rental', false]);
   });
 });

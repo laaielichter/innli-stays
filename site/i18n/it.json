@@ -44,7 +44,7 @@
   "Protected against bots": "Protetto dai bot",
   "Limits on how many rooms an agent may hold, per agent and per guest. You can accept requests from identified agents only.": "Limiti al numero di camere che un agente può bloccare, per agente e per ospite. Puoi accettare richieste solo da agenti identificati.",
   "Camper rental": "Noleggio camper",
-  "Rent out campers and motorhomes the same way: berths and belted seats, the driving licence a vehicle needs, kilometres included, the deposit, pickup and return. The agent checks the driver before it asks.": "Noleggia camper e motorhome allo stesso modo: posti letto e posti con cintura, la patente richiesta dal veicolo, chilometri inclusi, la cauzione, il ritiro e la riconsegna. L'agente verifica il conducente prima di inviare la richiesta.",
+  "Rent out campers and motorhomes the same way: who may drive, kilometres, deposit, insurance packages and the countries the vehicle may go to. The agent checks the driver and the route before it asks, and a checklist tells the owner what must be in order first.": "Noleggia camper e furgoni allo stesso modo: chi può guidare, chilometri, cauzione, pacchetti assicurativi e i paesi in cui il veicolo può andare. L'agente verifica il conducente e il percorso prima di chiedere, e una lista di controllo dice al proprietario cosa deve essere in ordine prima.",
   "Stay wishes": "Desideri di soggiorno",
   "When a guest finds nothing, the agent leaves an anonymous wish. You see the wishes your stay fits and answer with an offer.": "Quando un ospite non trova nulla, l'agente lascia un desiderio anonimo. Tu vedi i desideri adatti alla tua struttura e rispondi con un'offerta.",
   "Card guarantee": "Garanzia con carta",
@@ -90,7 +90,7 @@
   "Everything in the repository, without limits, under the AGPL. On a Raspberry Pi, your own PC or a small server.": "Tutto ciò che c'è nel repository, senza limiti, sotto AGPL. Su un Raspberry Pi, sul tuo PC o su un piccolo server.",
   "<a href=\"#start\"><b>Quick start →</b></a>": "<a href=\"#start\"><b>Avvio rapido →</b></a>",
   "Commercial licence": "Licenza commerciale",
-  "Build INNLI into your PMS, channel manager or agent platform without publishing your own code. Fixed prices, from € 2,500 a year. The larger licence adds all-or-nothing trips across several stays.": "Integra INNLI nel tuo PMS, channel manager o piattaforma di agenti senza pubblicare il tuo codice. Prezzi fissi, a partire da € 2.500 all'anno. La licenza più ampia aggiunge i viaggi «tutto o niente» su più strutture.",
+  "Build INNLI into your PMS, channel manager or agent platform without publishing your own code. Fixed prices, from € 490 a year. The larger licence adds all-or-nothing trips across several stays.": "Integra INNLI nel tuo PMS, channel manager o piattaforma di agenti senza pubblicare il tuo codice. Prezzi fissi, a partire da € 490 all'anno. La licenza più ampia aggiunge i viaggi «tutto o niente» su più strutture.",
   "<a href=\"https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md\"><b>How it works →</b></a>": "<a href=\"https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md\"><b>Come funziona →</b></a>",
   "Take it over": "Rilevalo",
   "One maker built INNLI. The copyright, the name, the packages and the guide can move to a company that wants to carry it on. By written offer.": "INNLI è stato creato da una sola persona. Il copyright, il nome, i pacchetti e la guida possono passare a un'azienda che voglia portarlo avanti. Su offerta scritta.",
@@ -181,5 +181,6 @@
   "Example of facts with their status": "Esempio di dati con il relativo stato",
   "Footer": "Piè di pagina",
   "Open-source software that makes B&Bs, guesthouses and small hotels findable, understandable and bookable by AI agents. Self-hosted. No commission.": "Software open source che rende B&B, affittacamere e piccoli hotel facili da trovare, capire e prenotare per gli agenti AI. Self-hosted. Nessuna commissione.",
-  "Free, open-source and self-hosted. Verified facts, honest prices, booked direct. No OTA cut.": "Gratuito, open source e self-hosted. Dati verificati, prezzi onesti, prenotazione diretta. Nessuna commissione OTA."
+  "Free, open-source and self-hosted. Verified facts, honest prices, booked direct. No OTA cut.": "Gratuito, open source e self-hosted. Dati verificati, prezzi onesti, prenotazione diretta. Nessuna commissione OTA.",
+  "Privacy": "Privacy"
 }

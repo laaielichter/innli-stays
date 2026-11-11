@@ -140,8 +140,38 @@ function showTab(tab) {
 
 // ------------------------------------------------------------------ Render
 
+const READY_CHIP = { done: ['In orde', 'confirmed'], open: ['Nog bevestigen', 'unconfirmed'], problem: ['Niet in orde', 'fail'] };
+async function renderRentalReady() {
+  const card = $('#rental-ready');
+  if (state.property.type !== 'camper_rental' || state.me?.role === 'reception') { card.hidden = true; return; }
+  const r = await api('/rental-readiness').catch(() => null);
+  if (!r) { card.hidden = true; return; }
+  card.hidden = false;
+  // Withdrawing a required answer hides the company from agents: show that at once.
+  if (state.property.published && r.published === false) {
+    state.property.published = false;
+    $('#published').checked = false;
+    $('#prop-status').textContent = T('Niet gepubliceerd');
+    $('#prop-status').className = 'chip unknown';
+    toast(T('Je bent niet meer zichtbaar voor agents: er is een verplicht punt niet in orde.'), true);
+  }
+  $('#rental-ready-intro').textContent = r.ready
+    ? T('Alles wat nodig is om zichtbaar te zijn voor agents heb je bevestigd.')
+    : T('Bevestig de verplichte punten in je paspoort. Pas daarna kun je zichtbaar worden voor agents.');
+  // What is in order needs no attention: show only what is still open.
+  const open = r.items.filter((i) => i.state !== 'done');
+  $('#rental-ready-items').replaceChildren(h('p', { class: 'small' }, T('{0} van {1} punten in orde.', r.items.length - open.length, r.items.length)), ...open.map((i) => h('div', { class: 'row', style: 'align-items:flex-start;gap:10px;margin:8px 0' },
+    h('span', { class: `chip ${READY_CHIP[i.state][1]}` }, READY_CHIP[i.state][0]),
+    h('div', {}, h('strong', {}, `${i.what}${i.required ? ' *' : ''}`), h('div', { class: 'muted small' }, i.why)),
+  )));
+  $('#rental-ready-note').textContent = `* ${T('verplicht')}. ${r.disclaimer}`;
+}
+
 function renderAll() {
+  renderRentalReady();
   const p = state.property;
+  // A rental company has campers, not rooms.
+  $('[data-tab=units]').textContent = T(p.type === 'camper_rental' ? 'Campers' : 'Kamers');
   $('#prop-name').textContent = p.name;
   $('#published').checked = p.published;
   const status = $('#prop-status');
@@ -239,6 +269,7 @@ function applyResult(result, def, unitId) {
   const target = unitId ? state.property.units.find((u) => u.id === unitId).facts : state.property.facts;
   target[def.key] = result.fact;
   state.completeness = result.completeness;
+  renderRentalReady();
   renderCompleteness();
   if (unitId) renderUnits(); else renderPassport();
 }
@@ -653,7 +684,7 @@ let drawCancel = () => {};
 
 function renderOffer() {
   const p = state.property;
-  extrasDraft = (p.extras || []).map((x) => ({ ...x }));
+  extrasDraft = (p.extras || []).map((x) => ({ ...x, insDeductible: x.insurance?.deductible, insDeposit: x.insurance?.securityDeposit }));
   codesDraft = (p.discountCodes || []).map((x) => ({ ...x }));
   cancelDraft = (p.cancellationRules || []).map((x) => ({ ...x }));
   drawExtras = listEditor($('#extras-rows'), extrasDraft, [
@@ -662,6 +693,10 @@ function renderOffer() {
     { key: 'per', label: 'Prijs geldt', options: PER_OPTIONS() },
     { key: 'max', label: 'Maximaal aantal', type: 'number', placeholder: '1' },
     { key: 'description', label: 'Toelichting (optioneel)' },
+    ...(p.type === 'camper_rental' ? [
+      { key: 'insDeductible', label: 'Verzekeringspakket: eigen risico (leeg = geen verzekering)', type: 'number' },
+      { key: 'insDeposit', label: 'Verzekeringspakket: borg (optioneel)', type: 'number' },
+    ] : []),
   ], 'Nog geen opties.');
   drawCodes = listEditor($('#codes-rows'), codesDraft, [
     { key: 'code', label: 'Code', placeholder: 'bijv. WELKOMTERUG' },
@@ -693,6 +728,7 @@ $('#offer-form').addEventListener('submit', guard(async (e) => {
     const out = { id, name, price: Number(x.price), per: x.per || 'stay' };
     if (Number(x.max) > 1) out.max = Number(x.max);
     if (String(x.description || '').trim()) out.description = String(x.description).trim();
+    if (x.insDeductible !== undefined && x.insDeductible !== '') out.insurance = { ...(x.insurance || {}), deductible: Number(x.insDeductible), securityDeposit: x.insDeposit === undefined || x.insDeposit === '' ? undefined : Number(x.insDeposit) };
     return out;
   });
   const discountCodes = codesDraft.map((c) => {
@@ -877,7 +913,10 @@ $('#basics-form').addEventListener('submit', guard(async (e) => {
       website: val('website') || null, contactEmail: val('contactEmail') || null, phone: val('phone') || null,
     },
   });
+  const typeChanged = property.type !== state.property.type;
   state.property = property; state.completeness = completeness;
+  // Another kind of business has other passport questions.
+  if (typeChanged) state.catalog = await fetch(`/api/fact-catalog?lang=${LANG}&type=${encodeURIComponent(property.type || '')}`).then((r) => r.json());
   renderAll();
   toast('Gegevens opgeslagen');
 }));
@@ -984,7 +1023,8 @@ $('#copy-secret').addEventListener('click', guard(async () => {
 }));
 
 $('#published').addEventListener('change', guard(async (e) => {
-  const { property } = await api('/property', { method: 'PATCH', body: { published: e.target.checked } });
+  let property;
+  try { ({ property } = await api('/property', { method: 'PATCH', body: { published: e.target.checked } })); } catch (err) { e.target.checked = state.property.published; renderRentalReady(); throw err; }
   state.property = property;
   renderAll();
   renderChecklist();
@@ -1163,7 +1203,7 @@ function renderRequests() {
         r.handledBy ? h('span', { class: 'muted', 'data-user-text': true }, ` · ${T('afgehandeld door {0}', r.handledBy)}`) : '',
       ),
       r.guest.message ? h('div', { class: 'msg', 'data-user-text': true }, r.guest.message) : null,
-      r.status === 'new' && r.holdUntil ? h('div', { class: 'small' }, T('Kamer vastgehouden tot {0}; daarna vervalt de aanvraag.', new Date(r.holdUntil).toLocaleString(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }))) : null,
+      r.status === 'new' && r.holdUntil ? h('div', { class: 'small' }, T(state.property.type === 'camper_rental' ? 'Camper vastgehouden tot {0}; daarna vervalt de aanvraag.' : 'Kamer vastgehouden tot {0}; daarna vervalt de aanvraag.', new Date(r.holdUntil).toLocaleString(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }))) : null,
       r.decidedBy === 'instant' ? h('div', { class: 'small muted' }, 'Direct bevestigd volgens je regels.') : null,
       plan ? h('div', { class: 'small' }, h('span', { class: 'chip info', 'data-user-text': true }, plan.name), plan.refundable ? '' : ` ${T('niet-restitueerbaar')}`) : null,
       r.extras?.length || r.discountCode ? h('div', { class: 'small', 'data-user-text': true }, [
@@ -1182,7 +1222,23 @@ function renderRequests() {
           await loadRequests();
         }) }, 'Ontvangen') : null,
       ) : null,
+      r.driver ? h('div', { class: 'small', 'data-user-text': true }, [
+        T('Bestuurder: {0} jaar', r.driver.age),
+        r.driver.licenceCategory ? T('rijbewijs {0}', r.driver.licenceCategory) : '',
+        r.driver.licenceYears !== undefined ? T('{0} jaar in bezit', r.driver.licenceYears) : '',
+        r.driver.licenceCountry ? T('afgegeven in {0}', r.driver.licenceCountry) : '',
+        r.driver.hasInternationalPermit ? T('internationaal rijbewijs') : '',
+        r.destinations?.length ? T('wil rijden in {0}', r.destinations.join(', ')) : '',
+      ].filter(Boolean).join(' · ')) : null,
       r.ownerNote ? h('div', { class: 'small muted', 'data-user-text': true }, T('Jouw bericht: {0}', r.ownerNote)) : null,
+      state.me?.role !== 'reception' && r.status !== 'new' && r.guest.email && !(r.status === 'accepted' && r.checkout >= new Date().toISOString().slice(0, 10)) ? h('div', { class: 'actions' },
+        h('button', { class: 'btn small', onclick: guard(async () => {
+          if (!confirm(T('De naam en contactgegevens van deze gast nu verwijderen? Dit kan niet ongedaan worden gemaakt.'))) return;
+          await api(`/requests/${encodeURIComponent(r.id)}/erase`, { method: 'POST', body: {} });
+          toast(T('Gegevens van de gast verwijderd'));
+          await loadRequests();
+        }) }, 'Gegevens van gast verwijderen'),
+      ) : null,
       r.status === 'new' ? h('div', { class: 'actions' },
         h('button', { class: 'btn primary small', onclick: decide('accept') }, 'Accepteren'),
         h('button', { class: 'btn small', onclick: decide('decline') }, 'Afwijzen'),

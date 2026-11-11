@@ -82,7 +82,7 @@ export function publicPages(store: Store, catalog: Catalog, requests: RequestSer
 
   const valuesFrom = (q: Record<string, unknown>): FormValues => {
     const s = (k: string) => (typeof q[k] === 'string' ? (q[k] as string).slice(0, 2000) : undefined);
-    return { unitId: s('unitId') ?? s('unit'), checkin: s('checkin'), checkout: s('checkout'), adults: s('adults'), children: s('children'), dogs: s('dogs'), breakfast: ['1', 'on', 'true'].includes(s('breakfast') ?? ''), name: s('name'), email: s('email'), phone: s('phone'), message: s('message'), ref: s('ref'), rooms: s('rooms'), ratePlanId: s('ratePlanId'), discountCode: s('discountCode'), extras: extrasFrom(q) };
+    return { driverAge: s('driverAge'), driverLicence: s('driverLicence'), driverLicenceYears: s('driverLicenceYears'), unitId: s('unitId') ?? s('unit'), checkin: s('checkin'), checkout: s('checkout'), adults: s('adults'), children: s('children'), dogs: s('dogs'), breakfast: ['1', 'on', 'true'].includes(s('breakfast') ?? ''), name: s('name'), email: s('email'), phone: s('phone'), message: s('message'), ref: s('ref'), rooms: s('rooms'), ratePlanId: s('ratePlanId'), discountCode: s('discountCode'), extras: extrasFrom(q) };
   };
 
   // English addresses for the same pages: /stay/<name>, /request/<token>, /review/<token>.

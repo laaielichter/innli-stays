@@ -38,10 +38,19 @@ Vaste prijzen, voor iedereen gelijk. Er valt niets te onderhandelen.
 
 | | Voor | Prijs |
 |---|---|---|
+| **Starter** | Eén maker of een team van hooguit 3 mensen, voor één product of dienst | € 490 per jaar |
 | **Klein bedrijf** | Een bedrijf met hooguit 10 mensen, voor één product of dienst | € 2.500 per jaar |
 | **Bedrijf** | Een groter bedrijf, of meer dan één product of dienst. Inclusief INNLI Pro | € 9.500 per jaar |
 
+De grootte is het aantal mensen dat op de eerste dag van de periode voor het bedrijf werkt. Je geeft dat zelf op; het staat in de overeenkomst.
+
+Drie jaar in één keer betaald kost de prijs van tweeënhalf jaar.
+
 Prijzen zijn in euro's, exclusief btw, vooraf te betalen op factuur. De overeenkomst is kort en in gewone taal: [docs/commercial-licence-agreement.md](docs/commercial-licence-agreement.md) (Engels).
+
+## Wat gratis blijft
+
+INNLI draaien voor je eigen verblijf of verhuurbedrijf is gratis en blijft gratis, met elke functie uit deze repository. Er is geen betaalde editie voor eigenaren, geen commissie op boekingen, geen verkoop van gegevens en er zijn geen betaalde plekken in zoekresultaten. Het geld komt van bedrijven die INNLI in hun eigen gesloten product bouwen.
 
 ## Het hele project
 

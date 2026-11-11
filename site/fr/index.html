@@ -23,9 +23,7 @@
 <link rel="alternate" hreflang="zh" href="https://laaielichter.github.io/innli-stays/zh/">
 <link rel="alternate" hreflang="x-default" href="https://laaielichter.github.io/innli-stays/">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="../fonts/fonts.css" rel="stylesheet">
 <style>
   :root {
     --cream: #f5efe4; --paper: #fbf7ef; --ink: #17202a; --terra: #d9643a; --terra-deep: #b84e28;
@@ -337,7 +335,7 @@
       <div class="card"><h3>Extension WordPress</h3><p>Publie vos informations confirmées sur votre site sous forme de données schema.org, vérifie votre domaine auprès des agents et gère l'accès des robots d'indexation IA.</p></div>
       <div class="card"><h3>Aussi pour les petits hôtels</h3><p>Types de chambres avec inventaire, plans tarifaires, blocages de 15 minutes, clés pour le personnel et webhooks signés vers votre PMS.</p></div>
       <div class="card"><h3>Protégé contre les bots</h3><p>Des limites au nombre de chambres qu'un agent peut bloquer, par agent et par voyageur. Vous pouvez n'accepter que les demandes d'agents identifiés.</p></div>
-      <div class="card"><h3>Location de camping-cars</h3><p>Louez vans et camping-cars de la même manière : couchages et places avec ceinture, permis requis pour le véhicule, kilomètres inclus, caution, prise en charge et retour. L'agent vérifie le conducteur avant de faire sa demande.</p></div>
+      <div class="card"><h3>Location de camping-cars</h3><p>Louez des camping-cars et des vans de la même manière : qui peut conduire, kilomètres, caution, formules d'assurance et pays où le véhicule peut aller. L'agent vérifie le conducteur et l'itinéraire avant de demander, et une liste de contrôle indique au propriétaire ce qui doit être en ordre d'abord.</p></div>
       <div class="card"><h3>Souhaits de séjour</h3><p>Quand un voyageur ne trouve rien, l'agent laisse un souhait anonyme. Vous voyez les souhaits auxquels votre hébergement correspond et vous répondez par une offre.</p></div>
       <div class="card"><h3>Garantie par carte</h3><p>En option, une garantie par carte sur votre propre compte Stripe : autorisée à la réservation, débitée seulement quand vous confirmez.</p></div>
       <div class="card"><h3>Assistant de réponse</h3><p>Répond aussitôt aux questions des voyageurs à partir de vos informations confirmées et de votre FAQ. Pas de modèle de langage, rien d'inventé. Le reste vous est transmis.</p></div>
@@ -404,7 +402,7 @@ claude mcp add --transport http innli <span class="s">https://your-stay.example/
     <p class="sub">INNLI ne prélève rien sur les réservations et ne vend aucune donnée. Les hôtes l'utilisent gratuitement ; les entreprises peuvent acquérir une licence, ou reprendre le projet tout entier.</p>
     <div class="three">
       <div class="card"><span class="step-n">POUR LES HÔTES</span><h3>Hébergez-le vous-même, gratuitement</h3><p>Tout ce que contient le dépôt, sans limites, sous licence AGPL. Sur un Raspberry Pi, votre propre PC ou un petit serveur.</p><p><a href="#start"><b>Démarrage rapide →</b></a></p></div>
-      <div class="card"><span class="step-n">POUR LES PLATEFORMES</span><h3>Licence commerciale</h3><p>Intégrez INNLI à votre PMS, votre channel manager ou votre plateforme d'agents sans publier votre propre code. Prix fixes, à partir de € 2 500 par an. La licence supérieure ajoute les voyages « tout ou rien » sur plusieurs hébergements.</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md"><b>Comment ça marche →</b></a></p></div>
+      <div class="card"><span class="step-n">POUR LES PLATEFORMES</span><h3>Licence commerciale</h3><p>Intégrez INNLI à votre PMS, votre channel manager ou votre plateforme d'agents sans publier votre propre code. Prix fixes, à partir de € 490 par an. La licence supérieure ajoute les voyages « tout ou rien » sur plusieurs hébergements.</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md"><b>Comment ça marche →</b></a></p></div>
       <div class="card"><span class="step-n">POUR LES ENTREPRISES</span><h3>Reprendre le projet</h3><p>INNLI a été créé par une seule personne. Les droits d'auteur, le nom, les paquets et le guide peuvent être cédés à une entreprise qui souhaite poursuivre le projet. Sur offre écrite.</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/docs/for-companies.md"><b>Ce que cela comprend →</b></a></p></div>
     </div>
   </div>
@@ -457,6 +455,7 @@ npm run demo:intl
       <a href="https://github.com/laaielichter/innli-stays/blob/main/CHANGELOG.md">Changelog</a>
       <a href="https://www.npmjs.com/package/innli-stays">npm</a>
       <a href="https://github.com/laaielichter/innli-stays/blob/main/LICENSE">AGPL-3.0</a>
+      <a href="../privacy.html">Confidentialité</a>
     </nav>
   </div>
 </footer>

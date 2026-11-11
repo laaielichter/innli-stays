@@ -36,10 +36,12 @@ export const PROPERTY_TYPES = ['bnb', 'pension', 'guesthouse', 'holiday_home', '
 /** Who will drive a rented vehicle: what a rental company must know before it says yes. */
 export interface Driver {
   age: number;
-  /** Licence category held: B, C1 or C. */
   licenceCategory?: string;
-  /** Years the licence has been held. */
   licenceYears?: number;
+  /** Country that issued the licence (ISO 3166-1 alpha-2). */
+  licenceCountry?: string;
+  /** The driver also carries an international driving permit. */
+  hasInternationalPermit?: boolean;
 }
 
 export interface Address {
@@ -81,6 +83,11 @@ export interface Extra {
   per: 'stay' | 'night' | 'person' | 'person_night' | 'room_night';
   /** Highest quantity a guest can choose (default 1). */
   max?: number;
+  /**
+   * Camper rental: this option is an insurance package. Choosing it changes what
+   * the guest risks: the deductible per claim, and optionally the deposit.
+   */
+  insurance?: { deductible: number; securityDeposit?: number; covers?: string[] };
 }
 
 /** A discount code the owner hands out (to returning guests, a newsletter, a partner). Codes are never shown to agents. */
@@ -386,6 +393,8 @@ export interface Quote {
   discountCode?: string;
   /** Camper rental: who will drive, as the agent stated it. */
   driver?: Driver;
+  /** Camper rental: countries the guest plans to drive in (ISO 3166-1 alpha-2). */
+  destinations?: string[];
   guests: Guests;
   breakfast: boolean;
   lines: QuoteLine[];
@@ -470,6 +479,8 @@ export interface BookingRequest {
   discountCode?: string;
   /** Camper rental: the driver the company said yes or no to. Removed with the other personal data. */
   driver?: Driver;
+  /** Camper rental: countries the guest said they will drive in. */
+  destinations?: string[];
   /** Agent platform URL that receives signed status changes of this request. */
   callbackUrl?: string;
   /** This request changes an earlier booking; accepting it cancels that one. */

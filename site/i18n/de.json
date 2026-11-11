@@ -44,7 +44,7 @@
   "Protected against bots": "Vor Bots geschützt",
   "Limits on how many rooms an agent may hold, per agent and per guest. You can accept requests from identified agents only.": "Grenzen dafür, wie viele Zimmer ein Agent halten darf, pro Agent und pro Gast. Sie können Anfragen auch nur von identifizierten Agenten annehmen.",
   "Camper rental": "Wohnmobilvermietung",
-  "Rent out campers and motorhomes the same way: berths and belted seats, the driving licence a vehicle needs, kilometres included, the deposit, pickup and return. The agent checks the driver before it asks.": "Vermieten Sie Campervans und Wohnmobile auf dieselbe Weise: Schlafplätze und Sitze mit Gurt, der nötige Führerschein für das Fahrzeug, Freikilometer, Kaution, Abholung und Rückgabe. Der Agent prüft den Fahrer, bevor er anfragt.",
+  "Rent out campers and motorhomes the same way: who may drive, kilometres, deposit, insurance packages and the countries the vehicle may go to. The agent checks the driver and the route before it asks, and a checklist tells the owner what must be in order first.": "Vermieten Sie Camper und Wohnmobile auf dieselbe Weise: wer fahren darf, Kilometer, Kaution, Versicherungspakete und die Länder, in die das Fahrzeug fahren darf. Der Agent prüft Fahrer und Route, bevor er anfragt, und eine Checkliste zeigt dem Vermieter, was zuerst in Ordnung sein muss.",
   "Stay wishes": "Aufenthaltswünsche",
   "When a guest finds nothing, the agent leaves an anonymous wish. You see the wishes your stay fits and answer with an offer.": "Findet ein Gast nichts, hinterlässt der Agent einen anonymen Wunsch. Sie sehen die Wünsche, zu denen Ihre Unterkunft passt, und antworten mit einem Angebot.",
   "Card guarantee": "Kartengarantie",
@@ -90,7 +90,7 @@
   "Everything in the repository, without limits, under the AGPL. On a Raspberry Pi, your own PC or a small server.": "Alles aus dem Repository, ohne Einschränkungen, unter der AGPL. Auf einem Raspberry Pi, Ihrem eigenen PC oder einem kleinen Server.",
   "<a href=\"#start\"><b>Quick start →</b></a>": "<a href=\"#start\"><b>Schnellstart →</b></a>",
   "Commercial licence": "Kommerzielle Lizenz",
-  "Build INNLI into your PMS, channel manager or agent platform without publishing your own code. Fixed prices, from € 2,500 a year. The larger licence adds all-or-nothing trips across several stays.": "Bauen Sie INNLI in Ihr PMS, Ihren Channel-Manager oder Ihre Agenten-Plattform ein, ohne Ihren eigenen Code zu veröffentlichen. Feste Preise, ab € 2.500 pro Jahr. Die größere Lizenz ergänzt Alles-oder-nichts-Reisen über mehrere Unterkünfte.",
+  "Build INNLI into your PMS, channel manager or agent platform without publishing your own code. Fixed prices, from € 490 a year. The larger licence adds all-or-nothing trips across several stays.": "Bauen Sie INNLI in Ihr PMS, Ihren Channel-Manager oder Ihre Agenten-Plattform ein, ohne Ihren eigenen Code zu veröffentlichen. Feste Preise, ab € 490 pro Jahr. Die größere Lizenz ergänzt Alles-oder-nichts-Reisen über mehrere Unterkünfte.",
   "<a href=\"https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md\"><b>How it works →</b></a>": "<a href=\"https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md\"><b>So funktioniert es →</b></a>",
   "Take it over": "Das Projekt übernehmen",
   "One maker built INNLI. The copyright, the name, the packages and the guide can move to a company that wants to carry it on. By written offer.": "INNLI wurde von einer einzelnen Person entwickelt. Urheberrecht, Name, Pakete und Handbuch können an ein Unternehmen übergehen, das es fortführen möchte. Auf schriftliches Angebot.",
@@ -181,5 +181,6 @@
   "Example of facts with their status": "Beispiel für Angaben mit ihrem Status",
   "Footer": "Fußzeile",
   "Open-source software that makes B&Bs, guesthouses and small hotels findable, understandable and bookable by AI agents. Self-hosted. No commission.": "Open-Source-Software, die B&Bs, Pensionen und kleine Hotels für KI-Agenten auffindbar, verständlich und buchbar macht. Selbst gehostet. Keine Provision.",
-  "Free, open-source and self-hosted. Verified facts, honest prices, booked direct. No OTA cut.": "Kostenlos, Open Source und selbst gehostet. Geprüfte Angaben, ehrliche Preise, direkt gebucht. Keine OTA-Provision."
+  "Free, open-source and self-hosted. Verified facts, honest prices, booked direct. No OTA cut.": "Kostenlos, Open Source und selbst gehostet. Geprüfte Angaben, ehrliche Preise, direkt gebucht. Keine OTA-Provision.",
+  "Privacy": "Datenschutz"
 }

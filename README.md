@@ -169,6 +169,9 @@ npm run pakket -- --concept  # download package (zip) in dist/
 - [docs/research-booking-problems.md](docs/research-booking-problems.md): what goes wrong when AI agents book, with sources
 
 - [SECURITY.md](SECURITY.md): reporting a vulnerability, what INNLI protects, and running it safely
+- [PRIVACY.md](PRIVACY.md): what personal data an installation holds, for how long, and who is responsible
+- [docs/architecture.md](docs/architecture.md): how the code is put together, and what a larger operator would change
+- [docs/legal/](docs/legal/README.md): where every legal matter is written down, with templates for a guest privacy notice and camper rental terms
 
 In Dutch: [README.nl.md](README.nl.md) and [docs/nl/](docs/nl/).
 
@@ -181,7 +184,7 @@ INNLI is an **open research project**: how can AI agents find and book small ind
 | | For whom | Cost |
 |---|---|---|
 | **Run it yourself** | Hosts and developers who run INNLI on their own computer or server. Everything in this repository, no limits. | Free (AGPL-3.0) |
-| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. The larger licence includes INNLI Pro: all-or-nothing trips across several stays. | From € 2,500 a year, fixed prices: [COMMERCIAL.md](COMMERCIAL.md) |
+| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. The larger licence includes INNLI Pro: all-or-nothing trips across several stays. | From € 490 a year, fixed prices: [COMMERCIAL.md](COMMERCIAL.md) |
 
 INNLI takes no commission on bookings, does not sell data of guests or hosts, and has no paid places in search results.
 

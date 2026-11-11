@@ -190,6 +190,7 @@ export function buildQuote(input: QuoteInput): Quote {
     lines.push({ kind: 'extra', label: qty > 1 ? `${qty} × ${extra.name}` : extra.name, amount: round2(extra.price * qty * factor), basis: t(`extra.per.${extra.per}` as Parameters<typeof t>[0], { amount: money(extra.price) }) });
     chosen.push({ id: extra.id, qty });
   }
+  if (chosen.filter((c) => (property.extras ?? []).find((e) => e.id === c.id)?.insurance).length > 1) throw new QuoteInputError('Choose at most one insurance package.');
 
   // Arrival rules: some owners only take arrivals on certain weekdays (e.g. Saturday to Saturday in summer).
   const arrival = checkinDaysFor(unit, input.checkin);

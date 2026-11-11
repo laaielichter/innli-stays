@@ -83,6 +83,10 @@ function miniCalendar(nights: { date: string; state: NightState }[], lang: Lang)
 }
 
 export interface FormValues {
+  /** Camper rental: the main driver. */
+  driverAge?: string;
+  driverLicence?: string;
+  driverLicenceYears?: string;
   unitId?: string;
   checkin?: string;
   checkout?: string;
@@ -145,7 +149,9 @@ export function stayPage(
   const tr = (key: Parameters<typeof t>[0], params: Parameters<typeof t>[1] = {}) => esc(t(key, params, lang));
   const m = (n: number) => money(n, lang, property.currency);
   const v = opts.values ?? {};
-  const facts = publicFacts(property.facts, 'property', property.currency, lang);
+  // A rental company has vehicles, a pick-up and a return, not rooms and an arrival.
+  const camper = property.type === 'camper_rental';
+  const facts = publicFacts(property.facts, 'property', property.currency, lang).filter((f) => f.key !== 'rental.rentalUseInsured');
   const dogsAllowed = readFact(property.facts, 'pets.dogsAllowed').value === true;
   const breakfastIncluded = readFact(property.facts, 'breakfast.included').value === true;
   const breakfastAvailable = breakfastIncluded || readFact(property.facts, 'breakfast.available').value === true;
@@ -154,7 +160,9 @@ export function stayPage(
 
   const rooms = property.units
     .map((u) => {
-      const uf = publicFacts(u.facts, 'unit', property.currency, lang).slice(0, 6);
+      const all = publicFacts(u.facts, 'unit', property.currency, lang);
+      // For a vehicle, what decides whether you can rent it comes first.
+      const uf = camper ? [...all.filter((f) => f.key.startsWith('vehicle.')), ...all.filter((f) => !f.key.startsWith('vehicle.'))].slice(0, 12) : all.slice(0, 6);
       const cal = opts.calendars.get(u.id);
       return `<div class="room"><h3>${esc(u.name)}</h3>${u.description ? `<p class="small">${esc(u.description)}</p>` : ''}
 <p class="small muted">${tr('pg.roomMax', { n: u.maxGuests, price: '\u0000' }).replace('\u0000', `<span class="price">${m(fromPrice(u))}</span>`)}</p>
@@ -165,7 +173,7 @@ ${cal ? `<details><summary class="small">${tr('pg.availability')}</summary>${min
 
   // Hotels: several identical rooms per type, and rate plans next to the standard rate.
   const maxRooms = Math.min(10, Math.max(1, ...property.units.map((u) => u.inventory ?? 1)));
-  const roomChoice = maxRooms > 1 ? `<label>${tr('pg.roomsCount')}<select name="rooms">${Array.from({ length: maxRooms }, (_, i) => `<option value="${i + 1}"${Number(v.rooms ?? 1) === i + 1 ? ' selected' : ''}>${i + 1}</option>`).join('')}</select></label>` : '';
+  const roomChoice = maxRooms > 1 ? `<label>${tr(camper ? 'pg.vehiclesCount' : 'pg.roomsCount')}<select name="rooms">${Array.from({ length: maxRooms }, (_, i) => `<option value="${i + 1}"${Number(v.rooms ?? 1) === i + 1 ? ' selected' : ''}>${i + 1}</option>`).join('')}</select></label>` : '';
   const planChoice = property.ratePlans?.length
     ? `<label>${tr('pg.ratePlan')}<select name="ratePlanId"><option value="">${tr('pg.ratePlanStandard')}</option>${property.ratePlans.map((rp) => `<option value="${esc(rp.id)}"${v.ratePlanId === rp.id ? ' selected' : ''}>${esc(rp.name)}${rp.refundable ? '' : ` (${tr('pg.nonRefundable')})`}</option>`).join('')}</select></label>`
     : '';
@@ -193,9 +201,9 @@ fetch(${JSON.stringify(opts.basePath)}+'/vraag?'+q).then(function(r){return r.te
 ${opts.error ? `<p class="err">${esc(opts.error)}</p>` : ''}
 <form method="post" action="${esc(opts.basePath)}/aanvraag?lang=${lang}${opts.embed ? '&amp;embed=1' : ''}" id="req">
 <div class="row">
-<label>${tr('pg.room')}<select name="unitId" required>${property.units.map((u) => `<option value="${esc(u.id)}"${v.unitId === u.id ? ' selected' : ''}>${esc(u.name)} (max. ${u.maxGuests})</option>`).join('')}</select></label>
-<label>${tr('pg.checkin')}<input type="date" name="checkin" min="${today}" value="${esc(v.checkin)}" required></label>
-<label>${tr('pg.checkout')}<input type="date" name="checkout" min="${today}" value="${esc(v.checkout)}" required></label>
+<label>${tr(camper ? 'pg.vehicle' : 'pg.room')}<select name="unitId" required>${property.units.map((u) => `<option value="${esc(u.id)}"${v.unitId === u.id ? ' selected' : ''}>${esc(u.name)} (max. ${u.maxGuests})</option>`).join('')}</select></label>
+<label>${tr(camper ? 'pg.pickup' : 'pg.checkin')}<input type="date" name="checkin" min="${today}" value="${esc(v.checkin)}" required></label>
+<label>${tr(camper ? 'pg.return' : 'pg.checkout')}<input type="date" name="checkout" min="${today}" value="${esc(v.checkout)}" required></label>
 </div><div class="row">
 <label>${tr('pg.adults')}<input type="number" name="adults" min="1" max="20" value="${esc(v.adults ?? 2)}" required></label>
 <label>${tr('pg.children')}<input type="number" name="children" min="0" max="20" value="${esc(v.children ?? 0)}"></label>
@@ -206,6 +214,11 @@ ${extrasChoice}
 ${property.discountCodes?.some((c) => c.active) ? `<label>${tr('pg.discountCode')}<input name="discountCode" maxlength="40" autocomplete="off" value="${esc(v.discountCode)}"></label>` : ''}
 ${breakfastAvailable && !breakfastIncluded ? `<label class="check"><input type="checkbox" name="breakfast" value="1"${v.breakfast ? ' checked' : ''}> ${tr('pg.withBreakfast')}</label>` : ''}
 ${breakfastIncluded ? `<input type="hidden" name="breakfast" value="1"><p class="small muted">${tr('pg.breakfastIncluded')}</p>` : ''}
+${camper ? `<div class="row">
+<label>${tr('pg.driverAge')}<input type="number" name="driverAge" min="16" max="99" value="${esc(v.driverAge)}" required></label>
+<label>${tr('pg.driverLicence')}<input name="driverLicence" maxlength="20" placeholder="B" value="${esc(v.driverLicence)}" required></label>
+<label>${tr('pg.driverLicenceYears')}<input type="number" name="driverLicenceYears" min="0" max="80" value="${esc(v.driverLicenceYears)}" required></label>
+</div>` : ''}
 <div id="offer">${opts.offer ? offerHtml(opts.offer, lang) : ''}</div>
 <div class="row">
 <label>${tr('pg.name')}<input name="name" autocomplete="name" value="${esc(v.name)}" required></label>
@@ -237,7 +250,7 @@ f.checkin.addEventListener('change',function(){f.checkout.min=f.checkin.value});
   const reviewHtml = rv && rv.count ? `<div class="card"><h2>${tr('pg.reviews')} <span class="muted small">${stars(rv.average ?? 0)} ${km(rv.average ?? 0, lang)} · ${rv.count}</span></h2>${rv.aspects ? `<dl class="facts small">${Object.entries(rv.aspects).map(([a, v]) => `<dt>${tr(`rv.aspect.${a}` as Parameters<typeof t>[0])}</dt><dd>${km(v!.average, lang)} / 5</dd>`).join('')}</dl>` : ''}${(rv.recent ?? []).map((x) => `<div class="review"><p><span class="stars">${stars(x.rating)}</span> <span class="muted small">${esc(month(x.month))}</span></p>${x.text ? `<p>${esc(x.text)}</p>` : ''}${x.ownerReply ? `<p class="small muted">${tr('pg.reply', { property: property.name, text: x.ownerReply })}</p>` : ''}</div>`).join('')}<p class="small muted">${tr('pg.reviewsNote')}</p></div>` : '';
   const description = descriptionIn(property, lang);
   const body = `<p class="muted small">${esc(place)}</p><h1>${esc(property.name)}</h1>${gallery}<p>${esc(description)}</p>
-<div class="card"><h2>${tr('pg.rooms')}</h2><div class="grid">${rooms}</div></div>
+<div class="card"><h2>${tr(camper ? 'pg.vehicles' : 'pg.rooms')}</h2><div class="grid">${rooms}</div></div>
 ${poiHtml}${reviewHtml}
 ${facts.length ? `<div class="card"><h2>${tr('pg.goodToKnow')}</h2><dl class="facts">${facts.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(f.display)}</dd>`).join('')}</dl><p class="small muted">${tr('pg.factsNote')}</p></div>` : ''}
 ${ask}

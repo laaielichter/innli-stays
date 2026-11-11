@@ -178,7 +178,7 @@ INNLI is een **open onderzoeksproject**: hoe vinden en boeken AI-agents kleine a
 | | Voor wie | Kosten |
 |---|---|---|
 | **Zelf draaien** | Eigenaren en ontwikkelaars die INNLI op hun eigen computer of server draaien. Alles in deze repository, zonder beperkingen. | Gratis (AGPL-3.0) |
-| **Commerciële licentie** | Platforms en leveranciers van een PMS of channel manager die INNLI in een product bouwen zonder hun eigen code te publiceren. Bij de grotere licentie hoort INNLI Pro: alles-of-niets-reizen over meerdere verblijven. | Vanaf € 2.500 per jaar, vaste prijzen: [COMMERCIAL.nl.md](COMMERCIAL.nl.md) |
+| **Commerciële licentie** | Platforms en leveranciers van een PMS of channel manager die INNLI in een product bouwen zonder hun eigen code te publiceren. Bij de grotere licentie hoort INNLI Pro: alles-of-niets-reizen over meerdere verblijven. | Vanaf € 490 per jaar, vaste prijzen: [COMMERCIAL.nl.md](COMMERCIAL.nl.md) |
 
 INNLI rekent geen commissie over boekingen, verkoopt geen gegevens van gasten of eigenaren, en heeft geen betaalde plekken in zoekresultaten.
 

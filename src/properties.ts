@@ -86,6 +86,7 @@ export const propertyPatchSchema = z
           price: z.number().min(0).max(10_000),
           per: z.enum(['stay', 'night', 'person', 'person_night', 'room_night']),
           max: z.number().int().min(1).max(50).optional(),
+          insurance: z.object({ deductible: z.number().min(0).max(100_000), securityDeposit: z.number().min(0).max(100_000).optional(), covers: z.array(z.string().trim().max(40)).max(12).optional() }).optional(),
         }),
       )
       .max(20)

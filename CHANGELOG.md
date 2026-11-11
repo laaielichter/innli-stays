@@ -10,6 +10,14 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - `get_quote` takes a **`driver`** (age, licence category, years held). The quote has a `rental` block: kilometres included for this rental, the deposit (not part of the total), insurance, pick-up and return, whether this driver may rent this vehicle, and which rules the company did not state.
 - The consent summary and hash include the rental terms: a changed deposit after the guest agreed gives `TERMS_CHANGED`.
 - `request_booking` refuses a camper request without a driver, and one where the driver or party breaks a rule (new error code `DRIVER_NOT_ELIGIBLE`). The driver's details are stored with the request and removed with the guest's personal data.
+- **Insurance packages**: a paid option can carry a deductible and a deposit of its own. The quote lists the packages, and with one chosen the deductible, deposit, consent summary and booking record follow it. The passport also holds liability cover, roadside assistance, where the insurance is valid, and whether the deposit needs a credit card.
+- **Where the guest drives**: `get_quote` takes `destinations`; a country the vehicle may not go to, or is not insured in, refuses the request (`RENTAL_NOT_POSSIBLE`).
+- **Different countries**: a licence from outside Europe follows the company's rule (accepted or not, international driving permit or not); kilometres are also given in miles where people use miles; the owner is warned when a car licence is stated for a vehicle too heavy for one by the usual rule of that country. These are rules of thumb, marked as not legal advice.
+- **Ready to rent out?**: a checklist in the dashboard of what must be in order (rental cover from the insurer, liability, rental terms, a valid inspection per vehicle and more). A rental company cannot be made visible to agents until the required points are confirmed. INNLI cannot check them and says so.
+- The checks run on **every way in**: an agent, a changed request and the form on the public page, which now asks for the driver. A request is not sent while the guest has not said what the rules need (`missingFromGuest`). When only the company can answer something, the request is never confirmed automatically.
+- The **public page** of a rental company shows the rental terms and vehicle facts, and speaks of vehicles, pick-up and return.
+- A rental company is **hidden again** as soon as a required point is no longer in order, also after a change of type or a restored backup.
+- Licence categories are read as they are (BE, C1E, CE and D cover what they cover); the licence needed and the inspection date have a fixed form.
 - No tourist tax line for campers. The sample data has a camper rental company with three vehicles.
 - Details: [docs/campers.md](docs/campers.md).
 
@@ -17,6 +25,25 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - When setting up, an owner can choose a **starter pack**: *B&B with two rooms*, *One holiday home*, *One campervan* or *One family motorhome*. The pack creates the rooms or vehicles and fills the passport with what is usual for that kind of business.
 - Everything a pack fills in is a **suggestion** (not confirmed, source `starter`). It never replaces a confirmed fact, and it never suggests a price, deposit or fee. The owner checks each one and presses "Correct".
 - An existing property can apply a pack of its own type from the Passport tab (`POST /api/owner/starter-pack`); the list is at `GET /api/starter-packs`.
+
+### Privacy and legal
+- **Personal data now really leaves the disk.** Removing a guest's details after the retention period only changed the latest record; older lines in the data files still held them until the file happened to be rewritten. The files are now rewritten at once. E-mail addresses on the waiting list are removed too; they were kept before.
+- Removal now covers every copy: the quote with the driver, checkout and booking sessions of agent platforms, questions sent with the same e-mail address, and a cancellation reason.
+- **Remove one guest's details at once** (`POST /api/owner/requests/:id/erase`, and a button on the request) for a request that is no longer active.
+- The dashboard shows the **driver** of a camper request to the company.
+- The website no longer loads fonts from Google: they are served from the site itself. A **privacy page** says what the site does (no cookies, no tracking).
+- New: [PRIVACY.md](PRIVACY.md), [docs/legal/](docs/legal/README.md) with templates for a guest privacy notice and camper rental terms, and a [code of conduct](CODE_OF_CONDUCT.md). No lawyer has reviewed them; the documents say so.
+
+### Architecture
+- [docs/architecture.md](docs/architecture.md) describes the layers, the trust boundaries and what a larger operator would have to change.
+- `test/architecture.test.ts` holds the module map: a new dependency between modules fails the test.
+
+### Fixed
+- An ACP checkout session made from a quote dropped the quote's paid options and discount code, so the session could cost something else than the guest was shown. They now come along, as does the driver of a camper quote.
+
+### Licensing
+- A third fixed price: **Starter**, € 490 a year, for one maker or a team of up to 3. Three years paid at once cost two and a half.
+- Running INNLI for your own stay or rental company stays free, with every function.
 
 ### Website in ten languages
 - The website is in English (the default), Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese, with a language picker and `hreflang` links. `site/index.html` is the only page edited by hand; `npm run site` writes the others from `site/i18n/<lang>.json`. The translations were made by machine and have not been checked by native speakers.
