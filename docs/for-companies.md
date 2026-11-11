@@ -79,6 +79,13 @@ The 2.1 changes went through a separate security review pass by an AI reviewer t
 - The AGPL means a competitor who offers a modified INNLI as a service must publish its changes.
 - The name is separate from the code: a fork may not call itself INNLI ([TRADEMARK.md](../TRADEMARK.md)).
 
+## How this works
+
+- **A licence** has a fixed price and a short agreement: [COMMERCIAL.md](../COMMERCIAL.md).
+- **A takeover** goes by written offer. Say what you want to take over and what you offer. The maker answers in writing, within a week.
+- Everything is arranged in writing. No calls or meetings are needed, and none are offered.
+- The maker does not join the buyer as an employee and does not offer support after a handover, beyond answering written questions about the code for an agreed, limited time.
+
 ## Getting in touch
 
 Use the profile of the owner of this GitHub repository, or open an issue with the *Commercial* template. That issue is public: say only who you are and how to reach you.

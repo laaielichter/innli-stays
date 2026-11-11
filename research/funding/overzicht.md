@@ -24,18 +24,16 @@ INNLI wordt gefinancierd uit eigen middelen van de maker. Er is geen externe fin
 
 ## Later verdienen
 
-INNLI is en blijft open source. Dat is een vaste keuze, geen tussenfase:
-- **Licentie:** de kern is AGPL-3.0 en blijft altijd open. Wie INNLI gesloten in een eigen product wil bouwen, koopt een commerciële licentie ([COMMERCIAL.md](../../COMMERCIAL.nl.md)). Een B&B of hotel mist zonder betalen niets.
+Wat nu geldt:
+- **Licentie:** de kern is AGPL-3.0. Wie INNLI gesloten in een eigen product wil bouwen, koopt een commerciële licentie ([COMMERCIAL.md](../../COMMERCIAL.nl.md)). Een B&B of hotel mist zonder betalen niets.
 - **Standaarden:** het paspoort, de toestemmings-hash en de uitwisseling van verblijfswensen worden open specificaties die iedereen mag implementeren.
 - **Gegevens:** die blijven bij de eigenaar. Iedereen kan een eigen installatie of een eigen gids draaien.
 
-Verdienen komt later, met de commerciële licentie en met diensten rond de open software:
+Verdienen gebeurt op drie manieren, alle drie zonder een dienst te hoeven draaien:
 
-- **Gehoste installatie** voor wie geen Raspberry Pi of server wil, voor een vast bedrag per maand. De software blijft gratis zelf te draaien.
-- **Installatie en ondersteuning** voor accommodaties en hotels.
-- **Koppelingen met boekingssystemen** die een PMS-leverancier laat bouwen of certificeren.
-- **Een eigen gids beheren** voor een keten, regio of toeristische organisatie. De code daarvoor is open: `GIDS_LICENTIE_VEREIST=1` en `tools/license.ts`.
-- **Donaties en sponsoring** door agentplatforms die INNLI gebruiken.
+- **Commerciële licenties** voor bedrijven, tegen vaste prijzen ([COMMERCIAL.nl.md](../../COMMERCIAL.nl.md)).
+- **Overname van het hele project** door een bedrijf dat het verder wil brengen ([docs/for-companies.md](../../docs/for-companies.md)).
+- **Fondsen** voor het open onderzoek (zie hierboven).
 
 Wat we níet doen: commissie per boeking, gegevens van gasten of eigenaren verkopen, of advertentieplekken in zoekresultaten. Dat zou de onafhankelijkheid ondermijnen waar het project om draait.
 

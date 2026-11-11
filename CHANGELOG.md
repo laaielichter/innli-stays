@@ -12,6 +12,7 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 - Details: [docs/acp.md](docs/acp.md).
 
 ### Licensing and ownership
+- Commercial licences have **fixed prices** (€ 2,500 or € 9,500 a year) and a short agreement in plain language. A takeover of the whole project goes by written offer. Contact is in writing.
 - The licence does not change: AGPL-3.0, with a commercial licence for companies.
 - The README and website no longer say the project "runs on donations" or make promises about the future. They state what is true now: free to run yourself, no commission, no selling data, no paid places in search results.
 - New: [TRADEMARK.md](TRADEMARK.md) (the licences cover the code; the name and logo have their own rules), [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (every run-time dependency and its licence) and [docs/for-companies.md](docs/for-companies.md) (what the project consists of, for a company that wants to license it or take it over).
