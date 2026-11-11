@@ -15,6 +15,8 @@ Software that an accommodation runs itself, so that AI agents can find it, under
 - a **dashboard** for the owner (English and Dutch), a public **stay page** in four languages, and a **WordPress plugin**;
 - the **INNLI guide**: one address through which agents reach every listed installation.
 
+See it work: [demo.md](demo.md) has an 87-second recording of a real booking on the sample stays, and the steps to repeat it.
+
 What it does in detail: [agent-features.md](agent-features.md), [agent-integration.md](agent-integration.md), [hotels.md](hotels.md).
 
 ## What a buyer would get

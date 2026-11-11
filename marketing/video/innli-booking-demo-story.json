@@ -1,0 +1,17 @@
+{
+  "version": "aes.story/1",
+  "name": "INNLI booking demo",
+  "deliver": "landscape-share",
+  "size": "1080",
+  "safeArea": "none",
+  "music": { "bpm": 96 },
+  "style": { "accent": "#d9643a", "accent2": "#7a9a7e", "ink": "#17202a", "muted": "#5b6672", "panel": "#fbf7ef", "background": { "from": "#fbf7ef", "to": "#f5efe4" }, "grid": false, "grain": 3, "glow": 0.3 },
+  "scenes": [
+    { "id": "open", "kind": "title", "beats": 6, "lines": ["An AI agent books", "*a stay.* Start to finish."], "sub": "Sample stays. Real calls and answers." },
+    { "id": "chat", "source": "<recordings>/chat1.mp4", "start": 0.2, "end": 52.7 },
+    { "id": "host", "kind": "title", "beats": 4, "lines": ["The host", "*decides.*"] },
+    { "id": "dash", "source": "<recordings>/dash-zoom.mp4", "start": 3.4, "end": 16.6 },
+    { "id": "done", "source": "<recordings>/chat2.mp4", "start": 0.2, "end": 11.8 },
+    { "id": "end", "kind": "card/end", "beats": 6, "title": "INNLI", "tagline": "Your stay,\n*bookable* by AI agents.", "url": "github.com/laaielichter/innli-stays" }
+  ]
+}

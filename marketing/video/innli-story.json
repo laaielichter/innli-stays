@@ -1,0 +1,97 @@
+{
+  "version": "aes.story/1",
+  "name": "INNLI Instagram story",
+  "deliver": "vertical-share",
+  "size": "720",
+  "safeArea": "story",
+  "music": {
+    "bpm": 96
+  },
+  "style": {
+    "accent": "#d9643a",
+    "accent2": "#7a9a7e",
+    "ink": "#17202a",
+    "muted": "#5b6672",
+    "panel": "#fbf7ef",
+    "background": {
+      "from": "#fbf7ef",
+      "to": "#f5efe4"
+    },
+    "grid": false,
+    "grain": 3,
+    "glow": 0.3
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "kind": "title",
+      "beats": 8,
+      "lines": [
+        "Guests don't",
+        "scroll",
+        "anymore.",
+        "Their *AI agents*",
+        "do."
+      ],
+      "size": 300,
+      "stagger": 0.75
+    },
+    {
+      "id": "ready",
+      "kind": "title",
+      "beats": 4,
+      "lines": [
+        "Is your stay",
+        "*agent-ready?*"
+      ],
+      "size": 300
+    },
+    {
+      "id": "ask",
+      "kind": "terminal",
+      "beats": 8,
+      "title": "A guest's AI agent asks",
+      "window": "your stay via INNLI",
+      "command": "quiet B&B, 2 nights, dog-friendly?",
+      "output": [
+        "rooms: 3 available",
+        "dogs: confirmed by the host",
+        "breakfast: included",
+        "booked direct"
+      ]
+    },
+    {
+      "id": "yours",
+      "kind": "chips",
+      "beats": 4,
+      "title": "Works with\n*what you have.*",
+      "items": [
+        "Your website",
+        "Your prices",
+        "Your calendar",
+        "Airbnb iCal",
+        "Booking.com iCal",
+        "WordPress"
+      ]
+    },
+    {
+      "id": "direct",
+      "kind": "title",
+      "beats": 4,
+      "lines": [
+        "Booked direct.",
+        "*No commission.*"
+      ],
+      "transition": "fadewhite",
+      "size": 300
+    },
+    {
+      "id": "end",
+      "kind": "card/end",
+      "beats": 4,
+      "title": "INNLI",
+      "tagline": "Your stay,\n*bookable* by AI agents.",
+      "url": "github.com/laaielichter/innli-stays"
+    }
+  ]
+}
