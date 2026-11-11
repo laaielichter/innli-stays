@@ -14,8 +14,9 @@ import type { Fetcher } from '../connectors/availability.ts';
 import { bookingsToken, calendarToken, exportIcs } from '../connectors/export.ts';
 import { bookingsIcs, monthlyStats, requestsCsv } from '../analytics/bookings.ts';
 import { addDays, DateRangeError, stayNights } from '../domain/dates.ts';
-import { completeness, FACT_CATALOG, FactValidationError, getFactDefinition, ownerConfirmFact, ownerMarkUnknown, ownerSetFact, suggestFact } from '../domain/facts.ts';
-import { LANGUAGES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
+import { applyStarterPack, getStarterPack, STARTER_PACKS } from '../starters.ts';
+import { completeness, FACT_CATALOG, factApplies, FactValidationError, getFactDefinition, ownerConfirmFact, ownerMarkUnknown, ownerSetFact, suggestFact } from '../domain/facts.ts';
+import { LANGUAGES, PROPERTY_TYPES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
 import { demoEngine } from '../demo/engine.ts';
 import { registerWithGuide, wellKnown } from '../directory/register.ts';
 import { GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER } from '../directory/types.ts';
@@ -579,12 +580,13 @@ export function createApp(opts: AppOptions) {
       .object({
         code: z.string(),
         name: z.string().trim().min(2, { error: () => t('own.nameRequired') }).max(120),
-        type: z.enum(['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel']).default('bnb'),
+        type: z.enum(PROPERTY_TYPES).default('bnb'),
         city: z.string().trim().min(1, { error: () => t('own.cityRequired') }).max(100),
         country: z.string().trim().length(2).default('NL'),
         language: z.enum(LANGUAGES).optional(),
         contactEmail: z.string().trim().email({ error: () => t('own.invalidEmail') }).optional().or(z.literal('')),
         website: z.string().trim().url().optional().or(z.literal('')),
+        starter: z.string().max(40).optional(),
         room: z.object({ name: z.string().trim().min(1).max(120), maxGuests: z.number().int().min(1).max(30), baseRatePerNight: z.number().min(0).max(10_000) }),
       })
       .parse(req.body);
@@ -592,20 +594,35 @@ export function createApp(opts: AppOptions) {
       res.status(403).json({ error: t('own.wrongCode') });
       return;
     }
-    const { property, ownerKey } = createProperty({ name: input.name, type: input.type, address: { city: input.city, country: input.country.toUpperCase() } });
+    const pack = input.starter ? getStarterPack(input.starter) : undefined;
+    if (input.starter && !pack) {
+      res.status(400).json({ error: 'Unknown starter pack.' });
+      return;
+    }
+    const { property, ownerKey } = createProperty({ name: input.name, type: pack?.type ?? input.type, address: { city: input.city, country: input.country.toUpperCase() } });
     if (input.language) property.language = input.language;
     if (input.contactEmail) property.contactEmail = input.contactEmail;
     if (input.website) property.website = input.website;
     property.booking = { connector: { kind: 'manual' } };
-    property.units.push(createUnit({ name: input.room.name, maxGuests: input.room.maxGuests, includedGuests: Math.min(2, input.room.maxGuests), baseRatePerNight: input.room.baseRatePerNight }));
+    // A starter pack brings its own rooms or vehicles and fills the passport with suggestions to confirm.
+    const started = pack ? applyStarterPack(property, pack, { lang: input.language ?? currentLang(), addUnits: true, ratePerNight: input.room.baseRatePerNight }) : undefined;
+    if (!pack) property.units.push(createUnit({ name: input.room.name, maxGuests: input.room.maxGuests, includedGuests: Math.min(2, input.room.maxGuests), baseRatePerNight: input.room.baseRatePerNight }));
     store.saveProperty(property);
-    res.status(201).json({ ownerKey, propertyId: property.id });
+    res.status(201).json({ ownerKey, propertyId: property.id, starter: started });
+  });
+
+  /** Starter packs: a usual set-up for a small owner, as suggestions to confirm. */
+  app.get('/api/starter-packs', (_req, res) => {
+    const lang = currentLang() === 'nl' ? 'nl' : 'en';
+    res.json(STARTER_PACKS.map((p) => ({ id: p.id, type: p.type, name: p.name[lang], summary: p.summary[lang], units: p.units.length, suggestions: Object.keys(p.facts).length + p.units.reduce((n, u) => n + Object.keys(u.facts).length, 0) })));
   });
 
   /** The fact catalog with labels, categories and hints in the requested language (?lang=). */
   app.get('/api/fact-catalog', (_req, res) => {
+    // ?type=camper_rental leaves out what only a place to stay has, and the other way round.
+    const type = PROPERTY_TYPES.find((t) => t === _req.query.type);
     const lang = currentLang();
-    res.json(FACT_CATALOG.map((d) => ({ ...d, label: factLabel(d.key, lang), category: factCategory(d.category, lang), hint: factHint(d.key, lang) })));
+    res.json(FACT_CATALOG.filter((d) => !type || factApplies(d, type)).map((d) => ({ ...d, label: factLabel(d.key, lang), category: factCategory(d.category, lang), hint: factHint(d.key, lang) })));
   });
 
   // ---------------------------------------------------------------- Owner dashboard API
@@ -702,6 +719,19 @@ export function createApp(opts: AppOptions) {
     const fact = ownerMarkUnknown(unitFacts(p, unitId), req.params.key);
     store.saveProperty(p);
     res.json({ fact, completeness: completeness(p) });
+  });
+
+  /** Fill an existing passport from a starter pack. Confirmed facts are left alone; no rooms are added. */
+  ownerApi.post('/starter-pack', (req, res) => {
+    const p = owner(req);
+    const pack = getStarterPack(z.object({ id: z.string().max(40) }).parse(req.body).id);
+    if (!pack || pack.type !== p.type) {
+      res.status(400).json({ error: 'This starter pack is for another kind of property.' });
+      return;
+    }
+    const result = applyStarterPack(p, pack, { lang: currentLang() });
+    store.saveProperty(p);
+    res.json({ ...result, completeness: completeness(p) });
   });
 
   ownerApi.post('/units', (req, res) => {
@@ -1101,7 +1131,7 @@ export function createApp(opts: AppOptions) {
     res.json(store.listProperties().map((p) => ({ id: p.id, slug: p.slug, name: p.name, published: p.published, completeness: completeness(p).score })));
   });
   adminApi.post('/properties', (req, res) => {
-    const input = z.object({ name: z.string().min(2), type: z.enum(['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel']).optional(), address: z.object({ city: z.string(), country: z.string().length(2) }).passthrough() }).parse(req.body);
+    const input = z.object({ name: z.string().min(2), type: z.enum(PROPERTY_TYPES).optional(), address: z.object({ city: z.string(), country: z.string().length(2) }).passthrough() }).parse(req.body);
     const { property, ownerKey } = createProperty(input as Parameters<typeof createProperty>[0]);
     if (store.getProperty(property.slug)) property.slug = `${property.slug}-${randomUUID().slice(0, 4)}`;
     store.saveProperty(property);

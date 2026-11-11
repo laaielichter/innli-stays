@@ -154,7 +154,7 @@ describe('first-run setup in the browser', () => {
   const input = { name: 'B&B Het Veerhuis', city: 'Zwolle', country: 'NL', contactEmail: 'info@veerhuis.example', room: { name: 'Rivierkamer', maxGuests: 2, baseRatePerNight: 110 } };
 
   it('requires the installation code and only works once', async () => {
-    assert.deepEqual(await (await fetch(`${server.url}/api/setup`)).json(), { needsSetup: true, version: '2.1.0' });
+    assert.deepEqual(await (await fetch(`${server.url}/api/setup`)).json(), { needsSetup: true, version: '2.2.0' });
     assert.equal((await setup({ ...input, code: 'WRONG' })).status, 403);
     const ok = await setup({ ...input, code: 'ab12cd34' });
     assert.equal(ok.status, 201);

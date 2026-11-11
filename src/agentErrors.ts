@@ -16,6 +16,7 @@ export const ERROR_CODES = [
   'RATE_LIMITED',
   'CONFLICT',
   'LIMIT_REACHED',
+  'DRIVER_NOT_ELIGIBLE',
   'UPSTREAM_ERROR',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -42,6 +43,7 @@ const DEFAULTS: Record<ErrorCode, { retryable: boolean; nextTools?: string[]; hi
   RATE_LIMITED: { retryable: true, hint: 'Wait retryAfterSeconds before trying again; do not retry in a loop.' },
   CONFLICT: { retryable: false, nextTools: ['check_status'], hint: 'The request changed meanwhile; check_status shows its current state.' },
   LIMIT_REACHED: { retryable: false, nextTools: ['check_status', 'cancel_request'], hint: 'Too many open requests are holding rooms. Wait for the host to answer, or withdraw one the guest no longer wants.' },
+  DRIVER_NOT_ELIGIBLE: { retryable: false, nextTools: ['search_stays', 'ask_host'], hint: 'This driver or party does not meet the rental rules in the message. Offer another vehicle (search_stays with kind: "camper"), another driver, or ask the company; never change the driver details to make it fit.' },
   UPSTREAM_ERROR: { retryable: true, hint: "The property's booking system did not answer; try again later or use the indicative data." },
 };
 

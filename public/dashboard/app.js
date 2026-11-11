@@ -73,7 +73,9 @@ for (const sel of $$('.lang-switch')) {
 
 async function login(key) {
   state.key = key;
-  const [{ property, completeness }, catalog, me] = await Promise.all([api('/property'), fetch(`/api/fact-catalog?lang=${LANG}`).then((r) => r.json()), api('/me').catch(() => ({ role: 'owner' }))]);
+  const [{ property, completeness }, me] = await Promise.all([api('/property'), api('/me').catch(() => ({ role: 'owner' }))]);
+  // A camper rental gets the rental and vehicle questions instead of the ones about rooms.
+  const catalog = await fetch(`/api/fact-catalog?lang=${LANG}&type=${encodeURIComponent(property.type || '')}`).then((r) => r.json());
   state.me = me;
   applyRole(me);
   state.property = property;
@@ -250,8 +252,21 @@ function groupByCategory(defs) {
   return groups;
 }
 
+async function renderStarterCard() {
+  const packs = (await fetch(`/api/starter-packs?lang=${LANG}`).then((r) => r.json()).catch(() => [])).filter((p) => p.type === state.property.type);
+  $('#starter-card').hidden = !packs.length || state.me?.role === 'reception';
+  $('#starter-pick').replaceChildren(...packs.map((p) => h('option', { value: p.id }, `${p.name}: ${p.summary}`)));
+}
+$('#starter-form').addEventListener('submit', guard(async (e) => {
+  e.preventDefault();
+  const r = await api('/starter-pack', { method: 'POST', body: { id: $('#starter-pick').value } });
+  toast(T('{0} voorstellen ingevuld. Kijk ze na en druk op "Klopt".', r.suggested));
+  await refresh();
+}));
+
 function renderPassport() {
   const root = $('#passport-facts');
+  renderStarterCard();
   root.replaceChildren();
   for (const [category, defs] of groupByCategory(state.catalog.filter((d) => d.scope === 'property'))) {
     root.append(h('div', { class: 'card' }, h('h2', {}, category), defs.map((d) => factEditor(d, state.property.facts[d.key]))));
@@ -1491,6 +1506,18 @@ async function boot() {
   const setup = await fetch('/api/setup').then((r) => r.json()).catch(() => ({ needsSetup: false }));
   if (setup.needsSetup) $('#setup-form').elements.language.value = LANG;
   if (setup.needsSetup) {
+    const packs = await fetch(`/api/starter-packs?lang=${LANG}`).then((r) => r.json()).catch(() => []);
+    const f = $('#setup-form').elements;
+    f.starter.append(...packs.map((p) => h('option', { value: p.id, 'data-type': p.type, 'data-units': p.units }, `${p.name}: ${p.summary}`)));
+    f.starter.addEventListener('change', () => {
+      const chosen = f.starter.selectedOptions[0];
+      const on = Boolean(f.starter.value);
+      $('#setup-starter-note').hidden = !on;
+      // The pack decides the type and brings its own rooms or vehicles; only the price is still asked.
+      if (on) f.type.value = chosen.dataset.type;
+      f.type.disabled = on;
+      for (const el of [f.roomName, f.maxGuests]) { el.disabled = on; el.required = !on; el.closest('label').hidden = on; }
+    });
     $('#login-form').hidden = true;
     $('#setup-form').hidden = false;
   }
@@ -1506,8 +1533,8 @@ $('#setup-form').addEventListener('submit', async (e) => {
     headers: { 'content-type': 'application/json', 'x-innli-lang': LANG },
     body: JSON.stringify({
       code: f.code.value, name: f.name.value, type: f.type.value, city: f.city.value, country: f.country.value.toUpperCase(), language: f.language.value,
-      contactEmail: f.contactEmail.value, website: f.website.value,
-      room: { name: f.roomName.value, maxGuests: Number(f.maxGuests.value), baseRatePerNight: Number(f.rate.value) },
+      contactEmail: f.contactEmail.value, website: f.website.value, starter: f.starter.value || undefined,
+      room: { name: f.roomName.value || '-', maxGuests: Number(f.maxGuests.value) || 2, baseRatePerNight: Number(f.rate.value) },
     }),
   });
   const data = await res.json().catch(() => ({}));

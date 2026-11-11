@@ -23,6 +23,8 @@ export interface FactDefinition {
   critical: boolean;
   /** Owner hint shown in the dashboard. */
   hint?: string;
+  /** Only for camper rentals. Without it a fact is for stays, or for both (see `factApplies`). */
+  appliesTo?: 'camper';
 }
 
 /** Facts older than this are flagged for re-verification. */
@@ -95,6 +97,36 @@ export const FACT_CATALOG: FactDefinition[] = [
   { key: 'access.doorWidthCm', scope: 'unit', type: 'number', category: 'Toegankelijkheid', label: 'Smalste deurbreedte', agentDescription: 'Narrowest door width', unit: 'cm', critical: true },
   { key: 'bathroom.walkInShower', scope: 'unit', type: 'boolean', category: 'Toegankelijkheid', label: 'Inloopdouche zonder opstap', agentDescription: 'Walk-in shower without step', critical: true },
   { key: 'bathroom.grabBars', scope: 'unit', type: 'boolean', category: 'Toegankelijkheid', label: 'Beugels in badkamer', agentDescription: 'Grab bars in bathroom', critical: false },
+  // Camper rental: the rental terms (per company) and the vehicle (per unit)
+  { key: 'rental.pickupLocation', scope: 'property', type: 'string', category: 'Verhuur', label: 'Ophaaladres', agentDescription: 'Where the vehicle is picked up and returned', critical: false, appliesTo: 'camper' },
+  { key: 'rental.pickupFrom', scope: 'property', type: 'string', category: 'Verhuur', label: 'Ophalen vanaf', agentDescription: 'Pick-up from (local time)', critical: false, appliesTo: 'camper' },
+  { key: 'rental.returnUntil', scope: 'property', type: 'string', category: 'Verhuur', label: 'Inleveren uiterlijk', agentDescription: 'Return by (local time)', critical: false, appliesTo: 'camper' },
+  { key: 'rental.minDriverAge', scope: 'property', type: 'number', category: 'Verhuur', label: 'Minimumleeftijd bestuurder', agentDescription: 'Minimum age of the driver', critical: true, appliesTo: 'camper' },
+  { key: 'rental.minLicenceYears', scope: 'property', type: 'number', category: 'Verhuur', label: 'Rijbewijs minimaal (jaren)', agentDescription: 'Minimum number of years the driver must have held a licence', critical: true, appliesTo: 'camper' },
+  { key: 'rental.securityDeposit', scope: 'property', type: 'number', category: 'Verhuur', label: 'Borg', agentDescription: 'Refundable security deposit, paid at pick-up', unit: 'EUR', critical: true, appliesTo: 'camper' },
+  { key: 'rental.insuranceIncluded', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Allriskverzekering inbegrepen', agentDescription: 'Comprehensive insurance is included in the price', critical: true, appliesTo: 'camper' },
+  { key: 'rental.insuranceDeductible', scope: 'property', type: 'number', category: 'Verhuur', label: 'Eigen risico per schade', agentDescription: 'Insurance deductible per damage event', unit: 'EUR', critical: true, appliesTo: 'camper' },
+  { key: 'rental.unlimitedKm', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Onbeperkt kilometers', agentDescription: 'Unlimited kilometres are included', critical: true, appliesTo: 'camper' },
+  { key: 'rental.kmIncludedPerDay', scope: 'property', type: 'number', category: 'Verhuur', label: 'Kilometers inbegrepen per dag', agentDescription: 'Kilometres included per rental day', unit: 'km', critical: true, appliesTo: 'camper' },
+  { key: 'rental.pricePerExtraKm', scope: 'property', type: 'number', category: 'Verhuur', label: 'Prijs per extra kilometer', agentDescription: 'Price per kilometre above what is included', unit: 'EUR', critical: true, appliesTo: 'camper' },
+  { key: 'rental.abroadAllowed', scope: 'property', type: 'boolean', category: 'Verhuur', label: 'Naar het buitenland toegestaan', agentDescription: 'The vehicle may be taken abroad', critical: false, appliesTo: 'camper' },
+  { key: 'rental.countriesAllowed', scope: 'property', type: 'string[]', category: 'Verhuur', label: 'Toegestane landen', agentDescription: 'Countries the vehicle may be driven in', critical: false, appliesTo: 'camper' },
+  { key: 'rental.fuelPolicy', scope: 'property', type: 'string', category: 'Verhuur', label: 'Brandstofafspraak', agentDescription: 'Fuel policy, e.g. return with a full tank', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.type', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Type voertuig', agentDescription: 'Vehicle type, e.g. campervan, motorhome, caravan', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.beltedSeats', scope: 'unit', type: 'number', category: 'Voertuig', label: 'Zitplaatsen met gordel', agentDescription: 'Seats with a seat belt: the most people who may travel', critical: true, appliesTo: 'camper' },
+  { key: 'vehicle.licenceCategory', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Vereist rijbewijs', agentDescription: 'Driving licence category the vehicle needs (B, C1 or C)', critical: true, appliesTo: 'camper' },
+  { key: 'vehicle.transmission', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Versnellingsbak', agentDescription: 'Transmission: manual or automatic', critical: true, appliesTo: 'camper' },
+  { key: 'vehicle.fuel', scope: 'unit', type: 'string', category: 'Voertuig', label: 'Brandstof', agentDescription: 'Fuel: diesel, petrol or electric', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.lengthM', scope: 'unit', type: 'number', category: 'Voertuig', label: 'Lengte', agentDescription: 'Vehicle length', unit: 'm', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.heightM', scope: 'unit', type: 'number', category: 'Voertuig', label: 'Hoogte', agentDescription: 'Vehicle height', unit: 'm', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.year', scope: 'unit', type: 'number', category: 'Voertuig', label: 'Bouwjaar', agentDescription: 'Year the vehicle was built', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.toilet', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Toilet aan boord', agentDescription: 'Toilet on board', critical: true, appliesTo: 'camper' },
+  { key: 'vehicle.shower', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Douche aan boord', agentDescription: 'Shower on board', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.kitchen', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Keuken aan boord', agentDescription: 'Kitchen with hob and fridge on board', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.heating', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Verwarming', agentDescription: 'Heating that works while parked', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.winterReady', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Geschikt voor de winter', agentDescription: 'Suitable for winter: insulated, winter tyres, frost-proof water', critical: true, appliesTo: 'camper' },
+  { key: 'vehicle.bikeRack', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Fietsendrager', agentDescription: 'Bike rack', critical: false, appliesTo: 'camper' },
+  { key: 'vehicle.awning', scope: 'unit', type: 'boolean', category: 'Voertuig', label: 'Luifel', agentDescription: 'Awning', critical: false, appliesTo: 'camper' },
 ];
 
 const BY_KEY = new Map(FACT_CATALOG.map((d) => [d.key, d]));
@@ -103,8 +135,18 @@ export function getFactDefinition(key: string): FactDefinition | undefined {
   return BY_KEY.get(key);
 }
 
-export function factDefinitionsFor(scope: FactScope): FactDefinition[] {
-  return FACT_CATALOG.filter((d) => d.scope === scope);
+/** Facts about a building that mean nothing for a vehicle you drive away in. */
+const STAY_ONLY = /^(garden\.|breakfast\.|fees\.touristTax|location\.|parking\.|access\.|bathroom\.|unit\.|rules\.(partiesAllowed|quietHours)|checkin\.|checkout\.|eco\.carFreeReachable)/;
+
+/** Does this fact belong in the passport of this kind of property? */
+export function factApplies(def: FactDefinition, propertyType: string | undefined): boolean {
+  const camper = propertyType === 'camper_rental';
+  if (def.appliesTo === 'camper') return camper;
+  return !(camper && STAY_ONLY.test(def.key));
+}
+
+export function factDefinitionsFor(scope: FactScope, propertyType?: string): FactDefinition[] {
+  return FACT_CATALOG.filter((d) => d.scope === scope && factApplies(d, propertyType));
 }
 
 export function unknownFact(now = new Date()): Fact {
@@ -206,10 +248,10 @@ export interface Completeness {
 }
 
 /** How complete and trustworthy the passport is, from a guest-decision perspective. */
-export function completeness(property: { facts: FactMap; units: { id: string; name: string; facts: FactMap }[] }, now = new Date(), lang: Lang = currentLang()): Completeness {
+export function completeness(property: { type?: string; facts: FactMap; units: { id: string; name: string; facts: FactMap }[] }, now = new Date(), lang: Lang = currentLang()): Completeness {
   const result: Completeness = { criticalTotal: 0, criticalConfirmed: 0, unconfirmed: [], unknownCritical: [], stale: [], score: 0 };
   const visit = (facts: FactMap, scope: FactScope, prefix: string) => {
-    for (const def of factDefinitionsFor(scope)) {
+    for (const def of factDefinitionsFor(scope, property.type)) {
       const fact = readFact(facts, def.key);
       const label = factLabel(def.key, lang);
       const name = prefix ? `${prefix}: ${label}` : label;

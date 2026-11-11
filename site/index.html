@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-root="./">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,6 +11,17 @@
 <meta property="og:image" content="https://laaielichter.github.io/innli-stays/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#f5efe4">
+<link rel="alternate" hreflang="en" href="https://laaielichter.github.io/innli-stays/">
+<link rel="alternate" hreflang="nl" href="https://laaielichter.github.io/innli-stays/nl/">
+<link rel="alternate" hreflang="de" href="https://laaielichter.github.io/innli-stays/de/">
+<link rel="alternate" hreflang="fr" href="https://laaielichter.github.io/innli-stays/fr/">
+<link rel="alternate" hreflang="es" href="https://laaielichter.github.io/innli-stays/es/">
+<link rel="alternate" hreflang="it" href="https://laaielichter.github.io/innli-stays/it/">
+<link rel="alternate" hreflang="pt" href="https://laaielichter.github.io/innli-stays/pt/">
+<link rel="alternate" hreflang="pl" href="https://laaielichter.github.io/innli-stays/pl/">
+<link rel="alternate" hreflang="ja" href="https://laaielichter.github.io/innli-stays/ja/">
+<link rel="alternate" hreflang="zh" href="https://laaielichter.github.io/innli-stays/zh/">
+<link rel="alternate" hreflang="x-default" href="https://laaielichter.github.io/innli-stays/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +56,8 @@
   .nav nav a:hover { color: var(--terra-deep); }
   .nav .gh { border: 2px solid var(--ink); border-radius: 999px; padding: 7px 16px; font-weight: 600; }
   .nav .gh:hover { background: var(--ink); color: var(--cream); }
-  @media (max-width: 820px) { .nav nav a:not(.gh) { display: none; } }
+  .nav .lang { font: inherit; font-size: 14px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 10px; cursor: pointer; }
+  @media (max-width: 1020px) { .nav nav a:not(.gh) { display: none; } }
 
   /* Type */
   .hook { font-family: var(--mono); color: var(--terra-deep); letter-spacing: .06em; font-size: 15px; }
@@ -140,6 +152,8 @@
   th { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); font-weight: 400; }
   td code { color: var(--glow); }
   .tablewrap { overflow-x: auto; }
+  .split > *, .two > *, .three > * { min-width: 0; }
+  pre { max-width: 100%; }
 
   .std { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 34px; }
   @media (max-width: 760px) { .std { grid-template-columns: 1fr 1fr; } }
@@ -179,6 +193,18 @@
       <a href="#agents">For agent builders</a>
       <a href="#plans">Licensing</a>
       <a href="#start">Quick start</a>
+      <select class="lang" id="lang" aria-label="Language">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="pl">Polski</option>
+        <option value="ja">日本語</option>
+        <option value="zh">中文</option>
+      </select>
       <a class="gh" href="https://github.com/laaielichter/innli-stays">GitHub</a>
     </nav>
   </div>
@@ -190,7 +216,7 @@
     <div>
       <p class="hook">// guests don't scroll anymore. their agents do.</p>
       <h1>Your stay, <em>bookable</em> by AI&nbsp;agents.</h1>
-      <p class="lede">INNLI makes B&amp;Bs, guesthouses and small hotels findable, understandable and bookable by the AI agents your next guests already use. On your own server, with your own prices.</p>
+      <p class="lede">INNLI makes B&amp;Bs, guesthouses, small hotels and camper rentals findable, understandable and bookable by the AI agents your next guests already use. On your own server, with your own prices.</p>
       <div class="cta-row">
         <a class="btn" href="#start">Get started <span aria-hidden="true">→</span></a>
         <a class="btn ghost" href="https://github.com/laaielichter/innli-stays">View on GitHub <span aria-hidden="true">→</span></a>
@@ -311,6 +337,9 @@
       <div class="card"><h3>WordPress plugin</h3><p>Puts your confirmed facts on your site as schema.org data, verifies your domain for agents and manages AI crawler access.</p></div>
       <div class="card"><h3>Small hotels too</h3><p>Room types with inventory, rate plans, 15-minute holds, staff keys and signed webhooks to your PMS.</p></div>
       <div class="card"><h3>Protected against bots</h3><p>Limits on how many rooms an agent may hold, per agent and per guest. You can accept requests from identified agents only.</p></div>
+      <div class="card"><h3>Camper rental</h3><p>Rent out campers and motorhomes the same way: berths and belted seats, the driving licence a vehicle needs, kilometres included, the deposit, pickup and return. The agent checks the driver before it asks.</p></div>
+      <div class="card"><h3>Stay wishes</h3><p>When a guest finds nothing, the agent leaves an anonymous wish. You see the wishes your stay fits and answer with an offer.</p></div>
+      <div class="card"><h3>Card guarantee</h3><p>Optionally a card guarantee on your own Stripe account: authorised at booking, charged only when you confirm.</p></div>
       <div class="card"><h3>Answer assistant</h3><p>Answers guest questions at once from your confirmed details and FAQ. No language model, nothing made up. The rest comes to you.</p></div>
     </div>
   </div>
@@ -433,6 +462,10 @@ npm run demo:intl
 </footer>
 
 <script>
+  // The language picker: English at the top address, every other language in its own folder.
+  const picker = document.getElementById('lang');
+  picker.value = document.documentElement.lang;
+  picker.addEventListener('change', () => { location.href = document.documentElement.dataset.root + (picker.value === 'en' ? '' : picker.value + '/') + location.hash; });
   for (const b of document.querySelectorAll('.copy')) {
     b.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); } catch { /* clipboard not available */ }

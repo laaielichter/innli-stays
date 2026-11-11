@@ -21,6 +21,15 @@ export const REQUIREMENTS = [
   'ev_charging',
   'eco_label',
   'car_free_reachable',
+  // Camper rental
+  'automatic_transmission',
+  'car_licence_ok',
+  'toilet_on_board',
+  'shower_on_board',
+  'winter_ready',
+  'unlimited_km',
+  'bike_rack',
+  'travel_abroad',
 ] as const;
 
 export type Requirement = (typeof REQUIREMENTS)[number];
@@ -141,6 +150,22 @@ export function evaluateRequirement(requirement: Requirement, property: Property
       return combine(requirement, [evaluateFact(p, 'eco.label', (v) => typeof v === 'string' && v.trim().length > 1, now)]);
     case 'car_free_reachable':
       return combine(requirement, [evaluateFact(p, 'eco.carFreeReachable', isTrue, now)]);
+    case 'automatic_transmission':
+      return combine(requirement, [evaluateFact(u, 'vehicle.transmission', (v) => String(v).toLowerCase().startsWith('auto'), now)]);
+    case 'car_licence_ok':
+      return combine(requirement, [evaluateFact(u, 'vehicle.licenceCategory', (v) => String(v).toUpperCase() === 'B', now)]);
+    case 'toilet_on_board':
+      return combine(requirement, [evaluateFact(u, 'vehicle.toilet', isTrue, now)]);
+    case 'shower_on_board':
+      return combine(requirement, [evaluateFact(u, 'vehicle.shower', isTrue, now)]);
+    case 'winter_ready':
+      return combine(requirement, [evaluateFact(u, 'vehicle.winterReady', isTrue, now)]);
+    case 'unlimited_km':
+      return combine(requirement, [evaluateFact(p, 'rental.unlimitedKm', isTrue, now)]);
+    case 'bike_rack':
+      return combine(requirement, [evaluateFact(u, 'vehicle.bikeRack', isTrue, now)]);
+    case 'travel_abroad':
+      return combine(requirement, [evaluateFact(p, 'rental.abroadAllowed', isTrue, now)]);
   }
 }
 

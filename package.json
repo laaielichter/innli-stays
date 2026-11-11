@@ -1,6 +1,6 @@
 {
   "name": "innli-stays",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Self-hosted MCP + REST server that lets AI agents search, quote and request bookings at B&Bs and small hotels, from facts the owner confirmed. Unknown stays unknown.",
   "mcpName": "io.github.laaielichter/innli",
   "keywords": [
@@ -64,7 +64,8 @@
     "prepack": "npm run build",
     "smoke:npm": "node scripts/smoke-npm.ts",
     "conformance": "node src/conformance.ts",
-    "grade": "node scripts/grade.ts"
+    "grade": "node scripts/grade.ts",
+    "site": "node scripts/site.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

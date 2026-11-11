@@ -7,8 +7,9 @@ import { factDefinitionsFor, isStale, readFact, type FactScope } from './domain/
 import { evaluateRequirement, impliedRequirements, matchesLocation, matchRoomCombinations, matchScore, matchUnits, roomsNeeded, type CombinationMatch, type LocationFilter, type Requirement, type UnitMatch } from './domain/matching.ts';
 import { buildQuote as buildQuoteRaw, QuoteInputError, weekdayNames, type QuoteInput } from './domain/pricing.ts';
 import { cancellationSchedule, refundability } from './domain/cancellation.ts';
+import { isCamperRental, rentalTerms } from './domain/rental.ts';
 import { nightPrices } from './domain/rates.ts';
-import { isLiveConnector, type AvailabilityResult, type Currency, type FactMap, type FactValue, type Guests, type Language, type PoiKind, type Property, type Quote, type Unit } from './domain/types.ts';
+import { isLiveConnector, type AvailabilityResult, type Currency, type Driver, type FactMap, type FactValue, type Guests, type Language, type PoiKind, type Property, type Quote, type Unit } from './domain/types.ts';
 import type { Store } from './store.ts';
 import { currentLang, money, t, type MessageKey, type Params } from './i18n/index.ts';
 import { mapLimit } from './util/concurrency.ts';
@@ -64,6 +65,8 @@ export interface QuoteOptions {
   /** Paid options (bikes, packed lunch …) with quantity. */
   extras?: { id: string; qty?: number }[];
   discountCode?: string;
+  /** Camper rental: who will drive. */
+  driver?: Driver;
 }
 
 /** Agent identity used by the owner dashboard: sees unpublished stays and is not counted in analytics. */
@@ -78,6 +81,8 @@ const PATTERNS: Record<StayPattern, { weekday: number; nights: number }> = {
 };
 
 export interface SearchInput {
+  /** What the guest is looking for: somewhere to stay (default) or a camper to rent. They are never mixed. */
+  kind?: 'stay' | 'camper';
   location?: LocationFilter;
   checkin?: string;
   checkout?: string;
@@ -187,6 +192,7 @@ export class Catalog {
     const considered = new Map<string, { outcome: string; failed: Requirement[]; unknown: Requirement[] }>();
     const candidates: { property: Property; units: UnitMatch[]; combos: CombinationMatch[]; distanceKm?: number }[] = [];
     for (const property of this.published()) {
+      if (isCamperRental(property) !== (input.kind === 'camper')) continue;
       const loc = matchesLocation(property, input.location);
       if (!loc.ok) continue;
       const units = matchUnits(property, requirements, { guests, minBedLengthCm: input.minBedLengthCm });
@@ -429,7 +435,7 @@ export class Catalog {
       r.ownerReply = guard.clean(`reviews.recent[${i}].ownerReply`, r.ownerReply);
     });
     const sheet = (facts: FactMap, scope: FactScope, prefix: string) => {
-      const s = factSheet(facts, scope, new Date(), property.currency);
+      const s = factSheet(facts, scope, new Date(), property.currency, property.type);
       for (const f of s.facts) f.value = guard.clean(`${prefix}${f.key}`, f.value);
       return s;
     };
@@ -635,6 +641,7 @@ export class Catalog {
   private createQuote(property: Property, unit: Unit, checkin: string, checkout: string, nights: string[], guests: Guests, breakfast: boolean, availability: AvailabilityResult, opts: QuoteOptions = {}): Quote {
     this.checkCodeUses(property, opts.discountCode);
     const quote = buildQuote({ id: `q_${randomUUID()}`, property, unit, checkin, checkout, nights, guests, breakfast, availability, rooms: opts.rooms, ratePlanId: opts.ratePlanId, extras: opts.extras, discountCode: opts.discountCode });
+    if (opts.driver && isCamperRental(property)) quote.driver = opts.driver;
     // A short hold while the agent asks the guest for consent, so a busy property cannot sell the room meanwhile.
     if (opts.hold && availability.status === 'available' && quote.bookingMode === 'availability_request') {
       quote.hold = { until: new Date(Date.now() + QUOTE_HOLD_MINUTES * 60_000).toISOString() };
@@ -677,6 +684,8 @@ export class Catalog {
       extrasAvailable: property.extras?.length ? property.extras.map((e) => ({ id: e.id, name: e.name, price: e.price, per: e.per, max: e.max ?? 1, chosen: quote.extras?.find((x) => x.id === e.id)?.qty ?? 0 })) : undefined,
       ratePlanOptions: unit && property.ratePlans?.length ? this.ratePlanOptions(property, unit, quote) : undefined,
       summaryForGuest: guestSummary(property, unit, quote),
+      // Camper rental: kilometres, deposit, insurance, pick-up, and whether this driver may rent this vehicle.
+      rental: unit && isCamperRental(property) ? rentalTerms(property, unit, quote, quote.driver) : undefined,
       consent: quote.bookingMode === 'availability_request' ? consentFor(property, [quote]) : undefined,
       warnings,
     };
@@ -833,7 +842,7 @@ export class Catalog {
           parkingOnSite: fact('parking.onSite'),
           quiet: fact('location.quiet'),
         },
-        unknownCriticalFacts: factSheet(property.facts, 'property').unknown.length,
+        unknownCriticalFacts: factSheet(property.facts, 'property', new Date(), property.currency, property.type).unknown.length,
         rating: this.rating(property),
       });
     }
@@ -850,9 +859,9 @@ export function normaliseGuests(g: Partial<Guests> | undefined): Guests {
   return { adults, children, dogs };
 }
 
-export function factSheet(facts: FactMap, scope: FactScope, now = new Date(), currency: Currency = 'EUR'): AgentFactSheet {
+export function factSheet(facts: FactMap, scope: FactScope, now = new Date(), currency: Currency = 'EUR', propertyType?: string): AgentFactSheet {
   const sheet: AgentFactSheet = { facts: [], unknown: [] };
-  for (const def of factDefinitionsFor(scope)) {
+  for (const def of factDefinitionsFor(scope, propertyType)) {
     const fact = readFact(facts, def.key);
     if (fact.status === 'unknown' || fact.value === null) {
       if (def.critical) sheet.unknown.push(def.agentDescription);

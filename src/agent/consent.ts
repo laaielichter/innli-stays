@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { cancellationSchedule } from '../domain/cancellation.ts';
 import { readFact } from '../domain/facts.ts';
 import type { Property, Quote } from '../domain/types.ts';
+import { isCamperRental, rentalSentence, rentalTerms } from '../domain/rental.ts';
 import { money } from '../i18n/index.ts';
 import { canonical } from '../security/signing.ts';
 
@@ -12,6 +13,14 @@ import { canonical } from '../security/signing.ts';
  * hash no longer matches and nothing is sent: the guest never commits to
  * terms they did not see. The hash and summary go into the signed record.
  */
+/** The rental terms a guest agrees to; a company that changes its deposit or kilometres changes the hash. */
+function rentalConsent(property: Property, quote: Quote) {
+  const unit = property.units.find((u) => u.id === quote.unitId);
+  if (!unit || !isCamperRental(property)) return undefined;
+  const { kilometres, securityDeposit, insurance, driverRules, abroad, fuelPolicy } = rentalTerms(property, unit, quote);
+  return { kilometres, securityDeposit, insurance, driverRules, abroad, fuelPolicy, driver: quote.driver ?? null };
+}
+
 export function consentTerms(property: Property, quote: Quote) {
   const plan = quote.ratePlanId ? property.ratePlans?.find((p) => p.id === quote.ratePlanId) : undefined;
   const cancellation = plan?.cancellation ?? (readFact(property.facts, 'policy.cancellation').value as string | null) ?? null;
@@ -31,6 +40,8 @@ export function consentTerms(property: Property, quote: Quote) {
     totalIncludesAllMandatoryCosts: quote.complete,
     cancellation,
     cancellationRules: property.cancellationRules ?? [],
+    // Absent for stays, so their hashes stay what they were.
+    ...(isCamperRental(property) ? { rental: rentalConsent(property, quote) } : {}),
   };
 }
 
@@ -59,6 +70,10 @@ export function consentSummary(property: Property, quotes: Quote[]): string {
     `${rooms} at ${property.name}, ${fmt(q.checkin)} to ${fmt(q.checkout)} (${q.nights} night${q.nights === 1 ? '' : 's'}), ${party}.`,
     `Total ${money(total, 'en', q.currency)}${q.complete ? ', all mandatory costs included' : '; not all mandatory costs are known yet'}${q.priceCertainty === 'indicative' ? ', indicative until the host confirms' : ''}.`,
     cancel,
+    ...quotes.flatMap((x) => {
+      const unit = property.units.find((u) => u.id === x.unitId);
+      return unit && isCamperRental(property) ? [rentalSentence(property, unit, x, (n) => money(n, 'en', x.currency))] : [];
+    }).slice(0, 1),
     `Name and e-mail are shared with ${property.name}.`,
   ].join(' ');
 }

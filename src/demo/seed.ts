@@ -5,6 +5,7 @@ import type { FactMap, Property } from '../domain/types.ts';
 import { hashKey, newKey } from '../http/auth.ts';
 import { createProperty, createUnit } from '../properties.ts';
 import type { Store } from '../store.ts';
+import { seedCampers } from './campers.ts';
 import { seedHotel } from './hotel.ts';
 import { seedActivity, seedInternational } from './international.ts';
 
@@ -18,7 +19,7 @@ export interface DemoCredentials {
 }
 
 /** Three fictional stays that together show confirmed, unverified and unknown data, live vs calendar sync. */
-export function seedDemo(store: Store, baseUrl: string, opts: { international?: boolean; hotel?: boolean } = {}): DemoCredentials {
+export function seedDemo(store: Store, baseUrl: string, opts: { international?: boolean; hotel?: boolean; campers?: boolean } = {}): DemoCredentials {
   const engine = `${baseUrl.replace(/\/$/, '')}/demo-engine`;
   const owners: DemoCredentials['owners'] = [];
   const add = (p: Property, ownerKey: string) => {
@@ -163,6 +164,7 @@ export function seedDemo(store: Store, baseUrl: string, opts: { international?: 
   }
 
   if (opts.hotel) owners.push(seedHotel(store));
+  if (opts.campers) owners.push(seedCampers(store));
   if (opts.international) {
     owners.push(...seedInternational(store, engine));
     seedActivity(store, owners.map((o) => o.id));

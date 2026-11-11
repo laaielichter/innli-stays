@@ -28,10 +28,14 @@
       <label>Installatiecode
         <input name="code" required autocomplete="off" placeholder="Staat in het venster waarin INNLI draait">
       </label>
+      <label>Startpakket (optioneel)
+        <select name="starter"><option value="">Geen: ik vul alles zelf in</option></select>
+      </label>
+      <p class="muted small" id="setup-starter-note" hidden>Het pakket maakt je kamers of campers aan en vult je paspoort met voorstellen. Niets telt als bevestigd tot jij op "Klopt" drukt.</p>
       <label>Naam van je accommodatie <input name="name" required placeholder="B&amp;B De Hooiberg"></label>
       <div class="form-grid">
         <label>Type
-          <select name="type"><option value="bnb">B&amp;B</option><option value="pension">Pension</option><option value="guesthouse">Gastenverblijf</option><option value="holiday_home">Vakantiewoning</option><option value="unique_stay">Bijzonder verblijf</option><option value="hotel">Hotel</option></select>
+          <select name="type"><option value="bnb">B&amp;B</option><option value="pension">Pension</option><option value="guesthouse">Gastenverblijf</option><option value="holiday_home">Vakantiewoning</option><option value="unique_stay">Bijzonder verblijf</option><option value="camper_rental">Camperverhuur</option><option value="hotel">Hotel</option></select>
         </label>
         <label>Plaats <input name="city" required></label>
         <label>Land <input name="country" value="NL" maxlength="2" required title="ISO-code, bijv. NL, BE, DE, GB, FR"></label>
@@ -188,6 +192,14 @@
           </form>
           <div id="import-result"></div>
         </div>
+        <div class="card" id="starter-card" hidden>
+          <h2>Snel beginnen met een startpakket</h2>
+          <p class="muted small">Vult lege vragen met wat gebruikelijk is, als voorstel. Wat je al bevestigd hebt blijft staan. Niets telt als bevestigd tot jij op "Klopt" drukt.</p>
+          <form id="starter-form" class="row">
+            <select id="starter-pick"></select>
+            <button class="btn">Voorstellen invullen</button>
+          </form>
+        </div>
         <div id="passport-facts"></div>
       </section>
 
@@ -215,7 +227,7 @@
             <label>Naam <input name="name" required></label>
             <label>Type
               <select name="type">
-                <option value="bnb">B&amp;B</option><option value="pension">Pension</option><option value="guesthouse">Gastenverblijf</option><option value="holiday_home">Vakantiewoning</option><option value="unique_stay">Bijzonder verblijf</option><option value="hotel">Hotel</option>
+                <option value="bnb">B&amp;B</option><option value="pension">Pension</option><option value="guesthouse">Gastenverblijf</option><option value="holiday_home">Vakantiewoning</option><option value="unique_stay">Bijzonder verblijf</option><option value="camper_rental">Camperverhuur</option><option value="hotel">Hotel</option>
               </select>
             </label>
             <label>Omschrijving <textarea name="description" rows="4"></textarea></label>

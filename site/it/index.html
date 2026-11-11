@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="it" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INNLI: la tua struttura, prenotabile dagli agenti AI</title>
+<meta name="description" content="Software open source che rende B&B, affittacamere e piccoli hotel facili da trovare, capire e prenotare per gli agenti AI. Self-hosted. Nessuna commissione.">
+<meta property="og:title" content="INNLI: la tua struttura, prenotabile dagli agenti AI">
+<meta property="og:description" content="Gratuito, open source e self-hosted. Dati verificati, prezzi onesti, prenotazione diretta. Nessuna commissione OTA.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://laaielichter.github.io/innli-stays/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f5efe4">
+<link rel="alternate" hreflang="en" href="https://laaielichter.github.io/innli-stays/">
+<link rel="alternate" hreflang="nl" href="https://laaielichter.github.io/innli-stays/nl/">
+<link rel="alternate" hreflang="de" href="https://laaielichter.github.io/innli-stays/de/">
+<link rel="alternate" hreflang="fr" href="https://laaielichter.github.io/innli-stays/fr/">
+<link rel="alternate" hreflang="es" href="https://laaielichter.github.io/innli-stays/es/">
+<link rel="alternate" hreflang="it" href="https://laaielichter.github.io/innli-stays/it/">
+<link rel="alternate" hreflang="pt" href="https://laaielichter.github.io/innli-stays/pt/">
+<link rel="alternate" hreflang="pl" href="https://laaielichter.github.io/innli-stays/pl/">
+<link rel="alternate" hreflang="ja" href="https://laaielichter.github.io/innli-stays/ja/">
+<link rel="alternate" hreflang="zh" href="https://laaielichter.github.io/innli-stays/zh/">
+<link rel="alternate" hreflang="x-default" href="https://laaielichter.github.io/innli-stays/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5efe4; --paper: #fbf7ef; --ink: #17202a; --terra: #d9643a; --terra-deep: #b84e28;
+    --sage: #7a9a7e; --sage-deep: #4f7255; --night: #101820; --glow: #ffcf8a; --muted: #5b6672; --line: rgba(23,32,42,.16);
+    --serif: Fraunces, Georgia, 'Times New Roman', serif;
+    --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --wrap: 1120px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { background: var(--cream); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+  a { color: inherit; }
+  img, svg { max-width: 100%; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+  .grain { position: fixed; inset: 0; width: 100%; height: 100%; opacity: .3; mix-blend-mode: multiply; pointer-events: none; z-index: 50; }
+  .skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: var(--cream); padding: 10px 16px; border-radius: 8px; z-index: 60; }
+  .skip:focus { left: 16px; }
+  :focus-visible { outline: 3px solid var(--terra); outline-offset: 3px; border-radius: 6px; }
+
+  /* Navigation */
+  header.nav { position: sticky; top: 0; z-index: 40; background: rgba(245,239,228,.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 16px; }
+  .logo { font-family: var(--serif); font-weight: 700; font-size: 28px; letter-spacing: .04em; text-decoration: none; }
+  .logo span { color: var(--terra); }
+  .nav nav { display: flex; align-items: center; gap: 26px; font-weight: 500; font-size: 15px; }
+  .nav nav a { text-decoration: none; }
+  .nav nav a:hover { color: var(--terra-deep); }
+  .nav .gh { border: 2px solid var(--ink); border-radius: 999px; padding: 7px 16px; font-weight: 600; }
+  .nav .gh:hover { background: var(--ink); color: var(--cream); }
+  .nav .lang { font: inherit; font-size: 14px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 10px; cursor: pointer; }
+  @media (max-width: 1020px) { .nav nav a:not(.gh) { display: none; } }
+
+  /* Type */
+  .hook { font-family: var(--mono); color: var(--terra-deep); letter-spacing: .06em; font-size: 15px; }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 700; letter-spacing: -.02em; line-height: 1.02; }
+  h1 { font-size: clamp(46px, 7.4vw, 96px); line-height: .96; letter-spacing: -.025em; margin: 14px 0 22px; }
+  h2 { font-size: clamp(34px, 4.6vw, 56px); margin: 10px 0 18px; }
+  h3 { font-size: 24px; line-height: 1.15; letter-spacing: -.01em; }
+  h1 em, h2 em { font-style: italic; font-weight: 500; color: var(--terra); }
+  .lede { font-size: clamp(18px, 2vw, 22px); line-height: 1.45; font-weight: 500; max-width: 34em; }
+  .label { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+  p.sub { color: var(--muted); max-width: 40em; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--cream); font-weight: 700; font-size: 17px; padding: 15px 26px; border-radius: 999px; text-decoration: none; border: 2px solid var(--ink); transition: transform .15s ease, box-shadow .15s ease; }
+  .btn span { color: var(--glow); transition: transform .15s ease; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16,24,32,.22); }
+  .btn:hover span { transform: translateX(4px); }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost span { color: var(--terra); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+
+  /* Hero */
+  .hero { padding: 56px 0 0; position: relative; }
+  .hero .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 32px; align-items: center; padding-bottom: 72px; }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .chip { font-family: var(--mono); font-size: 13px; border: 2px solid var(--ink); border-radius: 8px; padding: 6px 11px; background: var(--paper); }
+  .scene { position: relative; min-height: 520px; }
+  .scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .bubble { position: absolute; background: var(--night); color: #e9eef2; border-radius: 20px; font-family: var(--mono); font-size: 14.5px; line-height: 1.5; padding: 16px 20px; box-shadow: 0 18px 40px rgba(16,24,32,.25); }
+  .bubble .who { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); margin-bottom: 5px; }
+  .b1 { left: 0; top: 6px; width: min(300px, 62%); border-bottom-left-radius: 4px; }
+  .b2 { right: 0; bottom: 96px; width: min(270px, 58%); background: #fff; color: var(--ink); border: 2px solid var(--ink); border-bottom-right-radius: 4px; }
+  .b2 .who { color: var(--terra-deep); }
+  .b2 .k { color: var(--sage-deep); }
+  .b2 .ok { color: var(--terra-deep); font-weight: 600; }
+  @media (max-width: 900px) { .hero .grid { grid-template-columns: 1fr; } .scene { min-height: 460px; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .ring { transform-origin: 300px 300px; animation: pulse 5s ease-in-out infinite; }
+    .ring.r2 { animation-delay: .8s; } .ring.r3 { animation-delay: 1.6s; }
+    .b1 { animation: rise .7s .15s both; } .b2 { animation: rise .7s .55s both; }
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .hill { display: block; width: 100%; height: 90px; margin-top: -40px; position: relative; z-index: 1; }
+
+  /* Sections */
+  section { padding: 96px 0; }
+  .dark { background: var(--night); color: #e9eef2; }
+  .dark .hook { color: var(--glow); }
+  .dark p.sub { color: #a9b4bf; }
+  .sage { background: var(--sage); }
+  .paper { background: var(--paper); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 44px; }
+  .two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 44px; }
+  @media (max-width: 900px) { .three, .two { grid-template-columns: 1fr; } section { padding: 72px 0; } }
+  .card { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; padding: 26px; box-shadow: 6px 6px 0 var(--ink); }
+  .card p { margin-top: 10px; color: #37424e; font-size: 16px; }
+  .step-n { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; color: var(--terra-deep); display: block; margin-bottom: 12px; }
+  .dark .card { background: #18232e; border-color: #2c3a48; box-shadow: none; color: #e9eef2; }
+  .dark .card p { color: #b6c0ca; }
+  .dark .step-n { color: var(--glow); }
+
+  .list { list-style: none; margin-top: 18px; display: grid; gap: 12px; }
+  .list li { padding-left: 34px; position: relative; }
+  .list li::before { content: ""; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--terra); border: 2px solid var(--ink);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M5.5 11.5l3.5 3.5 7-8' fill='none' stroke='%23f5efe4' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size: 18px 18px; background-position: center; }
+  .list b { font-weight: 700; }
+
+  /* Unknown stays unknown */
+  .facts { font-family: var(--mono); font-size: 14.5px; background: #fff; border: 2px solid var(--ink); border-radius: 16px; overflow: hidden; box-shadow: 6px 6px 0 var(--ink); }
+  .facts div { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line); align-items: center; }
+  .facts div:last-child { border-bottom: 0; }
+  .facts .head { background: var(--ink); color: var(--cream); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+  .st { font-size: 12px; border-radius: 999px; padding: 3px 10px; border: 2px solid var(--ink); white-space: nowrap; }
+  .st.c { background: var(--sage); } .st.u { background: var(--glow); } .st.x { background: var(--cream); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  @media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 36px; } }
+
+  .demo { display: block; width: 100%; max-width: 960px; aspect-ratio: 16 / 9; margin-top: 36px; border: 2px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 var(--ink); background: var(--night); }
+
+  /* Code */
+  pre { font-family: var(--mono); font-size: 14px; line-height: 1.65; background: #0b1118; color: #dbe4ec; border-radius: 16px; padding: 22px 24px; overflow-x: auto; border: 1px solid #2c3a48; }
+  pre .c { color: #7f8c99; } pre .g { color: var(--glow); } pre .t { color: #f08a63; } pre .s { color: #9cc3a1; }
+  code { font-family: var(--mono); font-size: .9em; }
+  .codehead { display: flex; justify-content: space-between; align-items: center; margin: 26px 0 10px; }
+  .copy { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; background: transparent; color: inherit; border: 1.5px solid currentColor; border-radius: 999px; padding: 5px 12px; cursor: pointer; opacity: .8; }
+  .copy:hover { opacity: 1; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 15.5px; }
+  th, td { text-align: left; padding: 13px 14px; border-bottom: 1px solid #2c3a48; vertical-align: top; }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); font-weight: 400; }
+  td code { color: var(--glow); }
+  .tablewrap { overflow-x: auto; }
+  .split > *, .two > *, .three > * { min-width: 0; }
+  pre { max-width: 100%; }
+
+  .std { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 34px; }
+  @media (max-width: 760px) { .std { grid-template-columns: 1fr 1fr; } }
+  .std div { border: 2px solid var(--ink); border-radius: 14px; padding: 14px 18px; background: var(--paper); }
+  .std b { display: block; font-family: var(--serif); font-size: 20px; }
+  .std span { font-size: 14px; color: #37424e; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+  @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+  .compare .card.them { background: transparent; box-shadow: none; border-style: dashed; }
+  .compare ul { list-style: none; margin-top: 14px; display: grid; gap: 10px; }
+  .compare li { padding-left: 26px; position: relative; }
+  .compare li::before { position: absolute; left: 0; font-family: var(--mono); font-weight: 600; }
+  .them li::before { content: "–"; color: var(--muted); }
+  .us li::before { content: "✓"; color: var(--terra-deep); }
+
+  .final { text-align: center; padding: 110px 0 0; }
+  .final .lede { margin: 0 auto; }
+  .final .cta-row { justify-content: center; }
+  footer { background: var(--ink); color: #c9d2da; padding: 46px 0; font-size: 15px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center; }
+  footer a { color: var(--cream); text-decoration-color: rgba(245,239,228,.4); text-underline-offset: 3px; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Vai al contenuto</a>
+<svg class="grain" aria-hidden="true"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .4  0 0 0 0 .35  0 0 0 0 .3  0 0 0 .22 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Home di INNLI">INN<span>LI</span></a>
+    <nav aria-label="Principale">
+      <a href="#how">Come funziona</a>
+      <a href="#demo">Demo</a>
+      <a href="#hosts">Per gli host</a>
+      <a href="#agents">Per chi sviluppa agenti</a>
+      <a href="#plans">Licenze</a>
+      <a href="#start">Avvio rapido</a>
+      <select class="lang" id="lang" aria-label="Language">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="pl">Polski</option>
+        <option value="ja">日本語</option>
+        <option value="zh">中文</option>
+      </select>
+      <a class="gh" href="https://github.com/laaielichter/innli-stays">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<div class="hero" id="top">
+  <div class="wrap grid">
+    <div>
+      <p class="hook">// gli ospiti non scorrono più. lo fanno i loro agenti.</p>
+      <h1>La tua struttura, <em>prenotabile</em> dagli agenti&nbsp;AI.</h1>
+      <p class="lede">INNLI rende B&amp;B, affittacamere, piccoli hotel e noleggi di camper facili da trovare, capire e prenotare per gli agenti AI che i tuoi prossimi ospiti usano già. Sul tuo server, con i tuoi prezzi.</p>
+      <div class="cta-row">
+        <a class="btn" href="#start">Inizia <span aria-hidden="true">→</span></a>
+        <a class="btn ghost" href="https://github.com/laaielichter/innli-stays">Vedi su GitHub <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-facts" aria-label="In breve">
+        <div class="chip">gratuito e open source</div>
+        <div class="chip">self-hosted</div>
+        <div class="chip">nessuna commissione</div>
+      </div>
+    </div>
+    <div class="scene" role="img" aria-label="L'agente AI di un ospite chiede un B&amp;B tranquillo, che accetti cani e con colazione. La struttura risponde tramite INNLI con dati confermati e viene prenotata direttamente.">
+      <svg viewBox="0 0 600 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <radialGradient id="sun" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffcf8a"/><stop offset="1" stop-color="#ffcf8a" stop-opacity="0"/></radialGradient>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="2" fill="#17202a" opacity=".18"/></pattern>
+        </defs>
+        <circle cx="300" cy="300" r="270" fill="url(#sun)" opacity=".75"/>
+        <g fill="none" stroke="#d9643a" stroke-width="2">
+          <circle class="ring" cx="300" cy="300" r="170" opacity=".55" stroke-dasharray="4 10"/>
+          <circle class="ring r2" cx="300" cy="300" r="225" opacity=".35" stroke-dasharray="4 14"/>
+          <circle class="ring r3" cx="300" cy="300" r="280" opacity=".2" stroke-dasharray="4 18"/>
+        </g>
+        <g transform="translate(170 210)">
+          <rect x="10" y="100" width="240" height="190" fill="#f5efe4" stroke="#17202a" stroke-width="5"/>
+          <rect x="10" y="100" width="240" height="190" fill="url(#dots)"/>
+          <path d="M-14 112 L130 10 L274 112 Z" fill="#d9643a" stroke="#17202a" stroke-width="5" stroke-linejoin="round"/>
+          <rect x="186" y="28" width="30" height="58" fill="#17202a"/>
+          <rect x="38" y="138" width="56" height="56" fill="#ffcf8a" stroke="#17202a" stroke-width="5"/>
+          <rect x="166" y="138" width="56" height="56" fill="#ffcf8a" stroke="#17202a" stroke-width="5"/>
+          <path d="M66 138 V194 M38 166 H94 M194 138 V194 M166 166 H222" stroke="#17202a" stroke-width="4"/>
+          <path d="M106 290 V222 a24 24 0 0 1 48 0 V290 Z" fill="#17202a"/>
+          <circle cx="145" cy="258" r="4" fill="#ffcf8a"/>
+          <rect x="88" y="62" width="84" height="32" rx="6" fill="#17202a"/>
+          <text x="130" y="85" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="20" fill="#ffcf8a">B&amp;B</text>
+        </g>
+        <g stroke="#17202a" stroke-width="3" fill="none" stroke-linecap="round">
+          <path d="M215 262 C 185 230, 165 200, 150 170" stroke-dasharray="2 10"/>
+          <path d="M430 400 C 455 392, 470 384, 480 372" stroke-dasharray="2 10"/>
+        </g>
+        <g transform="translate(140 150)"><circle r="24" fill="#17202a"/><path d="M0 -13 L4 -4 L13 0 L4 4 L0 13 L-4 4 L-13 0 L-4 -4 Z" fill="#ffcf8a"/></g>
+        <g transform="translate(445 395)"><circle r="20" fill="#d9643a" stroke="#17202a" stroke-width="4"/><path d="M-8 0 L-2 6 L9 -6" stroke="#f5efe4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+      </svg>
+      <div class="bubble b1"><div class="who">✦ agente AI dell'ospite</div>“B&amp;B tranquillo vicino alla costa, 2&nbsp;notti, cani ammessi, colazione inclusa?”</div>
+      <div class="bubble b2"><div class="who">⌂ la tua struttura via INNLI</div><span class="k">camere</span>: 3 disponibili<br><span class="k">cani</span>: confermato<br><span class="k">colazione</span>: inclusa<br><span class="ok">→ prenotato direttamente.<br>&nbsp;&nbsp;nessuna commissione OTA.</span></div>
+    </div>
+  </div>
+  <svg class="hill" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 C 290 0, 560 28, 750 44 C 1010 66, 1200 4, 1440 34 L1440 90 L0 90 Z" fill="#7a9a7e"/><path d="M0 84 C 340 52, 690 82, 930 70 C 1150 60, 1300 74, 1440 66 L1440 90 L0 90 Z" fill="#101820"/></svg>
+</div>
+
+<section class="dark" id="how">
+  <div class="wrap">
+    <p class="hook">// come funziona</p>
+    <h2>Trovata, capita, <em>prenotata</em>.</h2>
+    <p class="sub">Farsi trovare, farsi capire da un agente e ricevere davvero una prenotazione sono tre cose diverse. INNLI copre tutto il percorso.</p>
+    <div class="three">
+      <div class="card"><span class="step-n">01 · PASSAPORTO</span><h3>Conferma i tuoi dati una volta sola</h3><p>Circa 40 dati concreti: giardino recintato, lunghezza del letto, gradini fino alla camera, tassa di soggiorno. Ognuno è confermato, non confermato o sconosciuto. Confermi solo tu.</p></div>
+      <div class="card"><span class="step-n">02 · CONNESSIONE</span><h3>Un unico indirizzo per tutti gli agenti</h3><p>Gli agenti consultano il tuo passaporto, verificano la disponibilità in tempo reale e ricevono un totale dettagliato con tutti i costi obbligatori. Via MCP, REST, ACP o UCP.</p></div>
+      <div class="card"><span class="step-n">03 · PRENOTAZIONE</span><h3>Prenotato da te, senza intermediari</h3><p>L'ospite accetta condizioni precise, la camera viene bloccata e tu confermi, oppure la prenotazione è immediata entro le tue regole. Registro firmato incluso.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="demo">
+  <div class="wrap">
+    <p class="hook">// guardalo in azione</p>
+    <h2>Un agente AI prenota un soggiorno, <em>dall'inizio alla fine</em>.</h2>
+    <p class="sub">87 secondi, senza audio. Le chiamate e le risposte sono reali, fatte sulle strutture di esempio incluse in INNLI. L'ospite è un esempio. Guarda cosa fa l'agente quando l'host non ha confermato qualcosa.</p>
+    <video class="demo" controls muted playsinline preload="none" poster="../demo-poster.jpg" aria-label="Registrazione di un agente AI che cerca, chiede un preventivo e prenota un soggiorno tramite INNLI, e dell'host che accetta dalla dashboard">
+      <source src="../demo.mp4" type="video/mp4">
+      <a href="../demo.mp4">Scarica la registrazione</a>
+    </video>
+    <div class="cta-row">
+      <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/demo.md">Provalo tu in cinque minuti <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section id="honest">
+  <div class="wrap split">
+    <div>
+      <p class="hook">// la regola alla base di tutto</p>
+      <h2>Ciò che è sconosciuto resta <em>sconosciuto</em>.</h2>
+      <p class="lede">Un agente che tira a indovinare manda un ospite con il cane in un giardino senza recinzione. INNLI non riempie mai un vuoto.</p>
+      <ul class="list">
+        <li><b>Ogni dato ha uno stato,</b> una fonte e una data di verifica. Dopo un anno INNLI ti chiede di ricontrollarlo.</li>
+        <li><b>I prezzi sono completi, oppure dichiarano di non esserlo.</b> Un costo obbligatorio mancante viene segnalato, non nascosto.</li>
+        <li><b>Niente è prenotato finché un risultato non dice <code>booked: true</code>.</b> Una richiesta in sospeso non viene mai chiamata prenotazione.</li>
+        <li><b>Nessuna conversione nascosta.</b> I prezzi restano nella tua valuta.</li>
+      </ul>
+    </div>
+    <div class="facts" aria-label="Esempio di dati con il relativo stato">
+      <div class="head"><span>camera sul giardino · passaporto</span><span>stato</span></div>
+      <div><span>garden.fullyEnclosed: true</span><span class="st c">confermato</span></div>
+      <div><span>pets.dogsAllowed: true</span><span class="st c">confermato</span></div>
+      <div><span>bed.lengthCm: 210</span><span class="st c">confermato</span></div>
+      <div><span>access.stepsToUnit: 0</span><span class="st u">non confermato</span></div>
+      <div><span>parking.evCharger</span><span class="st x">sconosciuto</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="hosts">
+  <div class="wrap">
+    <p class="hook">// per gli host</p>
+    <h2>I tuoi ospiti, i tuoi prezzi, il <em>tuo</em> server.</h2>
+    <p class="sub">INNLI gira su un Raspberry Pi, sul tuo PC o su un piccolo server. Non è un chatbot e nemmeno l'ennesimo gestionale alberghiero: affianca il sito e il sistema di prenotazione che hai già.</p>
+    <div class="compare">
+      <div class="card them"><span class="label">Tramite una piattaforma</span>
+        <ul><li>Dal 15 al 22% di commissione per prenotazione</li><li>L'ospite e i dati appartengono alla piattaforma</li><li>Un agente che non trova un prezzo in tempo reale manda l'ospite altrove</li><li>Il tuo annuncio dice ciò che la piattaforma gli lascia dire</li></ul>
+      </div>
+      <div class="card us"><span class="label">Con INNLI</span>
+        <ul><li>Nessuna commissione, su nessuna prenotazione</li><li>I dati degli ospiti restano sulla tua installazione</li><li>Disponibilità in tempo reale dal tuo calendario o sistema di prenotazione</li><li>Dati confermati da te, in quattro lingue</li></ul>
+      </div>
+    </div>
+    <div class="three">
+      <div class="card"><h3>Dashboard</h3><p>Richieste, calendario delle camere, desideri di soggiorno degli agenti e ciò che gli agenti cercano nella tua zona. In inglese o olandese.</p></div>
+      <div class="card"><h3>Calendari e sistemi di prenotazione</h3><p>Un'API di prenotazione in tempo reale, iCal da Airbnb o Booking.com, il tuo calendario delle camere, oppure solo richieste. Un controllo contro le doppie prenotazioni tiene d'occhio gli altri canali.</p></div>
+      <div class="card"><h3>Plugin WordPress</h3><p>Pubblica i tuoi dati confermati sul tuo sito come dati schema.org, verifica il tuo dominio per gli agenti e gestisce l'accesso dei crawler AI.</p></div>
+      <div class="card"><h3>Anche per i piccoli hotel</h3><p>Tipologie di camera con inventario, piani tariffari, blocchi di 15 minuti, chiavi per lo staff e webhook firmati verso il tuo PMS.</p></div>
+      <div class="card"><h3>Protetto dai bot</h3><p>Limiti al numero di camere che un agente può bloccare, per agente e per ospite. Puoi accettare richieste solo da agenti identificati.</p></div>
+      <div class="card"><h3>Noleggio camper</h3><p>Noleggia camper e motorhome allo stesso modo: posti letto e posti con cintura, la patente richiesta dal veicolo, chilometri inclusi, la cauzione, il ritiro e la riconsegna. L'agente verifica il conducente prima di inviare la richiesta.</p></div>
+      <div class="card"><h3>Desideri di soggiorno</h3><p>Quando un ospite non trova nulla, l'agente lascia un desiderio anonimo. Tu vedi i desideri adatti alla tua struttura e rispondi con un'offerta.</p></div>
+      <div class="card"><h3>Garanzia con carta</h3><p>Se vuoi, una garanzia con carta sul tuo account Stripe: autorizzata alla prenotazione, addebitata solo quando confermi.</p></div>
+      <div class="card"><h3>Assistente alle risposte</h3><p>Risponde subito alle domande degli ospiti a partire dai tuoi dati confermati e dalle FAQ. Nessun modello linguistico, niente di inventato. Il resto arriva a te.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="agents">
+  <div class="wrap">
+    <p class="hook">// per chi sviluppa agenti</p>
+    <h2>Costruito per gli agenti, <em>misurato</em> in token.</h2>
+    <p class="sub">20 strumenti in sette gruppi, oppure un profilo core da 8 con risposte brevi. Ogni risultato porta con sé le chiamate successive con gli argomenti già compilati e dice per quanto tempo resta affidabile.</p>
+    <div class="codehead"><span class="label">Collega un agente</span><button class="copy" data-copy="claude mcp add --transport http innli https://your-stay.example/mcp">Copia</button></div>
+<pre><span class="c"># Claude Code, or any MCP client (Streamable HTTP)</span>
+claude mcp add --transport http innli <span class="s">https://your-stay.example/mcp</span>
+
+<span class="c"># then just ask</span>
+<span class="g">"Find a quiet farm stay in Tuscany for three nights in May with an
+ enclosed garden for my dog and a ground-floor room."</span></pre>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Cosa</th><th>Dove</th><th>Perché conta</th></tr></thead>
+      <tbody>
+        <tr><td>MCP, profilo completo e profilo core</td><td><code>/mcp</code> · <code>/mcp?profile=core</code></td><td>Circa il 49% di contesto in meno per turno con il profilo core</td></tr>
+        <tr><td>REST con OpenAPI 3.1</td><td><code>/api/agent/v1/openapi.json</code></td><td>Gli stessi strumenti per le piattaforme senza MCP</td></tr>
+        <tr><td>Sessioni di checkout ACP</td><td><code>/.well-known/acp.json</code> · <code>/acp</code></td><td>Il protocollo di OpenAI e Stripe, con una garanzia con carta che viene addebitata solo quando l'host conferma</td></tr>
+        <tr><td>Sessioni di prenotazione alloggi UCP (bozza)</td><td><code>/.well-known/ucp</code> · <code>/ucp/v1</code> · <code>/ucp/mcp</code></td><td>Prenotazione a sessioni con totali, policy e condizioni di pagamento</td></tr>
+        <tr><td>Identità senza account</td><td>Web Bot Auth, RFC 9421</td><td>Firma le tue richieste: un rate limit tutto tuo, con il tuo nome nel registro firmato</td></tr>
+        <tr><td>Controllo delle risposte</td><td><code>check_reply</code></td><td>Confronta la tua bozza con ciò che ha detto la struttura, prima che l'ospite la legga. Nessun modello linguistico, dieci lingue</td></tr>
+        <tr><td>Consenso con hash</td><td><code>consent.summary</code> · <code>consent.hash</code></td><td>Se le condizioni sono cambiate dopo il sì dell'ospite, non viene inviato nulla</td></tr>
+        <tr><td>Errori tipizzati</td><td><code>code</code> · <code>retryable</code> · <code>hint</code></td><td>Una consultazione al posto di un'ipotesi; header RateLimit in ogni risposta</td></tr>
+        <tr><td>Nuovi tentativi sicuri</td><td><code>Idempotency-Key</code></td><td>Un timeout non diventa mai una seconda prenotazione</td></tr>
+        <tr><td>Discovery</td><td>agent card · MCP server card · <code>llms.txt</code></td><td>Trovata senza che nessuno dica dove cercare</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="cta-row">
+      <a class="btn" style="background:var(--glow);color:var(--ink);border-color:var(--glow)" href="https://github.com/laaielichter/innli-stays/blob/main/docs/agent-integration.md">Guida all'integrazione <span style="color:var(--terra-deep)" aria-hidden="true">→</span></a>
+      <a class="btn ghost" style="color:#e9eef2;border-color:#e9eef2" href="https://github.com/laaielichter/innli-stays/tree/main/agent-kit">Agent kit e plugin per Claude <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section id="standards">
+  <div class="wrap">
+    <p class="hook">// standard aperti, nessun lock-in</p>
+    <h2>Parla la lingua che le piattaforme di agenti <em>parlano</em>.</h2>
+    <p class="sub">Le specifiche sono aperte e l'agent kit è sotto licenza MIT. Verifica tu stesso qualsiasi installazione con <code>npx innli-conformance https://your-stay.example</code>: 14 controlli in sola lettura, non viene prenotato nulla.</p>
+    <div class="std">
+      <div><b>MCP</b><span>Streamable HTTP e stdio</span></div>
+      <div><b>OpenAPI 3.1</b><span>Gli stessi strumenti via REST</span></div>
+      <div><b>ACP checkout</b><span>Il protocollo di OpenAI e Stripe</span></div>
+      <div><b>UCP lodging</b><span>Funzionalità in bozza, REST e MCP</span></div>
+      <div><b>Web Bot Auth</b><span>HTTP Message Signatures</span></div>
+      <div><b>OAuth 2.1</b><span>PKCE, registrazione dinamica</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="plans">
+  <div class="wrap">
+    <p class="hook">// usare innli</p>
+    <h2>Gratis da usare. <em>Aperto</em> per costruirci sopra.</h2>
+    <p class="sub">INNLI non trattiene nulla sulle prenotazioni e non vende dati. Gli host lo usano gratis; le aziende possono prenderlo in licenza, oppure portare avanti l'intero progetto.</p>
+    <div class="three">
+      <div class="card"><span class="step-n">PER GLI HOST</span><h3>Installalo da te, gratis</h3><p>Tutto ciò che c'è nel repository, senza limiti, sotto AGPL. Su un Raspberry Pi, sul tuo PC o su un piccolo server.</p><p><a href="#start"><b>Avvio rapido →</b></a></p></div>
+      <div class="card"><span class="step-n">PER LE PIATTAFORME</span><h3>Licenza commerciale</h3><p>Integra INNLI nel tuo PMS, channel manager o piattaforma di agenti senza pubblicare il tuo codice. Prezzi fissi, a partire da € 2.500 all'anno. La licenza più ampia aggiunge i viaggi «tutto o niente» su più strutture.</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md"><b>Come funziona →</b></a></p></div>
+      <div class="card"><span class="step-n">PER LE AZIENDE</span><h3>Rilevalo</h3><p>INNLI è stato creato da una sola persona. Il copyright, il nome, i pacchetti e la guida possono passare a un'azienda che voglia portarlo avanti. Su offerta scritta.</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/docs/for-companies.md"><b>Cosa comprende →</b></a></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="start">
+  <div class="wrap split">
+    <div>
+      <p class="hook">// avvio rapido</p>
+      <h2>Operativo con <em>due</em> comandi.</h2>
+      <p class="sub">Richiede Node.js 22.18 o successivo. Una procedura guidata nel browser ti chiede il tuo nome e la tua prima camera, poi ti dà la tua chiave da proprietario. Ci sono anche Docker e un download in zip.</p>
+      <div class="cta-row">
+        <a class="btn" href="https://github.com/laaielichter/innli-stays/blob/main/docs/install.md">Guida all'installazione <span aria-hidden="true">→</span></a>
+        <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/owner-guide.md">Guida per il proprietario <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div>
+      <div class="codehead" style="margin-top:0"><span class="label">La tua struttura</span><button class="copy" data-copy="npm install --omit=dev && INNLI_LANG=en npm start">Copia</button></div>
+<pre>npm install --omit=dev
+INNLI_LANG=en npm start
+<span class="c"># open http://localhost:3000/dashboard/</span></pre>
+      <div class="codehead"><span class="label">Oppure prova le strutture di esempio</span><button class="copy" data-copy="npm install && npm run demo:intl">Copia</button></div>
+<pre>npm install
+npm run demo:intl
+<span class="c"># seven stays across Europe and a 48-room hotel</span></pre>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <p class="hook">// gratuito e open source</p>
+    <h2>La tua struttura è <em>pronta per gli agenti</em>?</h2>
+    <p class="lede">Open source sotto AGPL-3.0 e gratuito se lo installi da te. Nessuna commissione, su nessuna prenotazione.</p>
+    <div class="cta-row">
+      <a class="btn" href="https://github.com/laaielichter/innli-stays">Metti una stella su GitHub <span aria-hidden="true">→</span></a>
+      <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/agents-2.1.md">Leggi la ricerca <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+  <svg class="hill" style="margin-top:56px;height:110px" viewBox="0 0 1440 110" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70 C 290 10, 560 38, 750 54 C 1010 76, 1200 14, 1440 44 L1440 110 L0 110 Z" fill="#7a9a7e"/><path d="M0 98 C 340 66, 690 96, 930 84 C 1150 74, 1300 88, 1440 80 L1440 110 L0 110 Z" fill="#17202a"/></svg>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><span class="logo" style="color:var(--cream)">INN<span>LI</span></span><br>Strutture indipendenti, pronte per gli agenti AI di prenotazione.</div>
+    <nav aria-label="Piè di pagina">
+      <a href="https://github.com/laaielichter/innli-stays">GitHub</a>
+      <a href="https://github.com/laaielichter/innli-stays/blob/main/docs/agent-integration.md">Documentazione</a>
+      <a href="https://github.com/laaielichter/innli-stays/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://www.npmjs.com/package/innli-stays">npm</a>
+      <a href="https://github.com/laaielichter/innli-stays/blob/main/LICENSE">AGPL-3.0</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // The language picker: English at the top address, every other language in its own folder.
+  const picker = document.getElementById('lang');
+  picker.value = document.documentElement.lang;
+  picker.addEventListener('change', () => { location.href = document.documentElement.dataset.root + (picker.value === 'en' ? '' : picker.value + '/') + location.hash; });
+  for (const b of document.querySelectorAll('.copy')) {
+    b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); } catch { /* clipboard not available */ }
+    });
+  }
+</script>
+</body>
+</html>

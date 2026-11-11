@@ -24,6 +24,14 @@ export const REQUIREMENT_LABELS: Record<Requirement, string> = {
   ev_charging: 'Laadpaal',
   eco_label: 'Duurzaamheidskeurmerk',
   car_free_reachable: 'Bereikbaar zonder auto',
+  automatic_transmission: 'Automaat',
+  car_licence_ok: 'Met gewoon rijbewijs (B)',
+  toilet_on_board: 'Toilet aan boord',
+  shower_on_board: 'Douche aan boord',
+  winter_ready: 'Geschikt voor de winter',
+  unlimited_km: 'Onbeperkt kilometers',
+  bike_rack: 'Fietsendrager',
+  travel_abroad: 'Naar het buitenland',
 };
 
 const REQUIREMENT_LABELS_EN: Record<Requirement, string> = {
@@ -44,6 +52,14 @@ const REQUIREMENT_LABELS_EN: Record<Requirement, string> = {
   ev_charging: 'EV charging',
   eco_label: 'Sustainability label',
   car_free_reachable: 'Reachable without a car',
+  automatic_transmission: 'Automatic transmission',
+  car_licence_ok: 'Drivable on a car licence (B)',
+  toilet_on_board: 'Toilet on board',
+  shower_on_board: 'Shower on board',
+  winter_ready: 'Winter-ready',
+  unlimited_km: 'Unlimited kilometres',
+  bike_rack: 'Bike rack',
+  travel_abroad: 'Travel abroad',
 };
 
 export const requirementLabel = (r: Requirement, lang: Lang = currentLang()) => (lang === 'nl' ? REQUIREMENT_LABELS[r] : REQUIREMENT_LABELS_EN[r]) ?? r;
@@ -67,6 +83,14 @@ const REQUIREMENT_FACTS: Record<Requirement, string[]> = {
   ev_charging: ['eco.evCharging'],
   eco_label: ['eco.label'],
   car_free_reachable: ['eco.carFreeReachable'],
+  automatic_transmission: ['vehicle.transmission'],
+  car_licence_ok: ['vehicle.licenceCategory'],
+  toilet_on_board: ['vehicle.toilet'],
+  shower_on_board: ['vehicle.shower'],
+  winter_ready: ['vehicle.winterReady'],
+  unlimited_km: ['rental.unlimitedKm'],
+  bike_rack: ['vehicle.bikeRack'],
+  travel_abroad: ['rental.abroadAllowed'],
 };
 
 const OUTCOME_LABELS_EN: Record<string, string> = {

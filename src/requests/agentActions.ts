@@ -11,6 +11,7 @@ import { rateLimiter } from '../http/safeFetch.ts';
 import type { Store } from '../store.ts';
 import { signRecord } from '../security/signing.ts';
 import { cancellationCost } from '../domain/cancellation.ts';
+import { checkDriver, isCamperRental } from '../domain/rental.ts';
 import type { QuestionService } from './questions.ts';
 import type { WaitlistService } from './waitlist.ts';
 import { RequestError, rulesOf, type RequestService } from './service.ts';
@@ -152,6 +153,16 @@ export class AgentActions {
     if (quotes.some((q) => q!.bookingMode === 'booking_link')) {
       throw new CatalogError('This property takes bookings in its own booking system: use prepare_booking and give the guest the link.', { code: 'INVALID_INPUT', nextTools: ['prepare_booking'] });
     }
+    if (isCamperRental(property)) {
+      // A rental company cannot hand over keys to a driver it may not insure: settle that before the request, not at the counter.
+      for (const q of quotes as Quote[]) {
+        const unit = property.units.find((u) => u.id === q.unitId);
+        if (!unit) continue;
+        const check = checkDriver(property, unit, q.driver, q.guests);
+        if (check.eligible === false) throw new CatalogError(check.reasons.join(' '), { code: 'DRIVER_NOT_ELIGIBLE' });
+        if (!q.driver) throw new CatalogError("A camper rental needs the main driver's age and driving licence. Ask the guest, then get a fresh quote with driver.", { code: 'INVALID_INPUT', nextTools: ['get_quote'] });
+      }
+    }
     if (quotes.some((q) => Date.parse(q!.validUntil) < Date.now())) throw new CatalogError('Quote expired. Get a fresh quote first, so the guest agrees to the current price.', { code: 'QUOTE_EXPIRED' });
     // The guest approved specific terms; if the host changed any of them since, ask again instead of sending.
     const approved = consentFor(property, quotes as Quote[]);
@@ -207,6 +218,13 @@ export class AgentActions {
         m.holder = holder;
         if (m.consent) Object.assign(m.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
         this.store.saveRequest(m);
+      }
+    }
+    if (isCamperRental(property) && !replay) {
+      // The company needs to know who drives; it is removed with the guest's other personal data.
+      for (const m of this.requests.members(property, members[0])) {
+        const driver = (quotes as Quote[]).find((q) => q.unitId === m.unitId)?.driver;
+        if (driver) this.store.saveRequest(Object.assign(m, { driver }));
       }
     }
     const request = this.requests.members(property, members[0])[0];
@@ -368,6 +386,7 @@ export class AgentActions {
     try {
       created = await this.requests.create(property, raw, { agentClient: agent.name, language: old.language, replaces: old });
       created.holder = holder;
+      if (old.driver) created.driver = old.driver;
       if (created.consent) Object.assign(created.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
       this.store.saveRequest(created);
     } catch (err) {

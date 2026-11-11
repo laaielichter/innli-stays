@@ -20,7 +20,7 @@ const dataDir = dirname(config.dataFile);
 mkdirSync(dataDir, { recursive: true });
 
 if (config.demo && store.listProperties().length === 0) {
-  const creds = seedDemo(store, config.publicUrl, { international: process.env.INNLI_DEMO === 'intl', hotel: true });
+  const creds = seedDemo(store, config.publicUrl, { international: process.env.INNLI_DEMO === 'intl', hotel: true, campers: true });
   const file = join(dataDir, 'demo-credentials.json');
   writeFileSync(file, JSON.stringify(creds, null, 2));
   console.log(tx(`Demo-data aangemaakt. Sleutels staan in ${file}`, `Sample data created. Keys are in ${file}`));

@@ -9,6 +9,7 @@ const SCHEMA_TYPE: Record<Property['type'], string> = {
   guesthouse: 'LodgingBusiness',
   holiday_home: 'VacationRental',
   unique_stay: 'LodgingBusiness',
+  camper_rental: 'AutoRental',
   hotel: 'Hotel',
 };
 

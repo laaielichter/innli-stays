@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INNLI：让 AI 智能体直接预订你的住宿</title>
+<meta name="description" content="开源软件，让 B&B、民宿和小型酒店能被 AI 智能体找到、读懂并预订。自托管。不收佣金。">
+<meta property="og:title" content="INNLI：让 AI 智能体直接预订你的住宿">
+<meta property="og:description" content="免费、开源、自托管。经过核实的事实，诚实的价格，直接预订。没有 OTA 抽成。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://laaielichter.github.io/innli-stays/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f5efe4">
+<link rel="alternate" hreflang="en" href="https://laaielichter.github.io/innli-stays/">
+<link rel="alternate" hreflang="nl" href="https://laaielichter.github.io/innli-stays/nl/">
+<link rel="alternate" hreflang="de" href="https://laaielichter.github.io/innli-stays/de/">
+<link rel="alternate" hreflang="fr" href="https://laaielichter.github.io/innli-stays/fr/">
+<link rel="alternate" hreflang="es" href="https://laaielichter.github.io/innli-stays/es/">
+<link rel="alternate" hreflang="it" href="https://laaielichter.github.io/innli-stays/it/">
+<link rel="alternate" hreflang="pt" href="https://laaielichter.github.io/innli-stays/pt/">
+<link rel="alternate" hreflang="pl" href="https://laaielichter.github.io/innli-stays/pl/">
+<link rel="alternate" hreflang="ja" href="https://laaielichter.github.io/innli-stays/ja/">
+<link rel="alternate" hreflang="zh" href="https://laaielichter.github.io/innli-stays/zh/">
+<link rel="alternate" hreflang="x-default" href="https://laaielichter.github.io/innli-stays/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5efe4; --paper: #fbf7ef; --ink: #17202a; --terra: #d9643a; --terra-deep: #b84e28;
+    --sage: #7a9a7e; --sage-deep: #4f7255; --night: #101820; --glow: #ffcf8a; --muted: #5b6672; --line: rgba(23,32,42,.16);
+    --serif: Fraunces, Georgia, 'Times New Roman', serif;
+    --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --wrap: 1120px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { background: var(--cream); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+  a { color: inherit; }
+  img, svg { max-width: 100%; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+  .grain { position: fixed; inset: 0; width: 100%; height: 100%; opacity: .3; mix-blend-mode: multiply; pointer-events: none; z-index: 50; }
+  .skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: var(--cream); padding: 10px 16px; border-radius: 8px; z-index: 60; }
+  .skip:focus { left: 16px; }
+  :focus-visible { outline: 3px solid var(--terra); outline-offset: 3px; border-radius: 6px; }
+
+  /* Navigation */
+  header.nav { position: sticky; top: 0; z-index: 40; background: rgba(245,239,228,.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 16px; }
+  .logo { font-family: var(--serif); font-weight: 700; font-size: 28px; letter-spacing: .04em; text-decoration: none; }
+  .logo span { color: var(--terra); }
+  .nav nav { display: flex; align-items: center; gap: 26px; font-weight: 500; font-size: 15px; }
+  .nav nav a { text-decoration: none; }
+  .nav nav a:hover { color: var(--terra-deep); }
+  .nav .gh { border: 2px solid var(--ink); border-radius: 999px; padding: 7px 16px; font-weight: 600; }
+  .nav .gh:hover { background: var(--ink); color: var(--cream); }
+  .nav .lang { font: inherit; font-size: 14px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 10px; cursor: pointer; }
+  @media (max-width: 1020px) { .nav nav a:not(.gh) { display: none; } }
+
+  /* Type */
+  .hook { font-family: var(--mono); color: var(--terra-deep); letter-spacing: .06em; font-size: 15px; }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 700; letter-spacing: -.02em; line-height: 1.02; }
+  h1 { font-size: clamp(46px, 7.4vw, 96px); line-height: .96; letter-spacing: -.025em; margin: 14px 0 22px; }
+  h2 { font-size: clamp(34px, 4.6vw, 56px); margin: 10px 0 18px; }
+  h3 { font-size: 24px; line-height: 1.15; letter-spacing: -.01em; }
+  h1 em, h2 em { font-style: italic; font-weight: 500; color: var(--terra); }
+  .lede { font-size: clamp(18px, 2vw, 22px); line-height: 1.45; font-weight: 500; max-width: 34em; }
+  .label { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+  p.sub { color: var(--muted); max-width: 40em; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--cream); font-weight: 700; font-size: 17px; padding: 15px 26px; border-radius: 999px; text-decoration: none; border: 2px solid var(--ink); transition: transform .15s ease, box-shadow .15s ease; }
+  .btn span { color: var(--glow); transition: transform .15s ease; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16,24,32,.22); }
+  .btn:hover span { transform: translateX(4px); }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost span { color: var(--terra); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+
+  /* Hero */
+  .hero { padding: 56px 0 0; position: relative; }
+  .hero .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 32px; align-items: center; padding-bottom: 72px; }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .chip { font-family: var(--mono); font-size: 13px; border: 2px solid var(--ink); border-radius: 8px; padding: 6px 11px; background: var(--paper); }
+  .scene { position: relative; min-height: 520px; }
+  .scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .bubble { position: absolute; background: var(--night); color: #e9eef2; border-radius: 20px; font-family: var(--mono); font-size: 14.5px; line-height: 1.5; padding: 16px 20px; box-shadow: 0 18px 40px rgba(16,24,32,.25); }
+  .bubble .who { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); margin-bottom: 5px; }
+  .b1 { left: 0; top: 6px; width: min(300px, 62%); border-bottom-left-radius: 4px; }
+  .b2 { right: 0; bottom: 96px; width: min(270px, 58%); background: #fff; color: var(--ink); border: 2px solid var(--ink); border-bottom-right-radius: 4px; }
+  .b2 .who { color: var(--terra-deep); }
+  .b2 .k { color: var(--sage-deep); }
+  .b2 .ok { color: var(--terra-deep); font-weight: 600; }
+  @media (max-width: 900px) { .hero .grid { grid-template-columns: 1fr; } .scene { min-height: 460px; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .ring { transform-origin: 300px 300px; animation: pulse 5s ease-in-out infinite; }
+    .ring.r2 { animation-delay: .8s; } .ring.r3 { animation-delay: 1.6s; }
+    .b1 { animation: rise .7s .15s both; } .b2 { animation: rise .7s .55s both; }
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .hill { display: block; width: 100%; height: 90px; margin-top: -40px; position: relative; z-index: 1; }
+
+  /* Sections */
+  section { padding: 96px 0; }
+  .dark { background: var(--night); color: #e9eef2; }
+  .dark .hook { color: var(--glow); }
+  .dark p.sub { color: #a9b4bf; }
+  .sage { background: var(--sage); }
+  .paper { background: var(--paper); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 44px; }
+  .two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 44px; }
+  @media (max-width: 900px) { .three, .two { grid-template-columns: 1fr; } section { padding: 72px 0; } }
+  .card { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; padding: 26px; box-shadow: 6px 6px 0 var(--ink); }
+  .card p { margin-top: 10px; color: #37424e; font-size: 16px; }
+  .step-n { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; color: var(--terra-deep); display: block; margin-bottom: 12px; }
+  .dark .card { background: #18232e; border-color: #2c3a48; box-shadow: none; color: #e9eef2; }
+  .dark .card p { color: #b6c0ca; }
+  .dark .step-n { color: var(--glow); }
+
+  .list { list-style: none; margin-top: 18px; display: grid; gap: 12px; }
+  .list li { padding-left: 34px; position: relative; }
+  .list li::before { content: ""; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--terra); border: 2px solid var(--ink);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M5.5 11.5l3.5 3.5 7-8' fill='none' stroke='%23f5efe4' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size: 18px 18px; background-position: center; }
+  .list b { font-weight: 700; }
+
+  /* Unknown stays unknown */
+  .facts { font-family: var(--mono); font-size: 14.5px; background: #fff; border: 2px solid var(--ink); border-radius: 16px; overflow: hidden; box-shadow: 6px 6px 0 var(--ink); }
+  .facts div { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line); align-items: center; }
+  .facts div:last-child { border-bottom: 0; }
+  .facts .head { background: var(--ink); color: var(--cream); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+  .st { font-size: 12px; border-radius: 999px; padding: 3px 10px; border: 2px solid var(--ink); white-space: nowrap; }
+  .st.c { background: var(--sage); } .st.u { background: var(--glow); } .st.x { background: var(--cream); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  @media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 36px; } }
+
+  .demo { display: block; width: 100%; max-width: 960px; aspect-ratio: 16 / 9; margin-top: 36px; border: 2px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 var(--ink); background: var(--night); }
+
+  /* Code */
+  pre { font-family: var(--mono); font-size: 14px; line-height: 1.65; background: #0b1118; color: #dbe4ec; border-radius: 16px; padding: 22px 24px; overflow-x: auto; border: 1px solid #2c3a48; }
+  pre .c { color: #7f8c99; } pre .g { color: var(--glow); } pre .t { color: #f08a63; } pre .s { color: #9cc3a1; }
+  code { font-family: var(--mono); font-size: .9em; }
+  .codehead { display: flex; justify-content: space-between; align-items: center; margin: 26px 0 10px; }
+  .copy { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; background: transparent; color: inherit; border: 1.5px solid currentColor; border-radius: 999px; padding: 5px 12px; cursor: pointer; opacity: .8; }
+  .copy:hover { opacity: 1; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 15.5px; }
+  th, td { text-align: left; padding: 13px 14px; border-bottom: 1px solid #2c3a48; vertical-align: top; }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); font-weight: 400; }
+  td code { color: var(--glow); }
+  .tablewrap { overflow-x: auto; }
+  .split > *, .two > *, .three > * { min-width: 0; }
+  pre { max-width: 100%; }
+
+  .std { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 34px; }
+  @media (max-width: 760px) { .std { grid-template-columns: 1fr 1fr; } }
+  .std div { border: 2px solid var(--ink); border-radius: 14px; padding: 14px 18px; background: var(--paper); }
+  .std b { display: block; font-family: var(--serif); font-size: 20px; }
+  .std span { font-size: 14px; color: #37424e; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+  @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+  .compare .card.them { background: transparent; box-shadow: none; border-style: dashed; }
+  .compare ul { list-style: none; margin-top: 14px; display: grid; gap: 10px; }
+  .compare li { padding-left: 26px; position: relative; }
+  .compare li::before { position: absolute; left: 0; font-family: var(--mono); font-weight: 600; }
+  .them li::before { content: "–"; color: var(--muted); }
+  .us li::before { content: "✓"; color: var(--terra-deep); }
+
+  .final { text-align: center; padding: 110px 0 0; }
+  .final .lede { margin: 0 auto; }
+  .final .cta-row { justify-content: center; }
+  footer { background: var(--ink); color: #c9d2da; padding: 46px 0; font-size: 15px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center; }
+  footer a { color: var(--cream); text-decoration-color: rgba(245,239,228,.4); text-underline-offset: 3px; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<svg class="grain" aria-hidden="true"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .4  0 0 0 0 .35  0 0 0 0 .3  0 0 0 .22 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="INNLI 首页">INN<span>LI</span></a>
+    <nav aria-label="主导航">
+      <a href="#how">工作原理</a>
+      <a href="#demo">演示</a>
+      <a href="#hosts">致房东</a>
+      <a href="#agents">致智能体开发者</a>
+      <a href="#plans">授权</a>
+      <a href="#start">快速开始</a>
+      <select class="lang" id="lang" aria-label="Language">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="pl">Polski</option>
+        <option value="ja">日本語</option>
+        <option value="zh">中文</option>
+      </select>
+      <a class="gh" href="https://github.com/laaielichter/innli-stays">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<div class="hero" id="top">
+  <div class="wrap grid">
+    <div>
+      <p class="hook">// 客人不再自己翻页了，他们的智能体替他们找。</p>
+      <h1>你的住宿，AI&nbsp;智能体<em>可直接预订</em>。</h1>
+      <p class="lede">INNLI 让 B&amp;B、民宿、小型酒店和房车租赁能被 AI 智能体找到、读懂并预订，而你未来的客人已经在用这些智能体了。跑在你自己的服务器上，价格由你自己定。</p>
+      <div class="cta-row">
+        <a class="btn" href="#start">立即开始 <span aria-hidden="true">→</span></a>
+        <a class="btn ghost" href="https://github.com/laaielichter/innli-stays">在 GitHub 上查看 <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-facts" aria-label="一览">
+        <div class="chip">免费且开源</div>
+        <div class="chip">自托管</div>
+        <div class="chip">不收佣金</div>
+      </div>
+    </div>
+    <div class="scene" role="img" aria-label="客人的 AI 智能体想找一家安静、可带狗、含早餐的 B&amp;B。住宿方通过 INNLI 以已确认的事实作答，并被直接预订。">
+      <svg viewBox="0 0 600 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <radialGradient id="sun" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffcf8a"/><stop offset="1" stop-color="#ffcf8a" stop-opacity="0"/></radialGradient>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="2" fill="#17202a" opacity=".18"/></pattern>
+        </defs>
+        <circle cx="300" cy="300" r="270" fill="url(#sun)" opacity=".75"/>
+        <g fill="none" stroke="#d9643a" stroke-width="2">
+          <circle class="ring" cx="300" cy="300" r="170" opacity=".55" stroke-dasharray="4 10"/>
+          <circle class="ring r2" cx="300" cy="300" r="225" opacity=".35" stroke-dasharray="4 14"/>
+          <circle class="ring r3" cx="300" cy="300" r="280" opacity=".2" stroke-dasharray="4 18"/>
+        </g>
+        <g transform="translate(170 210)">
+          <rect x="10" y="100" width="240" height="190" fill="#f5efe4" stroke="#17202a" stroke-width="5"/>
+          <rect x="10" y="100" width="240" height="190" fill="url(#dots)"/>
+          <path d="M-14 112 L130 10 L274 112 Z" fill="#d9643a" stroke="#17202a" stroke-width="5" stroke-linejoin="round"/>
+          <rect x="186" y="28" width="30" height="58" fill="#17202a"/>
+          <rect x="38" y="138" width="56" height="56" fill="#ffcf8a" stroke="#17202a" stroke-width="5"/>
+          <rect x="166" y="138" width="56" height="56" fill="#ffcf8a" stroke="#17202a" stroke-width="5"/>
+          <path d="M66 138 V194 M38 166 H94 M194 138 V194 M166 166 H222" stroke="#17202a" stroke-width="4"/>
+          <path d="M106 290 V222 a24 24 0 0 1 48 0 V290 Z" fill="#17202a"/>
+          <circle cx="145" cy="258" r="4" fill="#ffcf8a"/>
+          <rect x="88" y="62" width="84" height="32" rx="6" fill="#17202a"/>
+          <text x="130" y="85" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="20" fill="#ffcf8a">B&amp;B</text>
+        </g>
+        <g stroke="#17202a" stroke-width="3" fill="none" stroke-linecap="round">
+          <path d="M215 262 C 185 230, 165 200, 150 170" stroke-dasharray="2 10"/>
+          <path d="M430 400 C 455 392, 470 384, 480 372" stroke-dasharray="2 10"/>
+        </g>
+        <g transform="translate(140 150)"><circle r="24" fill="#17202a"/><path d="M0 -13 L4 -4 L13 0 L4 4 L0 13 L-4 4 L-13 0 L-4 -4 Z" fill="#ffcf8a"/></g>
+        <g transform="translate(445 395)"><circle r="20" fill="#d9643a" stroke="#17202a" stroke-width="4"/><path d="M-8 0 L-2 6 L9 -6" stroke="#f5efe4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+      </svg>
+      <div class="bubble b1"><div class="who">✦ 客人的 AI 智能体</div>“海边附近安静的 B&amp;B，住 2&nbsp;晚，可带狗，含早餐，有吗？”</div>
+      <div class="bubble b2"><div class="who">⌂ 你的住宿（经由 INNLI）</div><span class="k">客房</span>：3 间可订<br><span class="k">狗</span>：已确认<br><span class="k">早餐</span>：已含<br><span class="ok">→ 已直接预订。<br>&nbsp;&nbsp;没有 OTA 抽成。</span></div>
+    </div>
+  </div>
+  <svg class="hill" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 C 290 0, 560 28, 750 44 C 1010 66, 1200 4, 1440 34 L1440 90 L0 90 Z" fill="#7a9a7e"/><path d="M0 84 C 340 52, 690 82, 930 70 C 1150 60, 1300 74, 1440 66 L1440 90 L0 90 Z" fill="#101820"/></svg>
+</div>
+
+<section class="dark" id="how">
+  <div class="wrap">
+    <p class="hook">// 工作原理</p>
+    <h2>被找到，被读懂，<em>被预订</em>。</h2>
+    <p class="sub">被找到、被智能体读懂、真正被预订，是三件不同的事。INNLI 把整条路都铺好。</p>
+    <div class="three">
+      <div class="card"><span class="step-n">01 · 护照</span><h3>事实只需确认一次</h3><p>约 40 项具体事实：花园是否有围栏、床的长度、到房间有几级台阶、旅游税。每一项都标明已确认、未确认或未知。只有你能确认。</p></div>
+      <div class="card"><span class="step-n">02 · 连接</span><h3>一个地址，对接所有智能体</h3><p>智能体查询你的护照、查看实时房态，并拿到包含所有必付费用的分项总价。支持 MCP、REST、ACP 或 UCP。</p></div>
+      <div class="card"><span class="step-n">03 · 预订</span><h3>直接向你预订，不经中间商</h3><p>客人同意确切的条款后，房间被保留，由你确认；或者在你设定的规则内即时预订。附带签名记录。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="demo">
+  <div class="wrap">
+    <p class="hook">// 看看实际效果</p>
+    <h2>AI 智能体预订一次住宿，<em>从头到尾</em>。</h2>
+    <p class="sub">87 秒，无声。调用和应答都是真实的，在 INNLI 自带的示例住宿上完成。客人是虚构的示例。留意房东尚未确认某项信息时，智能体是怎么做的。</p>
+    <video class="demo" controls muted playsinline preload="none" poster="../demo-poster.jpg" aria-label="录像：AI 智能体通过 INNLI 搜索、询价并预订一处住宿，房东在控制面板中接受">
+      <source src="../demo.mp4" type="video/mp4">
+      <a href="../demo.mp4">下载录像</a>
+    </video>
+    <div class="cta-row">
+      <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/demo.md">五分钟亲手试一遍 <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section id="honest">
+  <div class="wrap split">
+    <div>
+      <p class="hook">// 一切都遵循的规则</p>
+      <h2>未知的，就保持<em>未知</em>。</h2>
+      <p class="lede">靠猜的智能体，会把带狗的客人送到没有围栏的花园。INNLI 从不替你填补空白。</p>
+      <ul class="list">
+        <li><b>每项事实都有状态、</b>来源和核对日期。满一年后，INNLI 会请你重新核对。</li>
+        <li><b>价格要么完整，要么明说不完整。</b>缺少的必付费用会被标出来，而不是藏起来。</li>
+        <li><b>结果里没有 <code>booked: true</code>，就不算订上。</b>待处理的请求绝不会被称为预订。</li>
+        <li><b>没有隐藏的汇率换算。</b>价格始终以你自己的货币显示。</li>
+      </ul>
+    </div>
+    <div class="facts" aria-label="事实及其状态示例">
+      <div class="head"><span>花园房 · 护照</span><span>状态</span></div>
+      <div><span>garden.fullyEnclosed: true</span><span class="st c">已确认</span></div>
+      <div><span>pets.dogsAllowed: true</span><span class="st c">已确认</span></div>
+      <div><span>bed.lengthCm: 210</span><span class="st c">已确认</span></div>
+      <div><span>access.stepsToUnit: 0</span><span class="st u">未确认</span></div>
+      <div><span>parking.evCharger</span><span class="st x">未知</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="hosts">
+  <div class="wrap">
+    <p class="hook">// 致房东</p>
+    <h2>你的客人，你的价格，<em>你的</em>服务器。</h2>
+    <p class="sub">INNLI 可以运行在 Raspberry Pi、你自己的电脑或一台小型服务器上。它不是聊天机器人，也不是又一套酒店系统：它与你现有的网站和预订系统并肩工作。</p>
+    <div class="compare">
+      <div class="card them"><span class="label">通过平台</span>
+        <ul><li>每笔预订抽取 15% 至 22% 的佣金</li><li>客人和数据都归平台所有</li><li>智能体查不到实时价格，就把客人带去别处</li><li>你的房源介绍只能说平台允许说的</li></ul>
+      </div>
+      <div class="card us"><span class="label">使用 INNLI</span>
+        <ul><li>任何预订都不收佣金</li><li>客人数据留在你自己的部署里</li><li>来自你的日历或预订系统的实时房态</li><li>由你亲自确认的事实，提供四种语言</li></ul>
+      </div>
+    </div>
+    <div class="three">
+      <div class="card"><h3>控制面板</h3><p>预订请求、客房日历、智能体留下的住宿心愿，以及智能体在你所在地区都在搜什么。提供英语或荷兰语界面。</p></div>
+      <div class="card"><h3>日历与预订系统</h3><p>实时预订 API、来自 Airbnb 或 Booking.com 的 iCal、你自己的客房日历，或者只接收请求。防重复预订功能会盯住其他渠道。</p></div>
+      <div class="card"><h3>WordPress 插件</h3><p>把你确认过的事实以 schema.org 数据的形式放到你的网站上，为智能体验证你的域名，并管理 AI 爬虫的访问权限。</p></div>
+      <div class="card"><h3>小型酒店也适用</h3><p>带库存的房型、价格方案、15 分钟保留、员工密钥，以及发往你 PMS 的签名 Webhook。</p></div>
+      <div class="card"><h3>防范机器人</h3><p>限制智能体可保留的房间数量，按智能体、按客人分别计算。你也可以只接受已识别身份的智能体发来的请求。</p></div>
+      <div class="card"><h3>房车租赁</h3><p>露营车和自行式房车也能用同样的方式出租：铺位和带安全带的座位、车辆所需的驾照、包含的公里数、押金、取车与还车。智能体会先核对驾驶人，再发出请求。</p></div>
+      <div class="card"><h3>住宿心愿</h3><p>客人什么都没找到时，智能体会留下一条匿名心愿。你能看到与你的住宿相符的心愿，并用一份报价来回应。</p></div>
+      <div class="card"><h3>银行卡担保</h3><p>可选功能：通过你自己的 Stripe 账户做银行卡担保，预订时预授权，只有你确认后才扣款。</p></div>
+      <div class="card"><h3>答复助手</h3><p>根据你确认过的信息和常见问题，立即回答客人的提问。不用语言模型，绝不编造。其余的问题会转给你。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="agents">
+  <div class="wrap">
+    <p class="hook">// 致智能体开发者</p>
+    <h2>为智能体而建，以 token <em>计量</em>。</h2>
+    <p class="sub">20 个工具，分为七组；或者选用只有 8 个工具、应答简短的核心配置。每个结果都附带已填好参数的后续调用，并说明自己在多长时间内可靠。</p>
+    <div class="codehead"><span class="label">接入智能体</span><button class="copy" data-copy="claude mcp add --transport http innli https://your-stay.example/mcp">复制</button></div>
+<pre><span class="c"># Claude Code, or any MCP client (Streamable HTTP)</span>
+claude mcp add --transport http innli <span class="s">https://your-stay.example/mcp</span>
+
+<span class="c"># then just ask</span>
+<span class="g">"Find a quiet farm stay in Tuscany for three nights in May with an
+ enclosed garden for my dog and a ground-floor room."</span></pre>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>内容</th><th>位置</th><th>为什么重要</th></tr></thead>
+      <tbody>
+        <tr><td>MCP，完整配置与核心配置</td><td><code>/mcp</code> · <code>/mcp?profile=core</code></td><td>使用核心配置，每轮上下文约减少 49%</td></tr>
+        <tr><td>REST，附 OpenAPI 3.1</td><td><code>/api/agent/v1/openapi.json</code></td><td>为不支持 MCP 的平台提供同样的工具</td></tr>
+        <tr><td>ACP 结账会话</td><td><code>/.well-known/acp.json</code> · <code>/acp</code></td><td>OpenAI 与 Stripe 的协议，银行卡担保只有在房东确认后才会扣款</td></tr>
+        <tr><td>UCP 住宿预订会话（草案）</td><td><code>/.well-known/ucp</code> · <code>/ucp/v1</code> · <code>/ucp/mcp</code></td><td>基于会话的预订，包含总价、政策和付款条款</td></tr>
+        <tr><td>无需账户的身份识别</td><td>Web Bot Auth, RFC 9421</td><td>为请求签名：享有独立的速率限制，并在签名记录中具名</td></tr>
+        <tr><td>回复守卫</td><td><code>check_reply</code></td><td>在客人读到之前，把你的草稿与住宿方的说法逐一核对。不用语言模型，支持十种语言</td></tr>
+        <tr><td>带哈希的同意</td><td><code>consent.summary</code> · <code>consent.hash</code></td><td>如果客人点头之后条款有变，什么都不会发出</td></tr>
+        <tr><td>类型化错误</td><td><code>code</code> · <code>retryable</code> · <code>hint</code></td><td>查表而不是猜测；每个应答都带 RateLimit 响应头</td></tr>
+        <tr><td>安全重试</td><td><code>Idempotency-Key</code></td><td>超时绝不会变成第二笔预订</td></tr>
+        <tr><td>发现机制</td><td>智能体卡片 · MCP 服务器卡片 · <code>llms.txt</code></td><td>不用告诉对方去哪找，也能被发现</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="cta-row">
+      <a class="btn" style="background:var(--glow);color:var(--ink);border-color:var(--glow)" href="https://github.com/laaielichter/innli-stays/blob/main/docs/agent-integration.md">集成指南 <span style="color:var(--terra-deep)" aria-hidden="true">→</span></a>
+      <a class="btn ghost" style="color:#e9eef2;border-color:#e9eef2" href="https://github.com/laaielichter/innli-stays/tree/main/agent-kit">智能体工具包与 Claude 插件 <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section id="standards">
+  <div class="wrap">
+    <p class="hook">// 开放标准，不被锁定</p>
+    <h2>智能体平台<em>说</em>什么，它就说什么。</h2>
+    <p class="sub">规范是开放的，智能体工具包采用 MIT 许可。用 <code>npx innli-conformance https://your-stay.example</code> 就能亲自检查任何一处部署：14 项只读检查，不会产生任何预订。</p>
+    <div class="std">
+      <div><b>MCP</b><span>Streamable HTTP 和 stdio</span></div>
+      <div><b>OpenAPI 3.1</b><span>通过 REST 使用同样的工具</span></div>
+      <div><b>ACP 结账</b><span>OpenAI 与 Stripe 的协议</span></div>
+      <div><b>UCP 住宿</b><span>草案阶段的能力，REST 与 MCP</span></div>
+      <div><b>Web Bot Auth</b><span>HTTP Message Signatures</span></div>
+      <div><b>OAuth 2.1</b><span>PKCE，动态注册</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="plans">
+  <div class="wrap">
+    <p class="hook">// 使用 innli</p>
+    <h2>免费运行，<em>开放</em>扩展。</h2>
+    <p class="sub">INNLI 不从预订中抽成，也不出售数据。房东免费运行；企业可以购买授权，或者接手整个项目继续发展。</p>
+    <div class="three">
+      <div class="card"><span class="step-n">面向房东</span><h3>自己运行，免费</h3><p>仓库里的一切，毫无限制，遵循 AGPL。可运行在 Raspberry Pi、你自己的电脑或一台小型服务器上。</p><p><a href="#start"><b>快速开始 →</b></a></p></div>
+      <div class="card"><span class="step-n">面向平台</span><h3>商业授权</h3><p>把 INNLI 集成进你的 PMS、渠道管理系统或智能体平台，而无需公开你自己的代码。固定价格，每年 € 2,500 起。更高一级的授权还支持跨多处住宿、要么全订上要么全不订的整段行程。</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/COMMERCIAL.md"><b>了解详情 →</b></a></p></div>
+      <div class="card"><span class="step-n">面向企业</span><h3>接手项目</h3><p>INNLI 由一位开发者独立打造。版权、名称、软件包和指南可以转让给愿意把它继续做下去的公司。以书面要约方式进行。</p><p><a href="https://github.com/laaielichter/innli-stays/blob/main/docs/for-companies.md"><b>包含哪些内容 →</b></a></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="start">
+  <div class="wrap split">
+    <div>
+      <p class="hook">// 快速开始</p>
+      <h2><em>两</em>条命令即可运行。</h2>
+      <p class="sub">需要 Node.js 22.18 或更高版本。浏览器中的向导会询问你的名字和第一间客房，然后给你所有者密钥。也提供 Docker 和 zip 下载。</p>
+      <div class="cta-row">
+        <a class="btn" href="https://github.com/laaielichter/innli-stays/blob/main/docs/install.md">安装指南 <span aria-hidden="true">→</span></a>
+        <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/owner-guide.md">房东指南 <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div>
+      <div class="codehead" style="margin-top:0"><span class="label">你自己的住宿</span><button class="copy" data-copy="npm install --omit=dev && INNLI_LANG=en npm start">复制</button></div>
+<pre>npm install --omit=dev
+INNLI_LANG=en npm start
+<span class="c"># open http://localhost:3000/dashboard/</span></pre>
+      <div class="codehead"><span class="label">或者试试示例住宿</span><button class="copy" data-copy="npm install && npm run demo:intl">复制</button></div>
+<pre>npm install
+npm run demo:intl
+<span class="c"># seven stays across Europe and a 48-room hotel</span></pre>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <p class="hook">// 免费且开源</p>
+    <h2>你的住宿，<em>为智能体准备好了</em>吗？</h2>
+    <p class="lede">基于 AGPL-3.0 开源，自己运行完全免费。任何预订都不收佣金。</p>
+    <div class="cta-row">
+      <a class="btn" href="https://github.com/laaielichter/innli-stays">在 GitHub 上点个 Star <span aria-hidden="true">→</span></a>
+      <a class="btn ghost" href="https://github.com/laaielichter/innli-stays/blob/main/docs/agents-2.1.md">阅读研究报告 <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+  <svg class="hill" style="margin-top:56px;height:110px" viewBox="0 0 1440 110" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70 C 290 10, 560 38, 750 54 C 1010 76, 1200 14, 1440 44 L1440 110 L0 110 Z" fill="#7a9a7e"/><path d="M0 98 C 340 66, 690 96, 930 84 C 1150 74, 1300 88, 1440 80 L1440 110 L0 110 Z" fill="#17202a"/></svg>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><span class="logo" style="color:var(--cream)">INN<span>LI</span></span><br>独立住宿，为 AI 订房智能体做好准备。</div>
+    <nav aria-label="页脚">
+      <a href="https://github.com/laaielichter/innli-stays">GitHub</a>
+      <a href="https://github.com/laaielichter/innli-stays/blob/main/docs/agent-integration.md">文档</a>
+      <a href="https://github.com/laaielichter/innli-stays/blob/main/CHANGELOG.md">更新日志</a>
+      <a href="https://www.npmjs.com/package/innli-stays">npm</a>
+      <a href="https://github.com/laaielichter/innli-stays/blob/main/LICENSE">AGPL-3.0</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // The language picker: English at the top address, every other language in its own folder.
+  const picker = document.getElementById('lang');
+  picker.value = document.documentElement.lang;
+  picker.addEventListener('change', () => { location.href = document.documentElement.dataset.root + (picker.value === 'en' ? '' : picker.value + '/') + location.hash; });
+  for (const b of document.querySelectorAll('.copy')) {
+    b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); } catch { /* clipboard not available */ }
+    });
+  }
+</script>
+</body>
+</html>

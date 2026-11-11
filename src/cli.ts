@@ -18,6 +18,7 @@ import { loadConfig } from './config.ts';
 import { hashKey, newKey } from './http/auth.ts';
 import { defaultLang } from './i18n/index.ts';
 import { describeLicense, verifyLicense } from './licensing/license.ts';
+import { PROPERTY_TYPES } from './domain/types.ts';
 import { createProperty } from './properties.ts';
 import { Store } from './store.ts';
 
@@ -52,7 +53,7 @@ async function init() {
   const name = await ask(tx('Naam van je accommodatie', 'Name of your accommodation'));
   const city = await ask(tx('Plaats', 'Town'));
   const country = (await ask(tx('Land (2 letters)', 'Country (2 letters)'), defaultLang() === 'nl' ? 'NL' : '')).toUpperCase();
-  const typeAnswer = await ask(tx('Type: 1 = B&B, 2 = pension, 3 = gastenverblijf, 4 = vakantiewoning, 5 = bijzonder verblijf, 6 = hotel', 'Type: 1 = B&B, 2 = guesthouse (pension), 3 = guest house, 4 = holiday home, 5 = unique stay, 6 = hotel'), '1');
+  const typeAnswer = await ask(tx('Type: 1 = B&B, 2 = pension, 3 = gastenverblijf, 4 = vakantiewoning, 5 = bijzonder verblijf, 6 = hotel, 7 = camperverhuur', 'Type: 1 = B&B, 2 = guesthouse (pension), 3 = guest house, 4 = holiday home, 5 = unique stay, 6 = hotel, 7 = camper rental'), '1');
   const website = await ask(tx('Website (mag leeg)', 'Website (may be empty)'));
   const email = await ask(tx('E-mailadres voor aanvragen (mag leeg)', 'E-mail address for requests (may be empty)'));
   rl.close();
@@ -60,7 +61,7 @@ async function init() {
     console.error(tx('Naam, plaats en land zijn verplicht.', 'Name, town and country are required.'));
     process.exit(1);
   }
-  const types = ['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel'] as const;
+  const types = PROPERTY_TYPES;
   const { property, ownerKey } = createProperty({ name, type: types[Number(typeAnswer) - 1] ?? 'bnb', address: { city, country } });
   property.language = defaultLang();
   if (store.getProperty(property.slug)) property.slug = `${property.slug}-${randomUUID().slice(0, 4)}`;
