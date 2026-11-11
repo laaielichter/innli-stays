@@ -195,6 +195,7 @@ const BRIEF: Record<string, (r: Json) => Json> = {
     ratePlanId: r.ratePlanId,
     lines: r.lines?.map((l: Json) => ({ label: l.label, amount: l.amount })),
     cancellationCosts: r.cancellationCosts,
+    cancellation: r.cancellation,
     ratePlanOptions: r.ratePlanOptions?.map((p: Json) => pick(p, ['ratePlanId', 'name', 'total', 'refundable', 'selected'])),
   }),
   check_availability: (r) => ({

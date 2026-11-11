@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { AgentClient, AnalyticsEvent, BookingLink, BookingRequest, HostQuestion, Property, Quote, StaffMember, StayWish, WaitlistEntry, WishOffer } from './domain/types.ts';
+import type { BookingSessionRecord } from './ucp/types.ts';
 
 /** Installation-wide settings for a self-hosted install. */
 export interface Settings {
@@ -163,6 +164,7 @@ export class Store {
   private wishes: LogCollection<StayWish>;
   private wishesByToken = new Map<string, StayWish>();
   private wishOffers: LogCollection<WishOffer>;
+  private bookingSessions: LogCollection<BookingSessionRecord>;
 
   // Indexes
   private propertyIndex = new Map<string, Property>();
@@ -194,10 +196,11 @@ export class Store {
     this.waitlist = new LogCollection(logFile('waitlist'), (w) => w.id);
     this.wishes = new LogCollection(logFile('wishes'), (w) => w.id);
     this.wishOffers = new LogCollection(logFile('wish-offers'), (o) => o.id);
+    this.bookingSessions = new LogCollection(logFile('booking-sessions'), (b) => b.id);
     if (!path) return;
 
     if (writable) mkdirSync(dirname(writable), { recursive: true });
-    for (const [c, name] of [[this.quotes, 'quotes'], [this.links, 'links'], [this.requests, 'requests'], [this.questions, 'questions'], [this.events, 'events'], [this.demand, 'demand'], [this.waitlist, 'waitlist'], [this.wishes, 'wishes'], [this.wishOffers, 'wish-offers']] as const) {
+    for (const [c, name] of [[this.quotes, 'quotes'], [this.links, 'links'], [this.requests, 'requests'], [this.questions, 'questions'], [this.events, 'events'], [this.demand, 'demand'], [this.waitlist, 'waitlist'], [this.wishes, 'wishes'], [this.wishOffers, 'wish-offers'], [this.bookingSessions, 'booking-sessions']] as const) {
       (c as LogCollection<unknown>).load(logPath(name));
     }
     let migrated = false;
@@ -223,7 +226,7 @@ export class Store {
   }
 
   private collections(): LogCollection<unknown>[] {
-    return [this.quotes, this.links, this.requests, this.questions, this.events, this.demand, this.waitlist, this.wishes, this.wishOffers] as LogCollection<unknown>[];
+    return [this.quotes, this.links, this.requests, this.questions, this.events, this.demand, this.waitlist, this.wishes, this.wishOffers, this.bookingSessions] as LogCollection<unknown>[];
   }
 
   private reindex(): void {
@@ -529,6 +532,30 @@ export class Store {
   }
   waitlistFor(propertyId: string): WaitlistEntry[] {
     return [...this.waitlist.values()].filter((w) => w.propertyId === propertyId);
+  }
+
+  // Booking sessions (UCP lodging): the in-flight state between a platform and this installation
+  saveBookingSession(session: BookingSessionRecord): void {
+    this.bookingSessions.upsert(session);
+    this.persist();
+  }
+  getBookingSession(id: string): BookingSessionRecord | undefined {
+    return this.bookingSessions.get(id);
+  }
+  /** Sessions are short-lived: drop personal data of abandoned ones at once, and the session itself after `days`. */
+  pruneBookingSessions(days = 30, now = new Date()): number {
+    const cutoff = new Date(now.getTime() - days * 86_400_000).toISOString();
+    let removed = 0;
+    for (const b of [...this.bookingSessions.values()]) {
+      if (b.createdAt < cutoff) {
+        this.bookingSessions.remove(b.id);
+        removed++;
+      } else if (!b.statusToken && b.expiresAt < now.toISOString() && (b.guests || b.booker)) {
+        this.bookingSessions.upsert({ ...b, guests: undefined, booker: undefined });
+      }
+    }
+    if (removed) this.persist();
+    return removed;
   }
 
   // Stay wishes and the offers hosts make on them

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { track } from '../analytics/funnel.ts';
 import { CatalogError, type Catalog } from '../catalog.ts';
@@ -18,6 +19,21 @@ export interface AgentContext {
   name: string;
   /** Whether this agent may act for guests (requests, questions, cancellations). */
   canAct: boolean;
+  /** How the caller proved who it is: an agent key, a signed request (Web Bot Auth), or not at all. */
+  identity?: 'key' | 'verified' | 'anonymous';
+  /** Domain whose published key signed the request. */
+  verifiedDomain?: string;
+  /** What rate limits and hold limits count against: the key, the verified domain, or the address. */
+  bucket?: string;
+}
+export type AgentCaller = AgentContext;
+
+/** Open (unanswered) requests one holder may have per property. */
+export const MAX_OPEN_HOLDS = { anonymous: 2, identified: 25, perGuest: 3 };
+
+/** A stable, non-reversible id for whoever holds the nights; an address is never stored as such. */
+export function holderId(agent: AgentContext): string {
+  return `h_${createHash('sha256').update(agent.bucket ?? `name:${agent.name}`).digest('hex').slice(0, 16)}`;
 }
 
 /**
@@ -41,9 +57,46 @@ export class AgentActions {
     this.publicUrl = publicUrl.replace(/\/$/, '');
   }
 
-  private guard(agent: AgentContext, kind: string): void {
+  /**
+   * @param property when known: the host may only take actions from agents that proved who they are.
+   */
+  private guard(agent: AgentContext, kind: string, property?: Property): void {
     if (!agent.canAct) throw new CatalogError('This agent key is read-only: it may search and quote, but not act for guests.', { code: 'FORBIDDEN' });
-    if (!this.limit(`${agent.name}:${kind}`)) throw new CatalogError('Too many requests from this agent; try again in a minute.', { code: 'RATE_LIMITED' });
+    if (property && rulesOf(property).requireIdentifiedAgent && (agent.identity ?? 'anonymous') === 'anonymous') {
+      throw new CatalogError(`${property.name} only takes requests from agents that prove who they are.`, { code: 'AGENT_IDENTITY_REQUIRED' });
+    }
+    // Anonymous agents are counted per address, not together: one noisy caller must not block the rest.
+    if (!this.limit(`${agent.bucket ?? agent.name}:${kind}`)) throw new CatalogError('Too many requests from this agent; try again in a minute.', { code: 'RATE_LIMITED' });
+  }
+
+  /**
+   * Speculative holds are the cheapest way to hurt a small property: a script
+   * that "requests" every room keeps real guests out for days. So open
+   * requests are limited per holder and per guest address; an agent that
+   * proved who it is gets room to work for many guests at once.
+   */
+  private holdGuard(property: Property, agent: AgentContext, email: string, rooms: number): string {
+    const holder = holderId(agent);
+    const open = this.store.requestsFor(property.id).filter((r) => r.status === 'new' && (!r.holdUntil || Date.parse(r.holdUntil) > Date.now()));
+    const identified = (agent.identity ?? 'anonymous') !== 'anonymous';
+    const max = identified ? MAX_OPEN_HOLDS.identified : MAX_OPEN_HOLDS.anonymous;
+    const groups = (list: BookingRequest[]) => new Set(list.map((r) => r.groupId ?? r.id)).size;
+    if (groups(open.filter((r) => r.holder === holder)) + 1 > max) {
+      throw new CatalogError(`This agent already has ${max} open request${max === 1 ? '' : 's'} holding rooms at ${property.name}. Wait for the host's answer or withdraw one first.${identified ? '' : ' Agents that prove who they are (Web Bot Auth or OAuth) may hold more.'}`, { code: 'LIMIT_REACHED' });
+    }
+    const mail = email.trim().toLowerCase();
+    if (groups(open.filter((r) => r.guest.email?.toLowerCase() === mail)) + 1 > MAX_OPEN_HOLDS.perGuest) {
+      throw new CatalogError(`This guest already has ${MAX_OPEN_HOLDS.perGuest} open requests at ${property.name}. Wait for the host's answer or withdraw one first.`, { code: 'LIMIT_REACHED' });
+    }
+    // An anonymous caller may not tie up most of a small property on its own.
+    if (!identified) {
+      const totalRooms = property.units.reduce((n, u) => n + Math.max(1, u.inventory ?? 1), 0);
+      const held = open.filter((r) => r.holder === holder).reduce((n, r) => n + (r.rooms ?? 1), 0);
+      if (totalRooms > 2 && held + rooms > Math.max(2, Math.ceil(totalRooms / 2))) {
+        throw new CatalogError(`An anonymous agent cannot hold more than half of the rooms at ${property.name} at once. Agents that prove who they are (Web Bot Auth or OAuth) may.`, { code: 'LIMIT_REACHED' });
+      }
+    }
+    return holder;
   }
 
   private audit(property: Property, agent: AgentContext, action: string, meta: Record<string, unknown>): void {
@@ -57,7 +110,6 @@ export class AgentActions {
     if (args.guestConsent !== true) {
       throw new CatalogError('Ask the guest first: they must agree that their name and e-mail are shared with this host (set guestConsent: true).', { code: 'CONSENT_REQUIRED' });
     }
-    this.guard(agent, 'request');
     const ids = args.quoteIds?.length ? args.quoteIds : args.quoteId ? [args.quoteId] : [];
     if (!ids.length) throw new CatalogError('Pass quoteId, or quoteIds for a group over several rooms.');
     if (ids.length > 3) throw new CatalogError('At most three rooms per group request.');
@@ -70,6 +122,7 @@ export class AgentActions {
     if (new Set(quotes.map((q) => q!.unitId)).size !== quotes.length) throw new CatalogError('Each room can only be requested once in a group.');
     const property = this.store.getProperty(first.propertyId);
     if (!property || !property.published) throw new CatalogError('Accommodation not found.', { code: 'NOT_FOUND' });
+    this.guard(agent, 'request', property);
     if (quotes.some((q) => q!.bookingMode === 'booking_link')) {
       throw new CatalogError('This property takes bookings in its own booking system: use prepare_booking and give the guest the link.', { code: 'INVALID_INPUT', nextTools: ['prepare_booking'] });
     }
@@ -107,6 +160,9 @@ export class AgentActions {
       phone: args.guest.phone,
       message: args.message,
     });
+    // A retried call is the same request, not another hold.
+    const replay = args.idempotencyKey ? this.store.findRequestByIdempotencyKey(property.id, agent.name, args.idempotencyKey) : undefined;
+    const holder = replay ? undefined : this.holdGuard(property, agent, args.guest.email, (quotes as Quote[]).reduce((n, q) => n + (q.rooms ?? 1), 0));
     let members: BookingRequest[];
     try {
       members = quotes.length === 1
@@ -117,8 +173,16 @@ export class AgentActions {
       if (err instanceof z.ZodError) throw new CatalogError('Invalid guest details: provide a full name and a valid e-mail address.');
       throw err;
     }
+    if (holder) {
+      // Who held the nights, and how the agent proved itself, belong in the record a dispute is settled with.
+      for (const m of this.requests.members(property, members[0])) {
+        m.holder = holder;
+        if (m.consent) Object.assign(m.consent, { agentIdentity: agent.identity ?? 'anonymous', agentDomain: agent.verifiedDomain });
+        this.store.saveRequest(m);
+      }
+    }
     const request = this.requests.members(property, members[0])[0];
-    this.audit(property, agent, 'request_booking', { requestId: request.id, groupId: request.groupId, rooms: ids.length, result: request.status, idempotencyKey: args.idempotencyKey });
+    this.audit(property, agent, 'request_booking', { identity: agent.identity ?? 'anonymous', verifiedDomain: agent.verifiedDomain, requestId: request.id, groupId: request.groupId, rooms: ids.length, result: request.status, idempotencyKey: args.idempotencyKey });
     const booked = request.status === 'accepted';
     const view = await this.view(property, request);
     return {

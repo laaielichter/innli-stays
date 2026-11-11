@@ -1,5 +1,6 @@
 import type { Fetcher } from '../connectors/availability.ts';
 import type { BookingRequest, Property } from '../domain/types.ts';
+import { signOutbound } from '../agent/botAuth.ts';
 import { signRecord } from '../security/signing.ts';
 import type { Store } from '../store.ts';
 import type { BookingEventType } from './service.ts';
@@ -15,8 +16,10 @@ export class AgentCallbacks {
   private fetcher: Fetcher;
   private retryDelaysMs: number[];
   private pending = new Set<Promise<void>>();
+  private publicUrl?: string;
 
-  constructor(store: Store, fetcher: Fetcher, opts: { retryDelaysMs?: number[] } = {}) {
+  constructor(store: Store, fetcher: Fetcher, opts: { retryDelaysMs?: number[]; publicUrl?: string } = {}) {
+    this.publicUrl = opts.publicUrl;
     this.store = store;
     this.fetcher = fetcher;
     this.retryDelaysMs = opts.retryDelaysMs ?? [10_000, 120_000];
@@ -61,7 +64,9 @@ export class AgentCallbacks {
     for (const delay of [0, ...this.retryDelaysMs]) {
       if (delay) await new Promise((r) => setTimeout(r, delay).unref?.());
       try {
-        const res = await this.fetcher(url, { method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': 'INNLI-callbacks' }, body, signal: AbortSignal.timeout(10_000), redirect: 'manual' });
+        // Signed twice: inside the body (as before), and as HTTP Message Signatures (RFC 9421) any standard library verifies.
+        const signed = this.publicUrl ? signOutbound(this.store, this.publicUrl, url, body) : {};
+        const res = await this.fetcher(url, { method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': 'INNLI-callbacks', ...signed }, body, signal: AbortSignal.timeout(10_000), redirect: 'manual' });
         if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 429)) return;
       } catch {
         // retry

@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.1.0 — 2026-11-11
+
+Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies volgens UCP. Het onderzoek naar wat anderen bieden en wat nog open ligt, staat in [docs/agents-2.1.md](docs/agents-2.1.md).
+
+### Agents bewijzen wie ze zijn
+- **Web Bot Auth** (HTTP Message Signatures, RFC 9421): een platform ondertekent zijn verzoeken met een sleutel op zijn eigen domein. INNLI controleert dat, zonder account of gedeeld geheim.
+- Een bewezen platform krijgt een **eigen limiet** van 600 verzoeken per minuut.
+- Het bewezen domein staat in het **ondertekende boekingsdossier** (`consent.agentIdentity`, `consent.agentDomain`).
+- De antwoordheader `x-innli-agent-identity` zegt hoe de beller is herkend, of waarom een handtekening niet klopte.
+- Nieuwe regel voor eigenaren: **Alleen herkenbare agents**. Anonieme agents kunnen dan zoeken en prijzen opvragen, maar niet aanvragen (`AGENT_IDENTITY_REQUIRED`).
+- INNLI zet zijn eigen sleutels op `/.well-known/http-message-signatures-directory` en ondertekent statusberichten ook met RFC 9421.
+
+### Vasthouden zonder misbruik
+- **Limiet op open aanvragen** per houder en per accommodatie: 2 voor een anoniem adres, 25 voor een herkenbare agent, 3 per e-mailadres van een gast (`LIMIT_REACHED`).
+- Een anonieme agent kan niet meer dan de helft van de kamers tegelijk vasthouden.
+- Anonieme agents worden **per adres** geteld. Voorheen deelden ze één limiet en kon één beller de rest blokkeren.
+- Nieuw in het dashboard: **Agents en hun gedrag**. Per agent zie je prijsopvragen, aanvragen, boekingen en wat verviel of werd geannuleerd.
+
+### Boekingssessies volgens UCP (concept)
+- Profiel op `/.well-known/ucp` en een REST-adres op `/ucp/v1` met `booking-sessions`: aanmaken, lezen, bijwerken, afronden en annuleren.
+- Totalen in de kleinste munteenheid, betaaltermijnen (aanbetaling, rest ter plaatse) en annuleringsvoorwaarden met `refundability`.
+- Afronden stuurt dezelfde aanvraag als `request_booking`, met dezelfde toestemmingshash en hetzelfde dossier.
+- De standaard is een concept: `INNLI_UCP_VERSION` stelt de versie in.
+
+### Betrouwbaar opnieuw proberen
+- **`Idempotency-Key`-header** bij REST-tools en UCP: een herhaald verzoek krijgt het eerste antwoord (`Idempotent-Replayed: true`); dezelfde sleutel met andere inhoud geeft `409`.
+
+### Annuleren
+- Elke offerte heeft **`cancellation`**: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar alleen een tekst heeft.
+
+### Let op bij overstappen van 2.0
+- `LIMIT_REACHED` geeft via REST nu status 429 in plaats van 400.
+- Een anonieme agent kan per accommodatie nog 2 aanvragen tegelijk open hebben. Platforms die voor veel gasten werken: onderteken je verzoeken of gebruik een sleutel.
+- Naast de gegevens staat een nieuw bestand `innli.booking-sessions.jsonl`. Neem het mee in je back-up.
+
 ## 2.0.0 — 2026-10-19
 
 Agents en accommodaties vinden elkaar. We zochten uit waar het tussen AI-agents en accommodaties het meest misgaat, en losten de tien grootste knelpunten op. Het onderzoek en de bronnen staan in [docs/agents-2.0.md](docs/agents-2.0.md).

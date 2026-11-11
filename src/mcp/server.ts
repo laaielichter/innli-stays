@@ -7,7 +7,7 @@ import { REQUIREMENTS } from '../domain/matching.ts';
 import { CURRENCIES, LANGUAGES, POI_KINDS } from '../domain/types.ts';
 import type { WaitlistService } from '../requests/waitlist.ts';
 import type { WishService } from '../requests/wishes.ts';
-import type { AgentActions } from '../requests/agentActions.ts';
+import type { AgentActions, AgentContext } from '../requests/agentActions.ts';
 import { VERSION } from '../version.ts';
 import { shapeResult } from '../agent/shape.ts';
 
@@ -374,6 +374,8 @@ export interface ToolContext {
   waitlist?: WaitlistService;
   wishes?: WishService;
   canAct?: boolean;
+  /** Who is calling, when the transport identified them (key, signed request, address). */
+  caller?: AgentContext;
 }
 
 /**
@@ -382,7 +384,7 @@ export interface ToolContext {
  */
 export function toolHandlers(ctx: ToolContext): ToolHandlers {
   const { catalog, agentClient, actions, waitlist, wishes } = ctx;
-  const agent = { name: agentClient, canAct: ctx.canAct ?? true };
+  const agent: AgentContext = { ...ctx.caller, name: agentClient, canAct: ctx.canAct ?? true };
   const handlers: ToolHandlers = {
     search_stays: (args: ToolArgs<'search_stays'>) =>
       catalog.search(
@@ -466,10 +468,10 @@ export function parseProfile(value: unknown): ToolProfile {
  * One MCP server for the whole catalog; each owner manages their own stay inside it.
  * Without `actions` (e.g. a read-only stdio session) the tools that contact the host are left out.
  */
-export function createMcpServer(catalog: Catalog, agentClient: string, actions?: AgentActions, opts: { canAct?: boolean; waitlist?: WaitlistService; wishes?: WishService; profile?: ToolProfile } = {}): McpServer {
+export function createMcpServer(catalog: Catalog, agentClient: string, actions?: AgentActions, opts: { canAct?: boolean; waitlist?: WaitlistService; wishes?: WishService; profile?: ToolProfile; caller?: AgentContext } = {}): McpServer {
   const profile = opts.profile ?? 'full';
   const server = new McpServer({ name: 'innli', version: VERSION }, { instructions: profile === 'core' ? CORE_INSTRUCTIONS : INSTRUCTIONS });
-  const handlers = toolHandlers({ catalog, agentClient, actions, waitlist: opts.waitlist, wishes: opts.wishes, canAct: opts.canAct });
+  const handlers = toolHandlers({ catalog, agentClient, actions, waitlist: opts.waitlist, wishes: opts.wishes, canAct: opts.canAct, caller: opts.caller });
   for (const name of Object.keys(handlers) as ToolName[]) {
     if (profile === 'core' && !CORE_TOOLS.includes(name)) continue;
     const def = TOOLS[name];

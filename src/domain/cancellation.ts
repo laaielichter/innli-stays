@@ -48,3 +48,16 @@ export function cancellationSchedule(property: Property, stay: { checkin: string
   if (plan && !plan.refundable) return [{ from: 'booking', percent: 100, amount: round2(stay.total) }];
   return sortedRules(property.cancellationRules ?? []).map((r) => ({ from: addDays(stay.checkin, -r.daysBefore), percent: r.percent, amount: round2((stay.total * r.percent) / 100) }));
 }
+
+export type Refundability = 'refundable' | 'partially_refundable' | 'non_refundable' | 'unknown';
+
+/**
+ * One word an agent can act on without parsing a policy text: can the guest
+ * still cancel for free today, at a cost, or not at all? `unknown` when the
+ * host only wrote a text policy: never guessed from the wording.
+ */
+export function refundability(property: Property, stay: { checkin: string; total: number; ratePlanId?: string }, today?: string): { refundability: Refundability; freeUntil?: string; costNow: number | null; percentNow: number | null } {
+  const cost = cancellationCost(property, stay, today);
+  const value: Refundability = cost.percent === null ? 'unknown' : cost.percent >= 100 ? 'non_refundable' : cost.percent > 0 ? 'partially_refundable' : 'refundable';
+  return { refundability: value, freeUntil: cost.freeUntil, costNow: cost.amount, percentNow: cost.percent };
+}

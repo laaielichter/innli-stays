@@ -29,7 +29,7 @@ export type OwnerRequest = Request & { property: Property; role: 'owner' | Staff
  * reviews). Manager: everything except staff keys, licence and full backups.
  */
 const RECEPTION: [string, RegExp][] = [
-  ['GET', /^\/(me|property|requests|questions|reviews|waitlist|wishes|audit-log|conflicts|insights|analytics|agent-preview|stats|bookings\/feed|export\/requests\.csv|units\/[^/]+\/calendar)$/],
+  ['GET', /^\/(me|property|requests|questions|reviews|waitlist|wishes|audit-log|agents|conflicts|insights|analytics|agent-preview|stats|bookings\/feed|export\/requests\.csv|units\/[^/]+\/calendar)$/],
   ['POST', /^\/(requests\/[^/]+\/(accept|decline|paid)|questions\/[^/]+\/answer|reviews\/[^/]+\/reply)$/],
   ['PUT', /^\/units\/[^/]+\/closed$/],
 ];

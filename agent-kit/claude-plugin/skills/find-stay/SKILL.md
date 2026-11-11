@@ -26,6 +26,9 @@ Use `post_stay_wish`, with the guest's agreement. It is anonymous: no name or co
 - Every result has `nextActions` with the arguments already filled in. Prefer them over building calls yourself. `needs` lists what you must still ask the guest.
 - `freshness.validForSeconds` says how long you may reuse a result. Re-quote rather than reuse an old price.
 - Errors carry `code`, `retryable`, `hint` and `nextTools`. Do not retry when `retryable` is false. On `RATE_LIMITED`, wait `retryAfterSeconds`.
+- A request holds the room for the guest. Send one only for the stay the guest chose, never several "to be safe". On `LIMIT_REACHED`, wait for the host or withdraw a request the guest no longer wants.
+- On `AGENT_IDENTITY_REQUIRED` the host only takes requests from identified agents: give the guest the link from `prepare_booking` instead.
+- `cancellation.refundability` on a quote says `refundable`, `partially_refundable`, `non_refundable` or `unknown`. Say `unknown` as unknown; `freeUntil` is the last day of free cancellation.
 
 ## Safety
 

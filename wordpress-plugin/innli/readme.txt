@@ -2,7 +2,7 @@
 Tags: bed and breakfast, ai, schema, booking, structured data
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 
 Connects your B&B website to your INNLI accommodation passport.
@@ -28,6 +28,9 @@ No guarantee of inclusion or ranking: search engines and AI assistants decide fo
 4. Put [innli_conversion] on the confirmation page of your booking system.
 
 == Changelog ==
+
+= 2.1.0 =
+* Version aligned with INNLI 2.1.0. No changes to the plugin itself.
 
 = 2.0.0 =
 * Website verification: the plugin adds INNLI's verification tag to your home page by itself, so AI agents see your website as verified (Dashboard → Trust → Check now).

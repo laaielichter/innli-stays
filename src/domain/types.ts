@@ -307,6 +307,11 @@ export interface BookingRules {
   deposit?: DepositRule;
   /** Let the answer agent answer guest questions straight away when confirmed facts or the FAQ cover them (default on). */
   autoAnswer?: boolean;
+  /**
+   * Only agents that proved who they are (an agent key, or a request signed with
+   * Web Bot Auth) may send requests and questions; anonymous agents can still search and quote.
+   */
+  requireIdentifiedAgent?: boolean;
 }
 
 export const DEFAULT_BOOKING_RULES: BookingRules = { instantBooking: false, minLeadDays: 2, maxNights: 14, holdHours: 48 };
@@ -466,6 +471,8 @@ export interface BookingRequest {
   decidedAt?: string;
   /** Set when personal data was removed under the retention policy. */
   anonymisedAt?: string;
+  /** Who holds the nights (hashed key, verified domain or address): open holds are limited per holder. */
+  holder?: string;
   /** Agent-supplied key so a retried request_booking call does not create a duplicate. */
   idempotencyKey?: string;
   /** Rooms booked together as one stay share a group id and are decided together. */
@@ -479,6 +486,10 @@ export interface BookingRequest {
   consent?: {
     via: 'stay_page' | 'agent';
     agentClient?: string;
+    /** How the agent proved who it is: an agent key, a signed request (Web Bot Auth), or not at all. */
+    agentIdentity?: 'key' | 'verified' | 'anonymous';
+    /** Domain whose published key signed the agent's request. */
+    agentDomain?: string;
     statement: string;
     givenAt: string;
     /** Hash of the terms the guest approved (from get_quote consent.hash), when the agent passed it. */

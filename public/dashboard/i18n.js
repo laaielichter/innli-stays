@@ -19,6 +19,20 @@ export function setLang(lang) {
 }
 
 const EN = {
+  // 2.1: agent identity and behaviour
+  "Alleen herkenbare agents": "Identified agents only",
+  ": aanvragen en vragen alleen van agents die bewijzen wie ze zijn (met een sleutel of een ondertekend verzoek). Anonieme agents kunnen nog wel zoeken en prijzen opvragen, en verwijzen de gast naar je verblijfspagina.": ": requests and questions only from agents that prove who they are (with a key or a signed request). Anonymous agents can still search and ask for prices, and send the guest to your stay page.",
+  "Agents en hun gedrag": "Agents and how they behave",
+  "Per agent: hoeveel aanvragen een boeking werden, en hoeveel er vervielen of werden geannuleerd. Een agent die veel vasthoudt en weinig boekt, kost je beschikbaarheid. Anonieme agents mogen daarom maar weinig tegelijk vasthouden.": "Per agent: how many requests became a booking, and how many expired or were cancelled. An agent that holds a lot and books little costs you availability. That is why anonymous agents may hold only a few at once.",
+  "Bewezen (ondertekend)": "Proven (signed)",
+  "Sleutel": "Key",
+  "Anoniem": "Anonymous",
+  "Prijzen opgevraagd": "Quotes",
+  "Identiteit": "Identity",
+  "Geboekt": "Booked",
+  "Vervallen of geannuleerd": "Expired or cancelled",
+  "Houdt nu vast": "Holding now",
+  "Nog geen agents gezien.": "No agents seen yet.",
   // 2.0: stay wishes, trust
   "Gezocht": "Wanted",
   "Gasten die zoeken": "Guests who are looking",
