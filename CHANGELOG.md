@@ -26,6 +26,7 @@ Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies
 
 ### Boekingssessies volgens UCP (concept)
 - Profiel op `/.well-known/ucp` en een REST-adres op `/ucp/v1` met `booking-sessions`: aanmaken, lezen, bijwerken, afronden en annuleren.
+- Dezelfde vijf handelingen als MCP-tools op `/ucp/mcp`, voor platforms die UCP via MCP spreken.
 - Totalen in de kleinste munteenheid, betaaltermijnen (aanbetaling, rest ter plaatse) en annuleringsvoorwaarden met `refundability`.
 - Afronden stuurt dezelfde aanvraag als `request_booking`, met dezelfde toestemmingshash en hetzelfde dossier.
 - De standaard is een concept: `INNLI_UCP_VERSION` stelt de versie in.

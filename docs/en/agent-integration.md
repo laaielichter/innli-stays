@@ -238,6 +238,7 @@ Open requests hold rooms. Per property an anonymous address may have 2 open, an 
 REST tool calls and UCP operations take an `Idempotency-Key` header (at most 255 characters). The same key with the same body returns the first answer with `Idempotent-Replayed: true`, for 24 hours. The same key with another body returns 409.
 
 ### UCP lodging booking sessions (draft)
+- Over MCP: connect to `/ucp/mcp`. Each tool takes `meta: { "ucp-agent": { profile }, "idempotency-key"? }`, the session in `booking`, and an existing session's `id` at the top level.
 - Profile: `GET /.well-known/ucp`. Endpoint: `/ucp/v1`. Every request needs `UCP-Agent: profile="https://platform.example/profile"`.
 - `POST /booking-sessions` → 201 with the session; `GET` and `PUT /booking-sessions/{id}`; `POST /booking-sessions/{id}/complete` with `{"payment": {}}`; `POST /booking-sessions/{id}/cancel`.
 - `stays[]`: `accommodation_type.id` is the INNLI `unitId`, `rate_plan.id` a rate plan or `standard`. All stays of a session share their dates. Dogs: `occupancy.pets`.

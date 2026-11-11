@@ -167,7 +167,18 @@ export async function runConformance(baseUrl: string, opts: { fetcher?: typeof f
     const outcome = await f(`${endpoint}/booking-sessions`, { method: 'POST', headers, body: JSON.stringify({ property: { id: 'prop_conformance_does_not_exist' }, stays: [{ accommodation_type: { id: 'x' }, occupancy: { adults: 2 }, stay_dates: { start_date: '2099-01-01', end_date: '2099-01-02' } }] }) });
     const body = (await outcome.json()) as Json;
     expect(outcome.status === 200 && body.ucp?.status === 'error' && body.messages?.[0]?.severity, 'a business outcome must come as HTTP 200 with ucp.status "error" and messages');
-    return `UCP ${profile.ucp.version}`;
+    const viaMcp = profile.ucp.services['dev.ucp.lodging'].find((x: Json) => x.transport === 'mcp');
+    if (viaMcp) {
+      const client = new Client({ name: 'innli-conformance', version: '1' });
+      await client.connect(new StreamableHTTPClientTransport(new URL(String(viaMcp.endpoint).replace(/^https?:\/\/[^/]+/, base)), { requestInit: { headers: auth } }));
+      try {
+        const names = (await client.listTools()).tools.map((t) => t.name);
+        for (const t of ['create_booking_session', 'get_booking_session', 'update_booking_session', 'complete_booking_session', 'cancel_booking_session']) expect(names.includes(t), `UCP over MCP lacks ${t}`);
+      } finally {
+        await client.close();
+      }
+    }
+    return `UCP ${profile.ucp.version}${viaMcp ? ', REST and MCP' : ', REST'}`;
   });
   return checks;
 }

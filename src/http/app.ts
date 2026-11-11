@@ -46,7 +46,8 @@ import { agentCard, llmsTxt, mcpServerCard, staysOf } from '../agent/discovery.t
 import { BotAuthVerifier, DIRECTORY_PATH, DIRECTORY_TYPE, keyDirectory } from '../agent/botAuth.ts';
 import { checkWebsite, signedPassport, VERIFICATION_FILE, VERIFICATION_META, verificationToken, websiteVerified } from '../agent/trust.ts';
 import { idempotency } from './idempotency.ts';
-import { UCP_BASE_PATH, UcpLodging, UcpOutcome, UcpProtocolError, ucpProfile, UCP_VERSION } from '../ucp/lodging.ts';
+import { createUcpMcpServer } from '../ucp/mcp.ts';
+import { UCP_BASE_PATH, UCP_MCP_PATH, UcpLodging, UcpOutcome, UcpProtocolError, ucpProfile, UCP_VERSION } from '../ucp/lodging.ts';
 import { oauthRouter, wwwAuthenticate } from './oauth.ts';
 import { captionProblem, contentTypeOf, MAX_PHOTO_BYTES, MEDIA_FILE, MediaError, savePhoto } from './media.ts';
 
@@ -351,11 +352,25 @@ export function createApp(opts: AppOptions) {
   app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
   app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
 
+  // The same five operations as MCP tools, for platforms that speak UCP over MCP.
+  app.post(UCP_MCP_PATH, async (req, res) => {
+    const who = await identifyAgent(req, res);
+    if (!who) return;
+    const server = createUcpMcpServer(ucp, who, opts.publicUrl);
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+    res.on('close', () => {
+      void transport.close();
+      void server.close();
+    });
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  });
+
   const methodNotAllowed = (_req: Request, res: Response) => {
     res.status(405).set('allow', 'POST').json({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed' }, id: null });
   };
-  app.get('/mcp', methodNotAllowed);
-  app.delete('/mcp', methodNotAllowed);
+  app.get(['/mcp', UCP_MCP_PATH], methodNotAllowed);
+  app.delete(['/mcp', UCP_MCP_PATH], methodNotAllowed);
 
   // ---------------------------------------------------------------- Public
   app.get('/api/public/properties/:id/passport', (req, res) => {

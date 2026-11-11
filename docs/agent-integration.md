@@ -268,6 +268,7 @@ Open aanvragen houden kamers vast. Per accommodatie mag een anoniem adres er 2 o
 REST-tools en UCP nemen een `Idempotency-Key`-header aan (hooguit 255 tekens). Dezelfde sleutel met dezelfde inhoud geeft 24 uur lang het eerste antwoord, met `Idempotent-Replayed: true`. Dezelfde sleutel met andere inhoud geeft 409.
 
 ### Boekingssessies volgens UCP (concept)
+- Via MCP: verbind met `/ucp/mcp`. Elke tool neemt `meta: { "ucp-agent": { profile }, "idempotency-key"? }`, de sessie in `booking`, en de `id` van een bestaande sessie op het hoogste niveau.
 - Profiel: `GET /.well-known/ucp`. Adres: `/ucp/v1`. Elk verzoek heeft `UCP-Agent: profile="https://platform.example/profile"` nodig.
 - `POST /booking-sessions` → 201 met de sessie; `GET` en `PUT /booking-sessions/{id}`; `POST /booking-sessions/{id}/complete` met `{"payment": {}}`; `POST /booking-sessions/{id}/cancel`.
 - `stays[]`: `accommodation_type.id` is de `unitId` van INNLI, `rate_plan.id` een tariefplan of `standard`. Alle verblijven in een sessie hebben dezelfde data. Honden: `occupancy.pets`.

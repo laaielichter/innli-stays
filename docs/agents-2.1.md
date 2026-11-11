@@ -46,7 +46,7 @@ Een agent die elke kamer "aanvraagt", houdt echte gasten buiten zolang de kamer 
 Agentplatforms gaan naar afrekenen in sessies. UCP heeft een concept voor verblijven, met de onderdelen die een verblijf nodig heeft.
 
 **INNLI 2.1** voegt op elke installatie een UCP-adapter toe:
-- Profiel op `/.well-known/ucp`; REST-adres `/ucp/v1`.
+- Profiel op `/.well-known/ucp`; REST-adres `/ucp/v1`; dezelfde handelingen als MCP-tools op `/ucp/mcp` (`create_booking_session`, `get_…`, `update_…`, `complete_…`, `cancel_…`).
 - `POST /booking-sessions`, `GET` en `PUT /booking-sessions/{id}`, `POST …/complete`, `POST …/cancel`.
 - Een sessie is één of meer INNLI-offertes waarbij de kamers 15 minuten worden vastgehouden (`expires_at`). Gelijke kamers en maximaal drie kamertypes passen in één sessie.
 - `totals[]` in de kleinste munteenheid, die precies optellen tot het ene `total`; toeristenbelasting en kosten als eigen regels.
@@ -82,7 +82,7 @@ De gids geeft verzoeken van veel agents door vanaf één adres. Zonder maatregel
 
 ## Wat 2.1 bewust niet doet
 - **Betalen met een kaart door agents (betaaltokens van ACP, mandaten van AP2).** Daar is een betaalprovider of een uitgever van bewijzen voor nodig. INNLI verwerkt geen geld: de gast betaalt de accommodatie. De sessie en het dossier zijn zo opgezet dat er later een betaalhandler bij kan.
-- **UCP via MCP, en ondertekende UCP-antwoorden.** Voorlopig alleen REST.
+- **Ondertekende UCP-antwoorden.** Verzoeken worden gecontroleerd; antwoorden worden nog niet ondertekend.
 - **De nieuwste MCP-revisie.** INNLI volgt de officiële SDK.
 
 ## Bronnen

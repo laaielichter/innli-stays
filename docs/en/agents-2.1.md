@@ -46,7 +46,7 @@ An agent that "requests" every room keeps real guests out for as long as the hol
 Agent platforms are converging on session-based checkout. UCP has a draft lodging capability with the objects a stay needs.
 
 **INNLI 2.1** adds a UCP lodging adapter on every installation:
-- Profile at `/.well-known/ucp`; REST endpoint `/ucp/v1`.
+- Profile at `/.well-known/ucp`; REST endpoint `/ucp/v1`; the same operations as MCP tools at `/ucp/mcp` (`create_booking_session`, `get_…`, `update_…`, `complete_…`, `cancel_…`).
 - `POST /booking-sessions`, `GET` and `PUT /booking-sessions/{id}`, `POST …/complete`, `POST …/cancel`.
 - A session is one or more INNLI quotes with a 15-minute hold (`expires_at`). Identical rooms and up to three room types fit in one session.
 - `totals[]` in minor units, adding up exactly to the one `total`; tourist tax and fees as their own lines.
@@ -82,7 +82,7 @@ The guide relays requests for many agents from one address. Without care, every 
 
 ## What 2.1 deliberately does not do
 - **Card payments by agents (ACP payment tokens, AP2 mandates).** They need a payment provider or a credential provider. INNLI moves no money: the guest pays the property. The session and the signed record are shaped so that a payment handler can be added later.
-- **UCP over MCP, and signed UCP responses.** REST only for now.
+- **Signed UCP responses.** Requests are verified; responses are not signed yet.
 - **The newest MCP revision.** INNLI follows the official SDK.
 
 ## Sources

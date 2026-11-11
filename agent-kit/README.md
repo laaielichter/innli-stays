@@ -12,7 +12,7 @@ Everything an agent platform or developer needs to connect an agent to INNLI. Th
 | Plain-text overview for LLMs | `/llms.txt` |
 | Signing key (records, callbacks, passports) | `/.well-known/innli.json` |
 | OAuth 2.1 metadata | `/.well-known/oauth-protected-resource` |
-| UCP profile and lodging booking sessions (draft) | `/.well-known/ucp`, `/ucp/v1/booking-sessions` |
+| UCP profile and lodging booking sessions (draft), REST and MCP | `/.well-known/ucp`, `/ucp/v1/booking-sessions`, `/ucp/mcp` |
 | Key directory (RFC 9421; INNLI also verifies yours) | `/.well-known/http-message-signatures-directory` |
 
 ## Claude plugin

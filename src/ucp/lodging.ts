@@ -6,7 +6,7 @@ import { cancellationCost, cancellationSchedule, refundability } from '../domain
 import { DateRangeError } from '../domain/dates.ts';
 import type { BookingRequest, Property, Quote, QuoteLine } from '../domain/types.ts';
 import { money } from '../i18n/index.ts';
-import type { AgentActions, AgentContext } from '../requests/agentActions.ts';
+import { holderId, type AgentActions, type AgentContext } from '../requests/agentActions.ts';
 import { rulesOf, type RequestService } from '../requests/service.ts';
 import type { Store } from '../store.ts';
 import type { BookingSessionRecord, UcpPerson, UcpStayInput } from './types.ts';
@@ -25,6 +25,7 @@ import type { BookingSessionRecord, UcpPerson, UcpStayInput } from './types.ts';
 
 export const UCP_VERSION = process.env.INNLI_UCP_VERSION || '2026-08-25';
 export const UCP_BASE_PATH = '/ucp/v1';
+export const UCP_MCP_PATH = '/ucp/mcp';
 const BOOKING = 'dev.ucp.lodging.booking';
 const TERMS = 'dev.ucp.common.payment.terms';
 const CANCELLATION = 'dev.ucp.lodging.policy.cancellation';
@@ -85,7 +86,10 @@ export function ucpProfile(store: Store, publicUrl: string, keys: unknown[]) {
     ucp: {
       version: UCP_VERSION,
       services: {
-        'dev.ucp.lodging': [{ version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/overview`, transport: 'rest', schema: `${SPEC}/${UCP_VERSION}/services/lodging/rest.openapi.json`, endpoint: `${url}${UCP_BASE_PATH}` }],
+        'dev.ucp.lodging': [
+          { version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/overview`, transport: 'rest', schema: `${SPEC}/${UCP_VERSION}/services/lodging/rest.openapi.json`, endpoint: `${url}${UCP_BASE_PATH}` },
+          { version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/overview`, transport: 'mcp', schema: `${SPEC}/${UCP_VERSION}/services/lodging/mcp.openrpc.json`, endpoint: `${url}${UCP_MCP_PATH}` },
+        ],
       },
       capabilities: {
         [BOOKING]: [{ version: UCP_VERSION, spec: `${SPEC}/${UCP_VERSION}/specification/lodging/booking`, schema: `${SPEC}/${UCP_VERSION}/schemas/lodging/booking.json` }],
@@ -111,6 +115,7 @@ export class UcpLodging {
   private actions: AgentActions;
   private requests: RequestService;
   private publicUrl: string;
+  private created = new Map<string, string>();
 
   constructor(store: Store, catalog: Catalog, actions: AgentActions, requests: RequestService, publicUrl: string) {
     this.store = store;
@@ -122,7 +127,11 @@ export class UcpLodging {
 
   // ---------------------------------------------------------------- Operations
 
-  async create(body: unknown, agent: AgentContext, platformProfile: string) {
+  /** @param idempotencyKey a retried create with the same key returns the session the first call made (MCP binding). */
+  async create(body: unknown, agent: AgentContext, platformProfile: string, idempotencyKey?: string) {
+    const createKey = idempotencyKey ? `${holderId(agent)}:${idempotencyKey}` : undefined;
+    const earlier = createKey ? this.store.getBookingSession(this.created.get(createKey) ?? '') : undefined;
+    if (earlier) return this.render(earlier);
     const input = this.parse(body);
     const property = this.property(input.propertyId);
     const session: BookingSessionRecord = {
@@ -142,6 +151,10 @@ export class UcpLodging {
     };
     await this.price(property, session, agent);
     this.store.saveBookingSession(session);
+    if (createKey) {
+      this.created.set(createKey, session.id);
+      if (this.created.size > 2000) this.created.delete(this.created.keys().next().value!);
+    }
     return this.render(session);
   }
 

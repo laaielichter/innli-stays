@@ -391,6 +391,40 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       assert.deepEqual(confirmed.totals, s.totals, 'the confirmed price is the price the buyer saw');
     });
 
+    it('the same operations over MCP (/ucp/mcp)', async () => {
+      const profile = (await (await fetch(`${server.url}/.well-known/ucp`)).json()) as Json;
+      const service = profile.ucp.services['dev.ucp.lodging'].find((x: Json) => x.transport === 'mcp');
+      assert.equal(service.endpoint, `${server.url}/ucp/mcp`);
+      const client = new Client({ name: 'platform', version: '1' });
+      await client.connect(new StreamableHTTPClientTransport(new URL(service.endpoint), { requestInit: { headers: { authorization: `Bearer ${server.creds.agentKey}` } } }));
+      const mcp = async (name: string, args: Json) => (await client.callTool({ name, arguments: { meta: { 'ucp-agent': { profile: 'https://platform.example/profile' } }, ...args } })) as Json;
+      try {
+        assert.deepEqual((await client.listTools()).tools.map((t) => t.name).sort(), ['cancel_booking_session', 'complete_booking_session', 'create_booking_session', 'get_booking_session', 'update_booking_session']);
+        const checkin = addDays(new Date().toISOString().slice(0, 10), 110);
+        const booking = { property: { id: 'prop_spaarne' }, stays: [{ accommodation_type: { id: 'standaard' }, occupancy: { adults: 2 }, stay_dates: { start_date: checkin, end_date: addDays(checkin, 2) } }] };
+        const meta = { 'ucp-agent': { profile: 'https://platform.example/profile' }, 'idempotency-key': 'create-1' };
+        const created = (await mcp('create_booking_session', { meta, booking })).structuredContent;
+        assert.equal(created.status, 'incomplete');
+        assert.match(created.id, /^bks_/);
+        assert.equal((await mcp('create_booking_session', { meta, booking })).structuredContent.id, created.id, 'a retried create is the same session');
+        const ready = (await mcp('update_booking_session', { id: created.id, booking: { ...booking, booker: { first_name: 'Ada', last_name: 'Byron', email: 'ada@example.com' } } })).structuredContent;
+        assert.equal(ready.status, 'ready_for_complete');
+        const done = (await mcp('complete_booking_session', { id: created.id, booking: { payment: {} } })).structuredContent;
+        assert.equal(done.status, 'completed');
+        assert.equal((await mcp('get_booking_session', { id: created.id })).structuredContent.confirmation.id, done.confirmation.id);
+        assert.equal((await mcp('cancel_booking_session', { id: created.id })).structuredContent.status, 'canceled');
+
+        const soldOut = await mcp('create_booking_session', { booking: { ...booking, property: { id: 'prop_nope' } } });
+        assert.equal(soldOut.isError, undefined, 'a business outcome is a result, not a tool error');
+        assert.equal(soldOut.structuredContent.ucp.status, 'error');
+        const unknown = await mcp('get_booking_session', { id: 'bks_nope' });
+        assert.equal(unknown.isError, true);
+        assert.equal(unknown.structuredContent.code, 'not_found');
+      } finally {
+        await client.close();
+      }
+    });
+
     it('a property with its own booking system hands the buyer over', async () => {
       const w = freeWindow(['hooiberg-tuinkamer'], 2, 30);
       const s = (await ucp('POST', '/booking-sessions', { property: { id: 'prop_hooiberg' }, stays: [{ accommodation_type: { id: 'tuinkamer' }, occupancy: { adults: 2 }, stay_dates: { start_date: w.checkin, end_date: w.checkout } }], booker: { first_name: 'A', last_name: 'B', email: 'a@example.com' } })).body;
