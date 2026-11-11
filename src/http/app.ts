@@ -14,8 +14,8 @@ import type { Fetcher } from '../connectors/availability.ts';
 import { bookingsToken, calendarToken, exportIcs } from '../connectors/export.ts';
 import { bookingsIcs, monthlyStats, requestsCsv } from '../analytics/bookings.ts';
 import { addDays, DateRangeError, stayNights } from '../domain/dates.ts';
-import { completeness, FACT_CATALOG, FactValidationError, getFactDefinition, ownerConfirmFact, ownerMarkUnknown, ownerSetFact, suggestFact } from '../domain/facts.ts';
-import { LANGUAGES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
+import { completeness, FACT_CATALOG, factApplies, FactValidationError, getFactDefinition, ownerConfirmFact, ownerMarkUnknown, ownerSetFact, suggestFact } from '../domain/facts.ts';
+import { LANGUAGES, PROPERTY_TYPES, type BookingRequest, type FactMap, type Property } from '../domain/types.ts';
 import { demoEngine } from '../demo/engine.ts';
 import { registerWithGuide, wellKnown } from '../directory/register.ts';
 import { GUIDE_AGENT_HEADER, GUIDE_HOLDER_HEADER, GUIDE_IDENTITY_HEADER } from '../directory/types.ts';
@@ -579,7 +579,7 @@ export function createApp(opts: AppOptions) {
       .object({
         code: z.string(),
         name: z.string().trim().min(2, { error: () => t('own.nameRequired') }).max(120),
-        type: z.enum(['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel']).default('bnb'),
+        type: z.enum(PROPERTY_TYPES).default('bnb'),
         city: z.string().trim().min(1, { error: () => t('own.cityRequired') }).max(100),
         country: z.string().trim().length(2).default('NL'),
         language: z.enum(LANGUAGES).optional(),
@@ -604,8 +604,10 @@ export function createApp(opts: AppOptions) {
 
   /** The fact catalog with labels, categories and hints in the requested language (?lang=). */
   app.get('/api/fact-catalog', (_req, res) => {
+    // ?type=camper_rental leaves out what only a place to stay has, and the other way round.
+    const type = PROPERTY_TYPES.find((t) => t === _req.query.type);
     const lang = currentLang();
-    res.json(FACT_CATALOG.map((d) => ({ ...d, label: factLabel(d.key, lang), category: factCategory(d.category, lang), hint: factHint(d.key, lang) })));
+    res.json(FACT_CATALOG.filter((d) => !type || factApplies(d, type)).map((d) => ({ ...d, label: factLabel(d.key, lang), category: factCategory(d.category, lang), hint: factHint(d.key, lang) })));
   });
 
   // ---------------------------------------------------------------- Owner dashboard API
@@ -1101,7 +1103,7 @@ export function createApp(opts: AppOptions) {
     res.json(store.listProperties().map((p) => ({ id: p.id, slug: p.slug, name: p.name, published: p.published, completeness: completeness(p).score })));
   });
   adminApi.post('/properties', (req, res) => {
-    const input = z.object({ name: z.string().min(2), type: z.enum(['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel']).optional(), address: z.object({ city: z.string(), country: z.string().length(2) }).passthrough() }).parse(req.body);
+    const input = z.object({ name: z.string().min(2), type: z.enum(PROPERTY_TYPES).optional(), address: z.object({ city: z.string(), country: z.string().length(2) }).passthrough() }).parse(req.body);
     const { property, ownerKey } = createProperty(input as Parameters<typeof createProperty>[0]);
     if (store.getProperty(property.slug)) property.slug = `${property.slug}-${randomUUID().slice(0, 4)}`;
     store.saveProperty(property);

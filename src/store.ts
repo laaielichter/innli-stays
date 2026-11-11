@@ -465,6 +465,7 @@ export class Store {
       const end = r.status === 'accepted' ? r.checkout : (r.decidedAt ?? r.createdAt).slice(0, 10);
       if (end >= cutoff) continue;
       r.guest = { name: '(verwijderd)', email: '' };
+      r.driver = undefined;
       r.anonymisedAt = now.toISOString();
       this.requests.upsert(r);
       count++;

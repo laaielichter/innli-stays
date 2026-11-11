@@ -12,6 +12,7 @@ Software that an accommodation runs itself, so that AI agents can find it, under
 - an **agent connection** over MCP, REST (OpenAPI 3.1), ACP checkout sessions and UCP lodging booking sessions (draft);
 - **card guarantees** from agent platforms: authorised at checkout, captured only when the host confirms, on the property's own payment account;
 - **pricing, availability and booking**: itemised totals, holds, booking requests or instant booking, changes, cancellations, signed records;
+- **camper rental**: driver rules, kilometres, deposit and insurance, checked before a request is sent ([campers.md](campers.md));
 - a **dashboard** for the owner (English and Dutch), a public **stay page** in four languages, and a **WordPress plugin**;
 - the **INNLI guide**: one address through which agents reach every listed installation.
 
@@ -23,7 +24,7 @@ What it does in detail: [agent-features.md](agent-features.md), [agent-integrati
 
 | Asset | What it is |
 |---|---|
-| Source code | This repository: about 16,000 lines of TypeScript for the server, 3,900 lines of tests, the dashboard, and the WordPress plugin |
+| Source code | This repository: about 18,000 lines of TypeScript for the server, 4,500 lines of tests, the dashboard, and the WordPress plugin |
 | Copyright | Held by the maker. See [Ownership of the code](#ownership-of-the-code) |
 | The name | "INNLI", the wordmark and the house style ([TRADEMARK.md](../TRADEMARK.md), [marketing/STYLE.md](../marketing/STYLE.md)). Not registered as a trade mark |
 | Package names | `innli-stays` on npm and `io.github.laaielichter/innli` in the MCP registry |
@@ -47,7 +48,7 @@ Everything here can be reproduced from the repository.
 
 | Claim | How to check |
 |---|---|
-| 247 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
+| 256 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
 | Types are strict and clean | `npm run typecheck` |
 | The npm package installs and starts | `npm run smoke:npm` |
 | A running installation behaves as agents expect | `npx innli-conformance <address>`: 14 read-only checks |

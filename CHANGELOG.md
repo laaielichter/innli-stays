@@ -2,7 +2,20 @@
 
 Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
-## Unreleased
+## 2.2.0 - 2026-11-11
+
+### Camper rental
+- New property type **camper rental**, for companies that rent out motorhomes and campervans. Its passport asks about the rental (minimum driver age, years with a licence, deposit, insurance and deductible, kilometres, abroad, fuel, pick-up and return) and about each vehicle (seats with a belt, licence category, transmission, toilet, shower, winter use and more), and leaves out what only a place to stay has.
+- `search_stays` has **`kind: "camper"`**. Campers and places to stay are never mixed. Eight new requirements, such as `automatic_transmission`, `car_licence_ok`, `toilet_on_board` and `unlimited_km`.
+- `get_quote` takes a **`driver`** (age, licence category, years held). The quote has a `rental` block: kilometres included for this rental, the deposit (not part of the total), insurance, pick-up and return, whether this driver may rent this vehicle, and which rules the company did not state.
+- The consent summary and hash include the rental terms: a changed deposit after the guest agreed gives `TERMS_CHANGED`.
+- `request_booking` refuses a camper request without a driver, and one where the driver or party breaks a rule (new error code `DRIVER_NOT_ELIGIBLE`). The driver's details are stored with the request and removed with the guest's personal data.
+- No tourist tax line for campers. The sample data has a camper rental company with three vehicles.
+- Details: [docs/campers.md](docs/campers.md).
+
+### Website in ten languages
+- The website is in English (the default), Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese, with a language picker and `hreflang` links. `site/index.html` is the only page edited by hand; `npm run site` writes the others from `site/i18n/<lang>.json`. The translations were made by machine and have not been checked by native speakers.
+- The reply guard reads ten languages (the same list).
 
 ### The reply guard
 - New agent tool **`check_reply`** (MCP and REST): checks what an agent is about to tell the guest against what the stay actually returned. It blocks a booking that is not one yet, an amount the stay never gave, an unconfirmed or unknown fact told as certain, and a price without its disclosure. No language model; nothing is stored. Drafts in ten languages: English, Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese.

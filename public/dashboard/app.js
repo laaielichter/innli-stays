@@ -73,7 +73,9 @@ for (const sel of $$('.lang-switch')) {
 
 async function login(key) {
   state.key = key;
-  const [{ property, completeness }, catalog, me] = await Promise.all([api('/property'), fetch(`/api/fact-catalog?lang=${LANG}`).then((r) => r.json()), api('/me').catch(() => ({ role: 'owner' }))]);
+  const [{ property, completeness }, me] = await Promise.all([api('/property'), api('/me').catch(() => ({ role: 'owner' }))]);
+  // A camper rental gets the rental and vehicle questions instead of the ones about rooms.
+  const catalog = await fetch(`/api/fact-catalog?lang=${LANG}&type=${encodeURIComponent(property.type || '')}`).then((r) => r.json());
   state.me = me;
   applyRole(me);
   state.property = property;

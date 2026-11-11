@@ -4,7 +4,7 @@ import { ownerTextWarnings } from './agent/hostText.ts';
 import { validateDeeplinkTemplate } from './booking/links.ts';
 import { isValidMonthDay } from './domain/rates.ts';
 import { t } from './i18n/index.ts';
-import { CURRENCIES, currencyForCountry, LANGUAGES, POI_KINDS } from './domain/types.ts';
+import { CURRENCIES, currencyForCountry, LANGUAGES, POI_KINDS, PROPERTY_TYPES } from './domain/types.ts';
 
 const photoSchema = z.object({
   // https, or a photo uploaded to this installation (which may run on http while testing locally).
@@ -41,7 +41,7 @@ export const connectorSchema = z.discriminatedUnion('kind', [
 export const propertyPatchSchema = z
   .object({
     name: z.string().min(2).max(120),
-    type: z.enum(['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel']),
+    type: z.enum(PROPERTY_TYPES),
     description: z.string().max(4000),
     language: z.enum(LANGUAGES),
     currency: z.enum(CURRENCIES),

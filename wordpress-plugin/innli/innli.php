@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       INNLI – AI agent access for your accommodation
  * Description:       Connects your website to your INNLI accommodation passport: structured data from confirmed facts, a visible fact list, AI crawler settings and reporting of bookings made through AI agents.
- * Version:           2.1.0
+ * Version:           2.2.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            INNLI
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('INNLI_VERSION', '2.1.0');
+define('INNLI_VERSION', '2.2.0');
 define('INNLI_REF_COOKIE', 'innli_ref');
 
 final class Innli_Plugin

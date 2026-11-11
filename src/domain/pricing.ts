@@ -129,7 +129,10 @@ export function buildQuote(input: QuoteInput): Quote {
   }
 
   const tax = numberFact(property, 'fees.touristTaxPerPersonPerNight');
-  if (tax === null) {
+  // A camper pays tourist tax where it parks for the night, not to the rental company.
+  if (property.type === 'camper_rental') {
+    // nothing to add
+  } else if (tax === null) {
     complete = false;
     warnings.push(t('price.taxUnknown'));
   } else if (tax > 0) {

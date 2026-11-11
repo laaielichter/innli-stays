@@ -47,6 +47,7 @@ Being found, being understood by an agent and actually getting booked are three 
 | **Findability check** | <br>• robots.txt per crawler, keeping **search** crawlers and **training** crawlers apart.<br>• noindex, title, sitemap, room pages, visible prices and conditions, schema.org.<br>• Consistency with the passport.<br>It never promises a ranking. |
 | **WordPress plugin** | <br>• schema.org data from confirmed facts.<br>• The same facts shown visibly on the page.<br>• AI crawler settings.<br>• A crawler visit counter.<br>• Booking reports and the request form.<br>In English, with a Dutch translation. |
 | **Hotels and busy properties** | Room types with several rooms (availability counted per night, stop-sell), rate plans (non-refundable, with breakfast), 15-minute holds, changes without cancelling first, staff keys (reception/manager), signed webhooks to a PMS or channel manager, and hotel licence packages. Measured: availability for a 300-room hotel with 10,000 bookings in ~1 ms. See [docs/hotels.md](docs/hotels.md). |
+| **Camper rental** ([docs/campers.md](docs/campers.md)) | A rental company for motorhomes and campervans gets its own passport: who may drive (age, licence, years), kilometres, deposit, insurance, pick-up and return. Agents search with `kind: "camper"`, pass the driver to `get_quote`, and get back whether that driver may rent that vehicle. A request without an eligible driver is refused. |
 | **Reply guard** ([docs/reply-guard.md](docs/reply-guard.md)) | `check_reply` checks what an agent is about to tell the guest against what the stay actually returned: a booking that is not one yet, an amount the stay never gave, an unconfirmed fact told as certain. No language model, ten languages. `npm run grade` scores a whole conversation, as a test of a booking agent. |
 | **ACP checkout and card guarantees** ([docs/acp.md](docs/acp.md)) | Checkout sessions in the Agentic Commerce Protocol of OpenAI and Stripe, at `/acp`. An item is a quote or a stay written out in its id. Optionally a card guarantee on the property's own Stripe account: authorised at checkout, captured only when the host confirms, released otherwise. |
 | **New in 2.1: know your agent, protected holds, UCP** ([docs/agents-2.1.md](docs/agents-2.1.md)) | What we found missing elsewhere, built in:<br>• *agent identity*: platforms that sign their requests (Web Bot Auth, RFC 9421) are recognised without an account, get their own rate limit, and are named in the signed booking record;<br>• *protected holds*: a limit on open requests per agent and per guest, so a script cannot block a property's rooms;<br>• *UCP lodging booking sessions* (draft) at `/ucp/v1`, with the profile at `/.well-known/ucp`;<br>• an `Idempotency-Key` header, so a retry never books twice;<br>• `cancellation.refundability` on every quote;<br>• per agent in the dashboard: what became a booking and what expired;<br>• identity passed on, signed, through the INNLI guide;<br>• `npx innli-conformance <address>`: 14 read-only checks of any installation. |
@@ -84,7 +85,8 @@ The browser wizard asks for the installation code, your name, the language of yo
 **Try it with sample properties.** Seven stays across Europe:
 - Tuscany, Provence, the Black Forest, Bruges, Tyrol, the Douro and Kerry;
 - live and synced calendars, confirmed, unconfirmed and unknown facts, reviews and a FAQ.
-- plus a 48-room city hotel in Haarlem with room types, rate plans and the answer assistant (see [docs/hotels.md](docs/hotels.md)).
+- plus a 48-room city hotel in Haarlem with room types, rate plans and the answer assistant (see [docs/hotels.md](docs/hotels.md));
+- and a camper rental company on the Veluwe with three vehicles (see [docs/campers.md](docs/campers.md)).
 
 ```bash
 npm install
@@ -154,6 +156,7 @@ npm run pakket -- --concept  # download package (zip) in dist/
 - [docs/hotels.md](docs/hotels.md): for hotels: room types, rate plans, answer assistant, staff, webhooks to your PMS
 - [docs/hosting.md](docs/hosting.md): running locally or online, costs, tunnel, connecting calendars
 - [docs/agent-integration.md](docs/agent-integration.md): for builders of travel agents
+- [docs/campers.md](docs/campers.md): camper rental: driver rules, kilometres, deposit and insurance
 - [docs/reply-guard.md](docs/reply-guard.md): `check_reply`, the guard against saying more than the stay said, and grading a conversation
 - [docs/acp.md](docs/acp.md): ACP checkout sessions and card guarantees
 - [docs/agents-2.1.md](docs/agents-2.1.md): what other projects and standards offer agents, the five biggest open problems, and how 2.1 solves them

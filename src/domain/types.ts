@@ -30,7 +30,17 @@ export interface Fact {
 
 export type FactMap = Record<string, Fact>;
 
-export type PropertyType = 'bnb' | 'pension' | 'guesthouse' | 'holiday_home' | 'unique_stay' | 'hotel';
+export type PropertyType = 'bnb' | 'pension' | 'guesthouse' | 'holiday_home' | 'unique_stay' | 'hotel' | 'camper_rental';
+export const PROPERTY_TYPES = ['bnb', 'pension', 'guesthouse', 'holiday_home', 'unique_stay', 'hotel', 'camper_rental'] as const;
+
+/** Who will drive a rented vehicle: what a rental company must know before it says yes. */
+export interface Driver {
+  age: number;
+  /** Licence category held: B, C1 or C. */
+  licenceCategory?: string;
+  /** Years the licence has been held. */
+  licenceYears?: number;
+}
 
 export interface Address {
   street?: string;
@@ -374,6 +384,8 @@ export interface Quote {
   /** Paid options chosen for this stay. */
   extras?: { id: string; qty: number }[];
   discountCode?: string;
+  /** Camper rental: who will drive, as the agent stated it. */
+  driver?: Driver;
   guests: Guests;
   breakfast: boolean;
   lines: QuoteLine[];
@@ -456,6 +468,8 @@ export interface BookingRequest {
   ratePlanId?: string;
   extras?: { id: string; qty: number }[];
   discountCode?: string;
+  /** Camper rental: the driver the company said yes or no to. Removed with the other personal data. */
+  driver?: Driver;
   /** Agent platform URL that receives signed status changes of this request. */
   callbackUrl?: string;
   /** This request changes an earlier booking; accepting it cancels that one. */

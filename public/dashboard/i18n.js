@@ -260,6 +260,7 @@ const EN = {
   'Pension': 'Guesthouse (pension)',
   'Gastenverblijf': 'Guest house',
   'Vakantiewoning': 'Holiday home',
+  'Camperverhuur': 'Camper rental',
   'Bijzonder verblijf': 'Unique stay',
   'Plaats': 'Town',
   'Land': 'Country',
