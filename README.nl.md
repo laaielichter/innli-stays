@@ -10,7 +10,7 @@ INNLI is geen chatbot en geen nieuw hotelsysteem. Het is een **accommodatiepaspo
 
 Vindbaar zijn, door een agent begrepen worden en daadwerkelijk geboekt kunnen worden zijn drie verschillende dingen. INNLI ondersteunt de hele route.
 
-**Gratis en open source (AGPL-3.0).** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server). De **INNLI-gids** is één gratis adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. Geen abonnement, geen licentiekosten. Het project leeft van donaties: zie [Steun INNLI](#steun-innli).
+**Open source (AGPL-3.0), en gratis om zelf te draaien.** De B&B draait INNLI zelf (Raspberry Pi, eigen pc of server). De **INNLI-gids** is één gratis adres voor agents dat doorverwijst naar alle zelf-gehoste accommodaties. INNLI rekent nooit commissie over een boeking. Het verdient aan diensten rond de open software, voor wie dat wil: zie [Pakketten](#pakketten).
 
 ## Wat er in deze versie zit
 
@@ -170,12 +170,26 @@ curl -X POST localhost:3000/api/admin/agents -H "authorization: Bearer $INNLI_AD
 
 INNLI is een **open onderzoeksproject**: hoe vinden en boeken AI-agents kleine accommodaties eerlijk, veilig en zuinig, zonder tussenpersoon? De onderzoeksvragen, meetmethodes en eerste resultaten staan in [research/](research/README.nl.md). Alles is reproduceerbaar met `npm run measure` en `npm run research:injection`. Het project wordt nu uit eigen middelen gefinancierd; fondsen en verdienen zijn opties voor later en houden het project open ([research/funding/](research/funding/overzicht.md)). Citeren: [CITATION.cff](CITATION.cff).
 
+## Pakketten
+
+De software is voor iedereen dezelfde. Waar je eventueel voor betaalt, is dat iemand het werk voor je doet.
+
+| | Voor wie | Prijs |
+|---|---|---|
+| **Zelf draaien** | Eigenaren en ontwikkelaars die INNLI op hun eigen computer of server draaien. Alles in deze repository, zonder beperkingen. | Gratis (AGPL-3.0) |
+| **INNLI gehost** *(gepland)* | Eigenaren die geen server willen: wij draaien het, werken het bij en maken back-ups, op je eigen adres. | Een vast bedrag per maand. [Laat weten dat je interesse hebt](https://github.com/laaielichter/innli-stays/issues/new?template=hosted_interest.md) |
+| **Installatie en ondersteuning** | Eigenaren en hotels die het geïnstalleerd, gekoppeld aan hun boekingssysteem en werkend gehouden willen hebben. | Op aanvraag |
+| **Commerciële licentie** | Platforms en leveranciers van een PMS of channel manager die INNLI in een product bouwen zonder hun eigen code te publiceren. | Op aanvraag: [COMMERCIAL.nl.md](COMMERCIAL.nl.md) |
+| **Een eigen gids** | Regio's, VVV's en ketens die één agentadres voor hun eigen verblijven willen. | Op aanvraag |
+
+Wat INNLI niet doet: commissie rekenen over een boeking, gegevens van gasten of eigenaren verkopen, of plekken in zoekresultaten verkopen.
+
 ## Steun INNLI
 
-INNLI is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent mee? Steun het project:
-- **Doneren:** via de knop *Sponsor* bovenaan de GitHub-pagina (zodra die aan staat).
+Zelf draaien is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent mee?
 - **Een ster geven** op GitHub, zodat anderen INNLI vinden.
 - **Bijdragen:** meld fouten, vertaal, of bouw een koppeling met een boekingssysteem.
+- **Sponsoren:** via de knop *Sponsor* bovenaan de GitHub-pagina (zodra die aan staat).
 
 ## Licentie
 
@@ -184,3 +198,4 @@ INNLI is gratis en blijft dat. Helpt het je verblijf, of bouw je er een agent me
 - **De agent-kit:** [MIT](agent-kit/LICENSE), zodat agents zonder voorwaarden koppelen.
 - **De WordPress-plugin:** GPL-2.0-or-later.
 - **Bijdragen** vallen onder de [bijdragersovereenkomst](CLA.nl.md).
+- **De naam:** "INNLI" en het logo vallen niet onder deze licenties. Zie [TRADEMARK.md](TRADEMARK.md).

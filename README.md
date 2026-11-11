@@ -28,7 +28,7 @@ INNLI is not a chatbot and not another hotel system. It has four parts:
 
 Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.
 
-**Free and open source (AGPL-3.0).** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. No subscription, no licence fees. The project runs on donations: see [Support INNLI](#support-innli).
+**Open source (AGPL-3.0), and free to run yourself.** The B&B runs INNLI itself (Raspberry Pi, own PC or a server). The **INNLI guide** is one free address for agents that relays to all self-hosted properties. INNLI never takes commission on a booking. It earns from optional services around the open software: see [Plans](#plans).
 
 
 ## What it does
@@ -164,19 +164,34 @@ In Dutch: [README.nl.md](README.nl.md) and [docs/nl/](docs/nl/).
 
 ## Research
 
-INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.nl.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. It is self-funded for now; grants and monetisation are options for later and will keep the project open. To cite INNLI, see [CITATION.cff](CITATION.cff).
+INNLI is an **open research project**: how can AI agents find and book small independent accommodations honestly, safely and efficiently, without an intermediary? The research questions, methods and first results are in [research/](research/README.md). Everything is reproducible with `npm run measure` and `npm run research:injection`. It is self-funded for now. Grants and paid services pay for further work; the software you run yourself stays open source. To cite INNLI, see [CITATION.cff](CITATION.cff).
+
+## Plans
+
+The software is the same for everyone. What you pay for, if anything, is someone doing the work for you.
+
+| | For whom | Price |
+|---|---|---|
+| **Run it yourself** | Hosts and developers who host INNLI on their own computer or server. Everything in this repository, no limits. | Free (AGPL-3.0) |
+| **Hosted INNLI** *(planned)* | Hosts who do not want to run a server: we run it, update it and back it up, on your own address. | A fixed amount a month. [Register your interest](https://github.com/laaielichter/innli-stays/issues/new?template=hosted_interest.md) |
+| **Setup and support** | Hosts and hotels who want it installed, connected to their booking system and kept working. | On request |
+| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. | On request: [COMMERCIAL.md](COMMERCIAL.md) |
+| **Your own guide** | Regions, tourist boards and chains that want one agent address for their own stays. | On request |
+
+What INNLI will not do: take commission on a booking, sell data of guests or hosts, or sell places in search results.
 
 ## Support INNLI
 
-INNLI is free and stays free. Does it help your stay, or are you building an agent with it? Support the project:
-- **Donate:** with the *Sponsor* button at the top of the GitHub page (once it is switched on).
+Running it yourself is free and stays free. Does it help your stay, or are you building an agent with it?
 - **Star it** on GitHub, so others find INNLI.
 - **Contribute:** report bugs, translate, or build a connection to a booking system.
+- **Sponsor:** with the *Sponsor* button at the top of the GitHub page (once it is switched on).
 
 ## Licence
 
 - **The program:** [GNU AGPL-3.0](LICENSE). Free to use and modify, also for your own business. If you offer a modified version over a network, you share that version's source code.
-- **A commercial licence** is available for building INNLI into your own product without sharing your code. See [COMMERCIAL.md](COMMERCIAL.nl.md).
+- **A commercial licence** is available for building INNLI into your own product without sharing your code. See [COMMERCIAL.md](COMMERCIAL.md).
 - **The agent kit:** [MIT](agent-kit/LICENSE), so agents connect without conditions.
 - **The WordPress plugin:** GPL-2.0-or-later.
-- **Contributions** fall under the [contributor agreement](CLA.nl.md).
+- **Contributions** fall under the [contributor agreement](CLA.md).
+- **The name:** "INNLI" and the logo are not part of these licences. See [TRADEMARK.md](TRADEMARK.md).

@@ -2,6 +2,14 @@
 
 Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
+## Unreleased
+
+### How INNLI earns
+- The licence does not change: the software stays open source under the AGPL-3.0 and free to run yourself.
+- The wording does: INNLI no longer says it "runs on donations" or has "no subscription". It earns from optional services around the open software: hosted INNLI (planned), setup and support, commercial licences and guides for regions or chains. See *Plans* in the README.
+- Still excluded: commission on bookings, selling data, and paid places in search results.
+- New: [TRADEMARK.md](TRADEMARK.md). The licences cover the code; the name "INNLI" and the logo have their own rules.
+
 ## 2.1.0 - 2026-11-11
 
 Knowing which agent is calling, holding rooms without abuse, and booking sessions that follow UCP. The research into what others offer and what is still unsolved is in [docs/agents-2.1.md](docs/agents-2.1.md).
