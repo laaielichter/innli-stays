@@ -22,6 +22,21 @@ De AGPL vraagt dat wie een aangepaste versie via een netwerk aanbiedt, de gebrui
 - **De WordPress-plugin** (`wordpress-plugin/`): GPL-2.0-or-later.
 - **De koppeling zelf:** MCP, REST, het paspoort, de toestemmings-hash en de verblijfswensen. Iedereen mag ze implementeren in eigen software.
 
+## Wat een commerciële licentie inhoudt
+
+- Het recht om INNLI in een gesloten product of dienst te bouwen, zonder de plicht uit de AGPL om je eigen code te publiceren.
+- Dezelfde code als de open versie: er is geen aparte gesloten editie van de software die een verblijf zelf draait.
+
+De prijs hangt af van het gebruik (één product of meer, het aantal verblijven dat je bedient) en wordt per klant afgesproken.
+
+## Het hele project
+
+INNLI is gebouwd door en eigendom van één maker. Een bedrijf dat het hele project wil overnemen (code, naam, pakketnamen en de gids) vindt in [docs/for-companies.md](docs/for-companies.md) (Engels) wat daarbij hoort.
+
+## De naam
+
+De licenties gaan over de code, niet over de naam. "INNLI" en het logo mogen alleen worden gebruikt zoals in [TRADEMARK.md](TRADEMARK.md) staat.
+
 ## Aanvragen
 
 Neem contact op via het profiel van de eigenaar van deze GitHub-repository, of open een issue met de titel "Commerciële licentie". Zet daar geen vertrouwelijke gegevens in.
