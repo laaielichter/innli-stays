@@ -10,7 +10,7 @@ import type { WishService } from '../requests/wishes.ts';
 import type { AgentActions, AgentContext } from '../requests/agentActions.ts';
 import { VERSION } from '../version.ts';
 import { shapeResult } from '../agent/shape.ts';
-import { checkReply } from '../agent/guard.ts';
+import { checkReply, GUARD_LANGUAGES } from '../agent/guard.ts';
 
 export const INSTRUCTIONS = `INNLI is a catalog of small independent accommodations (B&Bs, guesthouses, unique stays) whose owners verify their own data.
 
@@ -211,7 +211,8 @@ const wishInput = {
   callbackUrl: z.string().url().max(500).optional().describe('https URL that is POSTed a signed event for every new host offer'),
 };
 const replyInput = {
-  message: z.string().min(1).max(8000).describe('Your draft reply to the guest, in English'),
+  message: z.string().min(1).max(8000).describe('Your draft reply to the guest'),
+  language: z.enum(GUARD_LANGUAGES).optional().describe('Language of the draft (en, nl, de, fr, es, it, pt, pl, ja, zh); recognised from the draft when left out'),
   evidence: z
     .array(z.object({ tool: z.string().max(60), args: z.record(z.string(), z.unknown()).optional(), result: z.record(z.string(), z.unknown()) }))
     .max(40)
@@ -294,7 +295,7 @@ export const TOOLS = {
   check_reply: {
     title: 'Check a draft reply',
     description:
-      'Checks what you are about to tell the guest against what the stay actually returned: a booking that is not one yet, an amount or date the stay never gave, an unconfirmed fact told as certain, a price without its disclosure. Returns ok, warn or block, the words concerned and what to say instead. Nothing is stored. English drafts.',
+      'Checks what you are about to tell the guest against what the stay actually returned: a booking that is not one yet, an amount or date the stay never gave, an unconfirmed fact told as certain, a price without its disclosure. Returns ok, warn or block, the words concerned and what to say instead. Nothing is stored. Drafts in English, Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese.',
     inputSchema: replyInput,
     annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   },

@@ -34,8 +34,17 @@ POST /api/agent/v1/tools/check_reply
 ```
 
 - `evidence` is the tool results of this conversation, oldest first, as the agent received them.
+- `language` is optional: `en`, `nl`, `de`, `fr`, `es`, `it`, `pt`, `pl`, `ja` or `zh`. Without it the language is recognised from the draft, and the answer says which one (`language`).
 - `verdict` is `ok`, `warn` or `block`. Do not send a draft that is blocked: rewrite it with the `fix` and check again.
 - Nothing is stored. The draft and the evidence are only compared.
+
+## Ten languages
+
+The guard reads drafts in English, Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese. In each of them it knows how a booking is claimed, how a sentence is made conditional, how a caveat is worded, how the common facts are named (enclosed garden, dogs, breakfast, parking, charger, step-free access, shower, bathroom, ground floor, quiet, wifi), how dates and amounts are written, and how a guest says yes, no or cancel.
+
+A short sentence does not say which language it is. So every pattern is tried in its own language: a Dutch claim is cleared by a Dutch condition, a Polish fact by a Polish caveat. English is always read too, because agents mix languages.
+
+The findings themselves (`evidence`, `fix`) are in English: they are for the agent, not for the guest.
 
 ## What it finds
 
@@ -69,6 +78,7 @@ The score starts at 100; a blocking finding costs 25 and a warning 8. That makes
 
 ## Limits
 
-- English drafts only.
+- Ten languages, tested with the same situation in each. The patterns for English are the most complete; in the other languages a mistake worded in an unusual way is more likely to be missed.
+- A fact the guard has no words for is only recognised in English.
 - It recognises the mistakes it has patterns for. A pass means none of these were found, not that the reply is good.
 - It checks what was said against the evidence it was given. Evidence the agent leaves out cannot be checked.

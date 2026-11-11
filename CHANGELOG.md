@@ -5,7 +5,7 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 ## Unreleased
 
 ### The reply guard
-- New agent tool **`check_reply`** (MCP and REST): checks what an agent is about to tell the guest against what the stay actually returned. It blocks a booking that is not one yet, an amount the stay never gave, an unconfirmed or unknown fact told as certain, and a price without its disclosure. No language model; nothing is stored. English drafts.
+- New agent tool **`check_reply`** (MCP and REST): checks what an agent is about to tell the guest against what the stay actually returned. It blocks a booking that is not one yet, an amount the stay never gave, an unconfirmed or unknown fact told as certain, and a price without its disclosure. No language model; nothing is stored. Drafts in ten languages: English, Dutch, German, French, Spanish, Italian, Portuguese, Polish, Japanese and Chinese.
 - **`npm run grade -- conversation.json`** scores a whole conversation from 0 to 100, including a booking request without a clear yes from the guest. Usable as a test of a booking agent.
 - There are now 20 tools; the core profile still has 8.
 - Details: [docs/reply-guard.md](docs/reply-guard.md).

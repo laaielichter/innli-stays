@@ -337,7 +337,7 @@ claude mcp add --transport http innli <span class="s">https://your-stay.example/
         <tr><td>ACP checkout sessions</td><td><code>/.well-known/acp.json</code> · <code>/acp</code></td><td>The protocol of OpenAI and Stripe, with a card guarantee that is only captured when the host confirms</td></tr>
         <tr><td>UCP lodging booking sessions (draft)</td><td><code>/.well-known/ucp</code> · <code>/ucp/v1</code> · <code>/ucp/mcp</code></td><td>Session-based booking with totals, policies and payment terms</td></tr>
         <tr><td>Identity without an account</td><td>Web Bot Auth, RFC 9421</td><td>Sign your requests: your own rate limit, named in the signed record</td></tr>
-        <tr><td>Reply guard</td><td><code>check_reply</code></td><td>Checks your draft against what the stay said, before the guest reads it. No language model</td></tr>
+        <tr><td>Reply guard</td><td><code>check_reply</code></td><td>Checks your draft against what the stay said, before the guest reads it. No language model, ten languages</td></tr>
         <tr><td>Consent with a hash</td><td><code>consent.summary</code> · <code>consent.hash</code></td><td>If the terms changed after the guest said yes, nothing is sent</td></tr>
         <tr><td>Typed errors</td><td><code>code</code> · <code>retryable</code> · <code>hint</code></td><td>A lookup instead of a guess; RateLimit headers on every answer</td></tr>
         <tr><td>Safe retries</td><td><code>Idempotency-Key</code></td><td>A timeout never becomes a second booking</td></tr>

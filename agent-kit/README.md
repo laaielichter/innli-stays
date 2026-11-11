@@ -43,7 +43,7 @@ node agent-kit/examples/book-a-stay.mjs "Tuscany"   # add --book to send the req
 
 ## New after 2.1
 
-- **`check_reply`.** Send your draft and the tool results of the conversation; get back `ok`, `warn` or `block`, the words concerned and what to say instead. It catches a booking that is not one yet, an amount the stay never gave, and an unconfirmed fact told as certain. See [docs/reply-guard.md](../docs/reply-guard.md).
+- **`check_reply`.** Send your draft and the tool results of the conversation; get back `ok`, `warn` or `block`, the words concerned and what to say instead. It catches a booking that is not one yet, an amount the stay never gave, and an unconfirmed fact told as certain, in ten languages. See [docs/reply-guard.md](../docs/reply-guard.md).
 - **ACP checkout sessions** at `/acp`: see [docs/acp.md](../docs/acp.md).
 
 ## What agents get in 2.1

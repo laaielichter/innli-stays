@@ -48,7 +48,7 @@ describe('the reply guard (check_reply)', () => {
 
   it('passes an honest reply', () => {
     const honest = `Seaview House Dingle fits your dates. The host confirmed that one dog is welcome. A fully enclosed garden is listed, but the host has not confirmed it, so I can't promise that. The total is €${total} for 3 nights, all mandatory costs included.`;
-    assert.deepEqual(checkReply({ message: honest, evidence: [search, answer, quote] }), { verdict: 'ok', findings: [] });
+    assert.deepEqual(checkReply({ message: honest, evidence: [search, answer, quote] }), { verdict: 'ok', findings: [], language: 'en' });
     const pending = `Your request has been sent to Seaview House Dingle. This is not yet a booking: the room is held while the host decides.`;
     assert.deepEqual(checkReply({ message: pending, evidence: [search, answer, quote, request] }).findings, []);
     assert.deepEqual(checkReply({ message: request.result.tellTheGuest, evidence: [quote, request] }).findings, [], "INNLI's own wording passes");

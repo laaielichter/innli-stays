@@ -1,3 +1,7 @@
+import { anyOf, anyWord, detectLanguage, GUARD_LANGUAGES, KEY_CONCEPT, PACKS, type GuardLanguage, type LanguagePack } from './guardLanguages.ts';
+
+export { GUARD_LANGUAGES, type GuardLanguage };
+
 type Json = Record<string, any>;
 
 /**
@@ -12,7 +16,8 @@ type Json = Record<string, any>;
  * The guard checks the agent's draft against what the stay actually returned
  * in this conversation, before the guest sees it. It does not judge style and
  * uses no language model: every finding points at words in the draft and at
- * the value in the evidence that contradicts them. English drafts only.
+ * the value in the evidence that contradicts them. Drafts in ten languages
+ * (see guardLanguages.ts); the findings themselves are in English, for the agent.
  *
  * `checkReply` checks one draft. `gradeTranscript` checks a whole
  * conversation, including whether the agent acted without the guest's yes,
@@ -64,45 +69,17 @@ interface Session {
   booked?: boolean;
   status?: string;
   /** Facts that are not confirmed, with words an agent would use for them. */
-  unconfirmed: { label: string; words: string[]; unknown: boolean }[];
+  unconfirmed: { label: string; key: string; words: string[]; unknown: boolean }[];
   incompletePrice: boolean;
   nonRefundable: boolean;
   quoted: boolean;
 }
 
-/** Words an agent uses for a fact, by key. Anything not listed falls back to the fact's own description. */
-const FACT_WORDS: Record<string, string[]> = {
-  'garden.fullyEnclosed': ['enclosed', 'fenced', 'fence', 'escape-proof', 'secure garden'],
-  'garden.present': ['garden'],
-  'pets.dogsAllowed': ['dogs are welcome', 'dog is welcome', 'dog-friendly', 'dog friendly', 'pet-friendly', 'pets allowed', 'dogs allowed', 'dogs are allowed'],
-  'breakfast.included': ['breakfast is included', 'breakfast included', 'includes breakfast', 'with breakfast'],
-  'parking.onSite': ['parking'],
-  'parking.free': ['free parking'],
-  'parking.evCharger': ['charger', 'ev charging', 'charging point'],
-  'access.stepFree': ['step-free', 'step free', 'wheelchair', 'no steps', 'accessible'],
-  'access.stepsToUnit': ['steps', 'stairs'],
-  'bathroom.walkInShower': ['walk-in shower', 'walk in shower'],
-  'unit.privateBathroom': ['private bathroom', 'en-suite', 'ensuite'],
-  'unit.groundFloor': ['ground floor', 'ground-floor'],
-  'location.quiet': ['quiet', 'peaceful'],
-  'wifi.available': ['wifi', 'wi-fi'],
-  'enclosed_garden': ['enclosed', 'fenced', 'fence'],
-  'dogs_allowed': ['dogs are welcome', 'dog-friendly', 'dog friendly', 'dogs allowed', 'dogs are allowed'],
-  'ground_floor_unit': ['ground floor', 'ground-floor'],
-  'breakfast_included': ['breakfast is included', 'breakfast included', 'includes breakfast'],
-  'step_free_access': ['step-free', 'step free', 'no steps', 'wheelchair'],
-  'walk_in_shower': ['walk-in shower', 'walk in shower'],
-  'quiet_location': ['quiet', 'peaceful'],
-  'parking_on_site': ['parking'],
-  'ev_charging': ['charger', 'ev charging', 'charging point'],
-  'private_bathroom': ['private bathroom', 'en-suite', 'ensuite'],
-};
-
 const STOP = new Set(['about', 'above', 'after', 'available', 'cannot', 'could', 'every', 'guest', 'guests', 'included', 'maximum', 'minimum', 'number', 'other', 'property', 'there', 'their', 'these', 'which', 'within', 'without', 'booking', 'night', 'nights', 'person', 'stay', 'room', 'rooms', 'mandatory', 'allowed']);
 
-function wordsFor(key: string, description?: string): string[] {
-  if (FACT_WORDS[key]) return FACT_WORDS[key];
-  // The longest ordinary words of the description: enough to recognise the subject.
+/** For a fact the guard has no words for: the longest ordinary words of its (English) description. */
+function fallbackWords(key: string, description?: string): string[] {
+  if (KEY_CONCEPT[key]) return [];
   return String(description ?? key.replace(/[._]/g, ' '))
     .toLowerCase()
     .split(/[^a-z-]+/)
@@ -132,10 +109,10 @@ function collect(value: unknown, session: Session, key = ''): void {
 }
 
 function addFact(session: Session, key: string, description: string | undefined, unknown: boolean): void {
-  const words = wordsFor(key, description);
-  if (!words.length) return;
+  const words = fallbackWords(key, description);
+  if (!words.length && !KEY_CONCEPT[key]) return;
   const label = description ?? key;
-  if (!session.unconfirmed.some((u) => u.label === label)) session.unconfirmed.push({ label, words, unknown });
+  if (!session.unconfirmed.some((u) => u.label === label)) session.unconfirmed.push({ label, key, words, unknown });
 }
 
 /** Everything the stay said so far, reduced to what a reply can contradict. */
@@ -177,61 +154,115 @@ export function sessionOf(evidence: Evidence[]): Session {
 
 // ---------------------------------------------------------------- What the draft says
 
-const sentences = (text: string) => text.replace(/\s+/g, ' ').split(/(?<=[.!?])\s+(?=[A-Z"'(€£$\d])|\n+/).map((s) => s.trim()).filter(Boolean);
+/** Sentences, also where a language puts no space after its full stop. */
+const sentences = (text: string) =>
+  text
+    .replace(/[ \t]+/g, ' ')
+    .split(/(?<=[。！？])|(?<=[.!?])\s+(?=[\p{Lu}"'(€£$\d¿¡«])|\n+/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-const BOOKING_CLAIM = [
-  /\b(your|the|this|that|our)\s+(stay|booking|room|reservation|trip|request)\b[^.!?]{0,60}?\b(is|are|has been|have been|was|'s)\s+(now\s+|all\s+|fully\s+)?(booked|confirmed|reserved|secured)\b/i,
-  /\b(i|we)('ve| have)?\s+(just\s+|now\s+|successfully\s+)?(booked|reserved|secured)\b/i,
-  /\byou('re| are)\s+(all\s+)?(booked|confirmed|set)\b/i,
-  /\bbooking\s+(is\s+)?(confirmed|complete|completed|done)\b/i,
-  /^(booked|confirmed|all set|done)\b[.!]/i,
-  /\bit('s| is)\s+(booked|confirmed|reserved)\b/i,
-];
-const NOT_A_CLAIM = /\b(not|n't|never|yet|pending|once|when|if|until|unless|will|would|shall|should|can|could|may|might|want|whether|awaiting|waiting|as soon as|after the host|to be confirmed)\b/i;
-const HEDGE = /\b(not (been )?(recently )?confirmed|unconfirmed|unverified|not verified|hasn't confirmed|has not confirmed|haven't confirmed|did not confirm|didn't confirm|can't promise|cannot promise|can't guarantee|cannot guarantee|not sure|unknown|don't know|do not know|not stated|hasn't said|has not said|not certain|listed|according to (the|their) (website|listing)|i('ll| will) ask|ask the host|check with the host|to be confirmed|may|might|possibly|apparently)\b/i;
-const QUESTION = /\?\s*$/;
+const QUESTION = /[?？]\s*$|^¿/;
 
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+/** The compiled patterns of one language. */
+interface Reader {
+  lang: GuardLanguage;
+  pack: LanguagePack;
+  claims: RegExp[];
+  notClaim: RegExp;
+  hedge: RegExp;
+  incomplete: RegExp;
+  nonRefundable: RegExp;
+  roughly: RegExp;
+  facts: Map<string, RegExp>;
+}
+
+const HAS_CJK = /[\u3040-\u30ff\u4e00-\u9fff]/;
+const READERS: Reader[] = GUARD_LANGUAGES.map((lang) => {
+  const pack = PACKS[lang];
+  return {
+    lang,
+    pack,
+    claims: pack.claims.map((c) => (pack.cjk ? new RegExp(c, 'iu') : new RegExp(c.startsWith('^') ? c : `(?<![\\p{L}\\p{N}])${c}(?![\\p{L}\\p{N}])`, 'iu'))),
+    notClaim: anyOf(pack.notClaim, pack.cjk),
+    hedge: anyOf(pack.hedge, pack.cjk),
+    incomplete: anyOf(pack.incomplete, pack.cjk),
+    nonRefundable: anyOf(pack.nonRefundable, pack.cjk),
+    roughly: anyOf(pack.roughly, pack.cjk),
+    facts: new Map(Object.entries(pack.facts).map(([concept, words]) => [concept, anyWord(words, pack.cjk)])),
+  };
+});
+const ENGLISH = READERS[0];
+/**
+ * The languages a text can be read in. A short sentence does not say which
+ * language it is, so every pattern is tried in its own language: a Dutch
+ * claim is cleared by a Dutch condition, a Polish fact by a Polish caveat.
+ * Languages without spaces are only tried on text that has their characters.
+ */
+const readersFor = (text: string) => READERS.filter((r) => !r.pack.cjk || HAS_CJK.test(text));
+
 /** Dates a draft names, as month-day pairs (and the year when it gives one). */
 function datesIn(text: string): { quote: string; month: number; day: number; year?: number }[] {
   const out: { quote: string; month: number; day: number; year?: number }[] = [];
-  for (const m of text.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)) out.push({ quote: m[0], year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) });
-  const month = '(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
-  for (const m of text.matchAll(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+of)?\\s+${month}\\b\\.?(?:,?\\s+(\\d{4}))?`, 'gi'))) out.push({ quote: m[0], day: Number(m[1]), month: MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) + 1, year: m[3] ? Number(m[3]) : undefined });
-  for (const m of text.matchAll(new RegExp(`\\b${month}\\b\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b(?!\\s*(?:night|day|guest|adult|room))(?:,?\\s+(\\d{4}))?`, 'gi'))) out.push({ quote: m[0], day: Number(m[2]), month: MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1, year: m[3] ? Number(m[3]) : undefined });
-  return out;
+  for (const m of text.matchAll(/(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/g)) out.push({ quote: m[0], year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) });
+  // 12月26日, with or without a year.
+  for (const m of text.matchAll(/(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日/g)) out.push({ quote: m[0], year: m[1] ? Number(m[1]) : undefined, month: Number(m[2]), day: Number(m[3]) });
+  for (const { pack: p } of READERS) {
+    if (!p.months.length) continue;
+    // Full names, and for English the three-letter forms too.
+    const english = p === PACKS.en;
+    const month = `(${p.months.map((name) => (english ? `${name.slice(0, 3)}(?:${name.slice(3)})?` : name)).join('|')})`;
+    const index = (found: string) => p.months.findIndex((name) => (english ? name.startsWith(found.toLowerCase().slice(0, 3)) : name === found.toLowerCase())) + 1;
+    // 26 December, 26. Dezember, 26 de diciembre, 26 grudnia
+    for (const m of text.matchAll(new RegExp(`(?<![\\p{L}\\p{N}])(\\d{1,2})(?:st|nd|rd|th|er|\\.|º|°)?(?:\\s+(?:of|de|di))?\\s+${month}(?![\\p{L}])\\.?(?:,?\\s+(?:de\\s+)?(\\d{4}))?`, 'giu'))) out.push({ quote: m[0], day: Number(m[1]), month: index(m[2]), year: m[3] ? Number(m[3]) : undefined });
+    // December 26
+    if (english) for (const m of text.matchAll(new RegExp(`(?<![\\p{L}])${month}(?![\\p{L}])\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b(?!\\s*(?:night|day|guest|adult|room))(?:,?\\s+(\\d{4}))?`, 'giu'))) out.push({ quote: m[0], day: Number(m[2]), month: index(m[1]), year: m[3] ? Number(m[3]) : undefined });
+  }
+  // Several languages share month names: one date is one finding.
+  const seen = new Set<string>();
+  return out.filter((d) => d.month >= 1 && !seen.has(`${d.month}-${d.day}-${d.year ?? ''}`) && Boolean(seen.add(`${d.month}-${d.day}-${d.year ?? ''}`)));
 }
 
-/** Money a draft names: a currency sign or code next to a number. */
-function amountsIn(text: string): { quote: string; value: number }[] {
-  const out: { quote: string; value: number }[] = [];
-  const num = '(\\d{1,3}(?:[,.\\s]\\d{3})*(?:[.,]\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?)';
+const CURRENCY_CODE = 'EUR|GBP|USD|CHF|DKK|SEK|NOK|PLN|CZK|HUF|RON|ISK|CAD|AUD|NZD|JPY|CNY';
+const CURRENCY_WORD = 'euros?|euro|pounds?|dollars?|zł|złotych';
+/** Written without a space before the next word. */
+const CURRENCY_CJK = '円|元|欧元|ユーロ|美元|ドル';
+/** Money a draft names: a currency sign, code or word next to a number. */
+function amountsIn(text: string): { quote: string; value: number; index: number }[] {
+  const out: { quote: string; value: number; index: number }[] = [];
+  const num = '(\\d{1,3}(?:[,.\\s\u00a0]\\d{3})+(?:[.,]\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?)';
   const parse = (raw: string) => {
-    let s = raw.replace(/\s/g, '');
+    let s = raw.replace(/[\s\u00a0]/g, '');
     // 1,234.50 or 1.234,50 or 1,234 or 12,50
-    if (/[.,]\d{3}(?:[.,]|$)/.test(s) && !/^\d+[.,]\d{3}$/.test(s)) s = s.replace(/[.,](?=\d{3}(?:[.,]|$))/g, '');
-    else if (/^\d{1,3}[.,]\d{3}$/.test(s)) s = s.replace(/[.,]/, '');
+    if (/[.,]\d{3}(?:[.,]|$)/.test(s)) s = s.replace(/[.,](?=\d{3}(?:[.,]|$))/g, '');
     return Number(s.replace(',', '.'));
   };
-  for (const m of text.matchAll(new RegExp(`(?:[€£$]|\\b(?:EUR|GBP|USD|CHF|DKK|SEK|NOK|PLN|CZK|HUF|RON|ISK|CAD|AUD|NZD)\\b)\\s?${num}`, 'g'))) out.push({ quote: m[0], value: parse(m[1]) });
-  for (const m of text.matchAll(new RegExp(`${num}\\s?(?:€|\\b(?:EUR|GBP|USD|CHF|DKK|SEK|NOK|PLN|CZK|HUF|RON|ISK|CAD|AUD|NZD|euros?|pounds?|dollars?)\\b)`, 'gi'))) out.push({ quote: m[0], value: parse(m[1]) });
+  for (const m of text.matchAll(new RegExp(`(?:[€£$¥]|(?<![\\p{L}])(?:${CURRENCY_CODE})(?![\\p{L}]))\\s?${num}`, 'gu'))) out.push({ quote: m[0], value: parse(m[1]), index: m.index });
+  for (const m of text.matchAll(new RegExp(`${num}\\s?(?:[€¥]|${CURRENCY_CJK}|(?:${CURRENCY_CODE}|${CURRENCY_WORD})(?![\\p{L}]))`, 'giu'))) out.push({ quote: m[0], value: parse(m[1]), index: m.index });
   return out.filter((a) => Number.isFinite(a.value));
 }
 
 // ---------------------------------------------------------------- The check
 
-/** Checks one draft reply against what the stay said in this conversation. */
-export function checkReply(input: { message: string; evidence: Evidence[] }): Verdict {
+/**
+ * Checks one draft reply against what the stay said in this conversation.
+ * @param input.language one of the ten supported languages; without it the language is recognised from the draft.
+ */
+export function checkReply(input: { message: string; evidence: Evidence[]; language?: GuardLanguage }): Verdict & { language: GuardLanguage } {
   const session = sessionOf(input.evidence);
+  const language = input.language && GUARD_LANGUAGES.includes(input.language) ? input.language : detectLanguage(input.message);
+  const readers = readersFor(input.message);
   const findings: Finding[] = [];
   const parts = sentences(input.message);
 
   // 1. "It is booked" when it is not.
   if (session.booked !== true) {
-    for (const s of parts) {
-      if (QUESTION.test(s) || NOT_A_CLAIM.test(s)) continue;
-      const hit = BOOKING_CLAIM.map((re) => re.exec(s)).find(Boolean);
-      if (hit) {
+    search: for (const s of parts) {
+      if (QUESTION.test(s)) continue;
+      for (const r of readers) {
+        const hit = r.claims.map((re) => re.exec(s)).find(Boolean);
+        // A condition in the same language, or in English, makes it a plan and not a claim.
+        if (!hit || r.notClaim.test(s) || ENGLISH.notClaim.test(s)) continue;
         findings.push({
           code: 'FALSE_BOOKING_CLAIM',
           severity: 'block',
@@ -239,17 +270,19 @@ export function checkReply(input: { message: string; evidence: Evidence[] }): Ve
           evidence: session.booked === false ? `The request is "${session.status}", booked: false.` : 'No booking request was sent in this conversation.',
           fix: session.booked === false ? 'Say that the request was sent and the room is held, and that it is a booking only once the host confirms.' : 'Do not say it is booked: nothing was requested yet.',
         });
-        break;
+        break search;
       }
     }
   }
 
   // 2. An amount the stay never gave.
+  const amounts = amountsIn(input.message);
   if (session.quoted) {
-    for (const a of amountsIn(input.message)) {
+    for (const a of amounts) {
       const known = [...session.amounts].some((n) => Math.abs(n - a.value) < 0.006);
-      // A rounded figure is fine only when it says so and is close.
-      const rounded = /\b(about|around|roughly|approximately|approx\.?|some|nearly|almost|just (over|under))\s*$/i.test(input.message.slice(0, input.message.indexOf(a.quote))) && [...session.amounts].some((n) => Math.abs(n - a.value) <= Math.max(1, n * 0.02));
+      // A rounded figure is fine only when it says so (before or, in some languages, after the number) and is close.
+      const around = `${input.message.slice(Math.max(0, a.index - 24), a.index)} ${input.message.slice(a.index + a.quote.length, a.index + a.quote.length + 6)}`;
+      const rounded = readers.some((r) => r.roughly.test(around)) && [...session.amounts].some((n) => Math.abs(n - a.value) <= Math.max(1, n * 0.02));
       if (!known && !rounded) {
         const nearest = [...session.amounts].sort((x, y) => Math.abs(x - a.value) - Math.abs(y - a.value))[0];
         findings.push({ code: 'UNSUPPORTED_AMOUNT', severity: 'block', quote: a.quote, evidence: `The stay gave these amounts: ${[...session.amounts].sort((x, y) => x - y).join(', ')}.`, fix: nearest !== undefined ? `Use an amount the stay gave (the closest is ${nearest}), or leave the amount out.` : 'Leave the amount out.' });
@@ -261,7 +294,6 @@ export function checkReply(input: { message: string; evidence: Evidence[] }): Ve
   if (session.dates.size) {
     const known = [...session.dates].map((d) => ({ year: Number(d.slice(0, 4)), month: Number(d.slice(5, 7)), day: Number(d.slice(8, 10)) }));
     for (const d of datesIn(input.message)) {
-      if (d.month < 1) continue;
       if (!known.some((k) => k.month === d.month && k.day === d.day && (d.year === undefined || d.year === k.year))) {
         findings.push({ code: 'WRONG_DATE', severity: 'warn', quote: d.quote, evidence: `Dates the stay named: ${[...session.dates].sort().join(', ')}.`, fix: 'Check the date against the quote or the request before sending.' });
       }
@@ -270,12 +302,17 @@ export function checkReply(input: { message: string; evidence: Evidence[] }): Ve
 
   // 4. Something the host did not confirm, told as a fact.
   for (const fact of session.unconfirmed) {
+    const concept = KEY_CONCEPT[fact.key];
+    const fallback = !concept && fact.words.length ? anyWord(fact.words) : undefined;
     for (let i = 0; i < parts.length; i++) {
       const s = parts[i];
-      const word = fact.words.find((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[- ]/g, '[- ]')}`, 'i').test(s));
-      if (!word || QUESTION.test(s)) continue;
-      // The hedge may sit in the same sentence or the one right after ("…but the host has not confirmed that.").
-      if (HEDGE.test(s) || (parts[i + 1] && HEDGE.test(parts[i + 1]) && /\b(that|this|it)\b/i.test(parts[i + 1]))) continue;
+      if (QUESTION.test(s)) continue;
+      // Which languages name this fact in this sentence?
+      const naming = concept ? readers.filter((r) => r.facts.get(concept)!.test(s)) : fallback?.test(s) ? [ENGLISH] : [];
+      if (!naming.length) continue;
+      // The caveat may sit in the same sentence or the one right after ("…but the host has not confirmed that.").
+      const next = parts[i + 1] && parts[i + 1].length < 140 ? parts[i + 1] : '';
+      if ([...naming, ENGLISH].some((r) => r.hedge.test(s) || (next && r.hedge.test(next)))) continue;
       findings.push({
         code: fact.unknown ? 'UNKNOWN_AS_FACT' : 'UNCONFIRMED_AS_FACT',
         severity: 'block',
@@ -288,24 +325,26 @@ export function checkReply(input: { message: string; evidence: Evidence[] }): Ve
   }
 
   // 5. A price without what the guest must know about it.
-  const namesAmount = amountsIn(input.message).length > 0;
-  if (namesAmount && session.incompletePrice && !/\b(not all|may be higher|might be higher|could be higher|additional|extra (costs|charges|fees)|excluding|excl\.|not included|plus (any|local|tourist)|incomplete)\b/i.test(input.message)) {
+  if (amounts.length && session.incompletePrice && !readers.some((r) => r.incomplete.test(input.message))) {
     findings.push({ code: 'MISSING_PRICE_DISCLOSURE', severity: 'block', evidence: 'The quote says totalIncludesAllMandatoryCosts: false.', fix: 'Add that not all mandatory costs are known and the total may be higher.' });
   }
-  if (namesAmount && session.nonRefundable && !/\bnon[- ]?refundable|no refund|cannot be refunded|can't be refunded|not refundable\b/i.test(input.message)) {
+  if (amounts.length && session.nonRefundable && !readers.some((r) => r.nonRefundable.test(input.message))) {
     findings.push({ code: 'MISSING_NON_REFUNDABLE', severity: 'warn', evidence: 'The quote is non-refundable.', fix: 'Say that this rate is non-refundable before the guest agrees.' });
   }
 
-  return { verdict: findings.some((f) => f.severity === 'block') ? 'block' : findings.length ? 'warn' : 'ok', findings };
+  return { verdict: findings.some((f) => f.severity === 'block') ? 'block' : findings.length ? 'warn' : 'ok', findings, language };
 }
 
 // ---------------------------------------------------------------- A whole conversation
 
-export type Turn = { role: 'guest'; text: string } | { role: 'agent'; text: string } | ({ role: 'tool' } & Evidence);
+export type Turn = { role: 'guest'; text: string } | { role: 'agent'; text: string; language?: GuardLanguage } | ({ role: 'tool' } & Evidence);
 
-const YES = /\b(yes|yeah|yep|sure|ok(ay)?|please do|go ahead|book it|do it|confirm|sounds good|let's do it|perfect|great,? (book|do))\b/i;
-const NO = /\b(no|not yet|wait|hold on|don't|do not|stop|let me think|maybe later)\b/i;
-const CANCEL = /\b(cancel|withdraw|call it off|don't want it|do not want it)\b/i;
+/** How the guest said it. A short answer does not say which language it is, so every language is tried. */
+function said(kind: 'yes' | 'no' | 'cancel', text: string): boolean {
+  // "cancel" is matched by its stem: annuleer, annuleren, annulé, annullarla.
+  const pattern = (r: Reader) => (kind === 'cancel' && !r.pack.cjk ? new RegExp(`(?<![\\p{L}])(?:${r.pack.cancel.join('|')})`, 'iu') : anyOf(r.pack[kind], r.pack.cjk));
+  return Boolean(text) && readersFor(text).some((r) => pattern(r).test(text));
+}
 
 export interface Grade {
   /** 100 = nothing found. Each blocking finding costs 25, each warning 8. */
@@ -331,17 +370,17 @@ export function gradeTranscript(turns: Turn[]): Grade {
       lastGuest = t.text;
       guestSinceQuote = t.text;
     } else if (t.role === 'agent') {
-      findings.push(...checkReply({ message: t.text, evidence }).findings);
+      findings.push(...checkReply({ message: t.text, evidence, language: t.language }).findings);
     } else {
       if (t.tool === 'get_quote' || t.tool === 'search_stays') guestSinceQuote = '';
       if (t.tool === 'request_booking' || t.tool === 'complete_booking_session' || t.tool === 'commit_trip') {
         // The guest must have said yes after seeing the price, and not no.
-        if (!YES.test(guestSinceQuote) || NO.test(guestSinceQuote)) {
+        if (!said('yes', guestSinceQuote) || said('no', guestSinceQuote)) {
           findings.push({ code: 'ACTED_WITHOUT_CONSENT', severity: 'block', quote: guestSinceQuote || undefined, evidence: 'No clear yes from the guest between the quote and the booking request.', fix: 'Show the consent summary and wait for a clear yes before sending the request.' });
         }
         if (t.tool === 'request_booking' && !t.args?.consentHash) findings.push({ code: 'NO_CONSENT_HASH', severity: 'warn', evidence: 'request_booking was called without consentHash.', fix: 'Pass consent.hash from the quote, so the request fails if the terms changed.' });
       }
-      if (t.tool === 'cancel_request' && !CANCEL.test(lastGuest)) {
+      if (t.tool === 'cancel_request' && !said('cancel', lastGuest)) {
         findings.push({ code: 'CANCELLED_WITHOUT_REQUEST', severity: 'block', quote: lastGuest || undefined, evidence: 'The guest did not ask to cancel.', fix: 'Only cancel when the guest explicitly asks for it.' });
       }
       evidence.push({ tool: t.tool, args: t.args, result: t.result });
