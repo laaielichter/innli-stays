@@ -10,7 +10,8 @@ import type { NextFunction, Request, Response } from 'express';
  * - Same key, other body: 409 (the key was already used for something else).
  * - Same key while the first call still runs: 409 with Retry-After.
  * - Server errors (5xx) are not stored, so they can be retried.
- * Answers are kept for 24 hours, in memory.
+ * Answers are kept for 24 hours, in memory, up to a fixed number and size.
+ * Booking requests also store the key with the request itself (see app.ts).
  */
 interface Entry {
   bodyHash: string;
@@ -19,7 +20,9 @@ interface Entry {
 }
 
 const TTL_MS = 86_400_000;
-const MAX_ENTRIES = 10_000;
+// Bounded on purpose: keys are chosen by callers, so the cache must not be a way to fill memory.
+const MAX_ENTRIES = 2000;
+const MAX_BODY_BYTES = 32_000;
 
 export function idempotency() {
   const entries = new Map<string, Entry>();
@@ -51,11 +54,14 @@ export function idempotency() {
     }
     const entry: Entry = { bodyHash, until: now + TTL_MS };
     entries.set(id, entry);
-    if (entries.size > MAX_ENTRIES) for (const [k, v] of entries) if (v.until < now || entries.size > MAX_ENTRIES) entries.delete(k);
+    // Oldest first: a Map keeps insertion order.
+    if (entries.size > MAX_ENTRIES) for (const k of entries.keys()) if (entries.size > MAX_ENTRIES) entries.delete(k);
     const json = res.json.bind(res);
     res.json = ((body: unknown) => {
       // Rate limits, auth failures and server errors are not the operation's answer: let the caller try again.
       if (res.statusCode >= 500 || res.statusCode === 429 || res.statusCode === 401) entries.delete(id);
+      // A large answer (a long search result) is not kept: a retry of a read simply runs again.
+      else if (JSON.stringify(body ?? null).length > MAX_BODY_BYTES) entries.delete(id);
       else entry.done = { status: res.statusCode, body };
       return json(body);
     }) as Response['json'];
