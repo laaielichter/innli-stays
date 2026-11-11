@@ -4,6 +4,15 @@ Nederlands: [CHANGELOG.nl.md](CHANGELOG.nl.md).
 
 ## Unreleased
 
+### The reply guard
+- New agent tool **`check_reply`** (MCP and REST): checks what an agent is about to tell the guest against what the stay actually returned. It blocks a booking that is not one yet, an amount the stay never gave, an unconfirmed or unknown fact told as certain, and a price without its disclosure. No language model; nothing is stored. English drafts.
+- **`npm run grade -- conversation.json`** scores a whole conversation from 0 to 100, including a booking request without a clear yes from the guest. Usable as a test of a booking agent.
+- There are now 20 tools; the core profile still has 8.
+- Details: [docs/reply-guard.md](docs/reply-guard.md).
+
+### INNLI Pro
+- A separate, closed-source add-on for agent platforms, included with the Company licence: all-or-nothing trips across several stays. It is not in this repository.
+
 ### ACP checkout sessions and card guarantees
 - **Agentic Commerce Protocol** (OpenAI and Stripe) at `/acp`, with discovery at `/.well-known/acp.json`: create, update, retrieve, complete and cancel a checkout session. An item id is a `quoteId`, or a stay written out as `property:unit:checkin:checkout:adults`.
 - Completing a session sends the same request as `request_booking`, with the same consent hash, hold limits and signed record.

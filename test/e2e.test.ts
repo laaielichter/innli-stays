@@ -35,7 +35,7 @@ describe('agent flow over MCP', () => {
   it('exposes the agent tools', async () => {
     const { tools } = await client.listTools();
     assert.deepEqual(tools.map((t) => t.name).sort(), [
-      'answer_question', 'ask_host', 'cancel_request', 'check_availability', 'check_status', 'compare_stays', 'find_available_dates', 'get_availability_calendar',
+      'answer_question', 'ask_host', 'cancel_request', 'check_availability', 'check_reply', 'check_status', 'compare_stays', 'find_available_dates', 'get_availability_calendar',
       'get_quote', 'get_stay_details', 'get_wish_offers', 'join_waitlist', 'modify_request', 'post_stay_wish', 'prepare_booking', 'report_data_issue', 'request_booking', 'search_stays', 'withdraw_stay_wish',
     ]);
   });

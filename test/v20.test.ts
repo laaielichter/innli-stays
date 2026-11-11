@@ -239,7 +239,7 @@ describe('2.0: agents find, trust and book faster', () => {
     assert.ok(card.skills.some((s: Json) => s.id === 'stay-wish'));
     const mcp = await (await fetch(`${server.url}/.well-known/mcp.json`)).json();
     assert.equal(mcp.profiles.core.tools, 8);
-    assert.equal(mcp.tools.length, 19);
+    assert.equal(mcp.tools.length, 20);
     const llms = await (await fetch(`${server.url}/llms.txt`)).text();
     assert.match(llms, /^# INNLI/);
     assert.match(llms, /\[Hotel Het Spaarne\]\(http:\/\/127\.0\.0\.1:\d+\/verblijf\/het-spaarne\)/);

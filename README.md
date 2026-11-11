@@ -36,7 +36,7 @@ Being found, being understood by an agent and actually getting booked are three 
 | Part | What it does |
 |---|---|
 | **Accommodation passport** | About 40 concrete facts: enclosed garden, bed length, steps to the room, tourist tax… Every fact has a status (confirmed / not confirmed / unknown), a source, evidence and a check date. Unknown stays unknown. After a year INNLI asks the owner to check it again. |
-| **Agent connection (MCP + REST)** | 19 tools in six groups: search and compare, availability, price, booking, contact with the host, and stay wishes (see the detailed list below). A core profile offers 8 of them, with brief answers. The same tools are available over REST with an OpenAPI 3.1 description. |
+| **Agent connection (MCP + REST)** | 20 tools in seven groups: search and compare, availability, price, booking, contact with the host, and stay wishes (see the detailed list below). A core profile offers 8 of them, with brief answers. The same tools are available over REST with an OpenAPI 3.1 description. |
 | **Honest prices** | An itemised total including mandatory fees, discounts and tourist tax, with a validity period. If a mandatory cost is unknown, the result says `totalIncludesAllMandatoryCosts: false` instead of showing a price that is too low. |
 | **Calendars and booking systems** | Four ways to handle availability: <br>• **Live API:** a booking system checked live, with a direct booking link.<br>• **iCal:** calendars from Airbnb, Booking.com or Google Calendar, leading to an availability request.<br>• **Room calendar:** the owner opens and closes nights in INNLI.<br>• **None:** requests only. |
 | **Reliable booking** | <br>• Rooms are held during a request, with automatic expiry.<br>• Instant booking within the owner's rules.<br>• Deposits through the owner's own payment link or bank details.<br>• Cancellation with the guest's consent.<br>• A signed booking record.<br>• A double-booking guard against other channels. |
@@ -47,6 +47,7 @@ Being found, being understood by an agent and actually getting booked are three 
 | **Findability check** | <br>• robots.txt per crawler, keeping **search** crawlers and **training** crawlers apart.<br>• noindex, title, sitemap, room pages, visible prices and conditions, schema.org.<br>• Consistency with the passport.<br>It never promises a ranking. |
 | **WordPress plugin** | <br>• schema.org data from confirmed facts.<br>• The same facts shown visibly on the page.<br>• AI crawler settings.<br>• A crawler visit counter.<br>• Booking reports and the request form.<br>In English, with a Dutch translation. |
 | **Hotels and busy properties** | Room types with several rooms (availability counted per night, stop-sell), rate plans (non-refundable, with breakfast), 15-minute holds, changes without cancelling first, staff keys (reception/manager), signed webhooks to a PMS or channel manager, and hotel licence packages. Measured: availability for a 300-room hotel with 10,000 bookings in ~1 ms. See [docs/hotels.md](docs/hotels.md). |
+| **Reply guard** ([docs/reply-guard.md](docs/reply-guard.md)) | `check_reply` checks what an agent is about to tell the guest against what the stay actually returned: a booking that is not one yet, an amount the stay never gave, an unconfirmed fact told as certain. No language model. `npm run grade` scores a whole conversation, as a test of a booking agent. |
 | **ACP checkout and card guarantees** ([docs/acp.md](docs/acp.md)) | Checkout sessions in the Agentic Commerce Protocol of OpenAI and Stripe, at `/acp`. An item is a quote or a stay written out in its id. Optionally a card guarantee on the property's own Stripe account: authorised at checkout, captured only when the host confirms, released otherwise. |
 | **New in 2.1: know your agent, protected holds, UCP** ([docs/agents-2.1.md](docs/agents-2.1.md)) | What we found missing elsewhere, built in:<br>• *agent identity*: platforms that sign their requests (Web Bot Auth, RFC 9421) are recognised without an account, get their own rate limit, and are named in the signed booking record;<br>• *protected holds*: a limit on open requests per agent and per guest, so a script cannot block a property's rooms;<br>• *UCP lodging booking sessions* (draft) at `/ucp/v1`, with the profile at `/.well-known/ucp`;<br>• an `Idempotency-Key` header, so a retry never books twice;<br>• `cancellation.refundability` on every quote;<br>• per agent in the dashboard: what became a booking and what expired;<br>• identity passed on, signed, through the INNLI guide;<br>• `npx innli-conformance <address>`: 14 read-only checks of any installation. |
 | **New in 2.0: agents and stays find each other** ([docs/agents-2.0.md](docs/agents-2.0.md)) | Ten problems from research, solved:<br>• *stay wishes*: agents leave an anonymous wish, and hosts answer with an offer from the dashboard, optionally with a discount;<br>• a *core profile* and brief answers: ~49% less context per turn and ~70% smaller answers;<br>• `nextActions` with prefilled arguments and `freshness` on every answer;<br>• typed errors with `retryable` and `hint`, plus RateLimit headers;<br>• consent with a hash over the terms;<br>• website verification (automatic with the WordPress plugin), a trust block and a signed passport;<br>• a guard against hidden instructions in text;<br>• a time budget for search;<br>• an agent card, MCP server card, `llms.txt` and a Claude plugin ([agent-kit](agent-kit/README.md)). |
@@ -63,6 +64,7 @@ Being found, being understood by an agent and actually getting booked are three 
 - **Availability:** `check_availability`, `find_available_dates`, `get_availability_calendar`.
 - **Price:** `get_quote`, with several rooms, rate plans and a 15-minute hold.
 - **Booking:** `prepare_booking`, `request_booking` (with the guest's consent; for groups all or nothing), `modify_request`, `cancel_request`, `join_waitlist`.
+- **Honest replies:** `check_reply` (checks your draft against what the stay said).
 - **Contact:** `answer_question` (answer assistant), `ask_host`, `report_data_issue`, `check_status` (with a signed booking record).
 - **Stay wishes:** `post_stay_wish`, `get_wish_offers`, `withdraw_stay_wish`.
 
@@ -152,6 +154,7 @@ npm run pakket -- --concept  # download package (zip) in dist/
 - [docs/hotels.md](docs/hotels.md): for hotels: room types, rate plans, answer assistant, staff, webhooks to your PMS
 - [docs/hosting.md](docs/hosting.md): running locally or online, costs, tunnel, connecting calendars
 - [docs/agent-integration.md](docs/agent-integration.md): for builders of travel agents
+- [docs/reply-guard.md](docs/reply-guard.md): `check_reply`, the guard against saying more than the stay said, and grading a conversation
 - [docs/acp.md](docs/acp.md): ACP checkout sessions and card guarantees
 - [docs/agents-2.1.md](docs/agents-2.1.md): what other projects and standards offer agents, the five biggest open problems, and how 2.1 solves them
 - [docs/agents-2.0.md](docs/agents-2.0.md): the ten biggest problems between agents and accommodations, and how 2.0 solves them
@@ -175,7 +178,7 @@ INNLI is an **open research project**: how can AI agents find and book small ind
 | | For whom | Cost |
 |---|---|---|
 | **Run it yourself** | Hosts and developers who run INNLI on their own computer or server. Everything in this repository, no limits. | Free (AGPL-3.0) |
-| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. | From € 2,500 a year, fixed prices: [COMMERCIAL.md](COMMERCIAL.md) |
+| **Commercial licence** | Platforms, PMS and channel-manager vendors that build INNLI into a product without publishing their own code. The larger licence includes INNLI Pro: all-or-nothing trips across several stays. | From € 2,500 a year, fixed prices: [COMMERCIAL.md](COMMERCIAL.md) |
 
 INNLI takes no commission on bookings, does not sell data of guests or hosts, and has no paid places in search results.
 

@@ -10,6 +10,7 @@ import type { WishService } from '../requests/wishes.ts';
 import type { AgentActions, AgentContext } from '../requests/agentActions.ts';
 import { VERSION } from '../version.ts';
 import { shapeResult } from '../agent/shape.ts';
+import { checkReply } from '../agent/guard.ts';
 
 export const INSTRUCTIONS = `INNLI is a catalog of small independent accommodations (B&Bs, guesthouses, unique stays) whose owners verify their own data.
 
@@ -35,6 +36,7 @@ Working efficiently:
 - Every result has nextActions: the next calls with arguments prefilled. Use them instead of guessing ids.
 - detail: "brief" gives the same facts and statuses in far fewer tokens; freshness.validForSeconds says how long a result stays reliable.
 - Errors carry code, retryable, hint and nextTools. Do not retry when retryable is false; on RATE_LIMITED wait retryAfterSeconds.
+- Before you tell the guest about a booking, a price or a fact: check_reply with your draft and this conversation's tool results. Do not send a draft whose verdict is block.
 - Nothing fits? post_stay_wish leaves an anonymous wish (no personal data) that hosts can answer with an offer; get_wish_offers collects them.`;
 
 /** Short guidance for the core profile: the same rules in a fraction of the tokens. */
@@ -208,6 +210,13 @@ const wishInput = {
   language: z.enum(LANGUAGES).optional(),
   callbackUrl: z.string().url().max(500).optional().describe('https URL that is POSTed a signed event for every new host offer'),
 };
+const replyInput = {
+  message: z.string().min(1).max(8000).describe('Your draft reply to the guest, in English'),
+  evidence: z
+    .array(z.object({ tool: z.string().max(60), args: z.record(z.string(), z.unknown()).optional(), result: z.record(z.string(), z.unknown()) }))
+    .max(40)
+    .describe('The INNLI tool results of this conversation, oldest first, as you received them'),
+};
 const wishTokenInput = { wishToken: z.string().max(300).describe('wishToken from post_stay_wish') };
 
 /** Tool definitions shared by an installation's own server and the INNLI guide. */
@@ -281,6 +290,13 @@ export const TOOLS = {
       'Changes dates, room, party, number of rooms or rate plan of a request or booking, only when the guest asked for it. A pending request is replaced right away (same hold rules). For a confirmed booking a change request is sent; the current booking stays valid until the host (or instant booking) confirms the change, then it is replaced. Returns the new statusToken.',
     inputSchema: modifyInput,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  },
+  check_reply: {
+    title: 'Check a draft reply',
+    description:
+      'Checks what you are about to tell the guest against what the stay actually returned: a booking that is not one yet, an amount or date the stay never gave, an unconfirmed fact told as certain, a price without its disclosure. Returns ok, warn or block, the words concerned and what to say instead. Nothing is stored. English drafts.',
+    inputSchema: replyInput,
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   },
   report_data_issue: {
     title: 'Report wrong data',
@@ -417,6 +433,8 @@ export function toolHandlers(ctx: ToolContext): ToolHandlers {
     prepare_booking: (args: ToolArgs<'prepare_booking'>) => catalog.prepareBooking(args.quoteId, agentClient),
     find_available_dates: (args: ToolArgs<'find_available_dates'>) => catalog.findAvailableDates(args.propertyId, { ...args, guests: args.guests ?? defaultGuests }, agentClient),
     get_availability_calendar: (args: ToolArgs<'get_availability_calendar'>) => catalog.availabilityCalendar(args.propertyId, args.month, agentClient, args.unitId),
+    // Needs nothing from the catalog: it only compares the draft with the evidence the agent passes in.
+    check_reply: (args: ToolArgs<'check_reply'>) => checkReply(args as never),
     compare_stays: (args: ToolArgs<'compare_stays'>) => catalog.compare(args.propertyIds, { ...args, guests: args.guests ?? defaultGuests }, agentClient),
   };
   if (actions) {

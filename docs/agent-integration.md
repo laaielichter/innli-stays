@@ -3,7 +3,7 @@
 INNLI offers a single [MCP](https://modelcontextprotocol.io) server with small, independent accommodations (B&Bs, guesthouses, unique stays) whose owners check the data themselves.
 
 - Endpoint: `POST https://<innli-host>/mcp` (Streamable HTTP, stateless, JSON responses)
-- No MCP? The same 19 tools work over REST: `POST /api/agent/v1/tools/<tool-name>` with the arguments as a JSON body. The description is in OpenAPI 3.1 at `GET /api/agent/v1/openapi.json`, usable as a *GPT Action* or as a function definition.
+- No MCP? The same 20 tools work over REST: `POST /api/agent/v1/tools/<tool-name>` with the arguments as a JSON body. The description is in OpenAPI 3.1 at `GET /api/agent/v1/openapi.json`, usable as a *GPT Action* or as a function definition.
 - Authentication: `Authorization: Bearer <agent-key>` (required if the server runs with `INNLI_REQUIRE_AGENT_KEY=1`). Your key decides under which name requests, click-throughs and bookings appear in the owners' statistics.
 - Every response has an `x-request-id`. If you send one yourself, it is reused. Quote it in any support question. Too many requests get a `429` with `Retry-After` (seconds).
 - MCP resources: `innli://stay/{propertyId}` (passport as JSON; `resources/list` returns all published stays). Prompt: `plan_stay` with the argument `wish`, a step-by-step plan from wish to request.
@@ -125,7 +125,7 @@ Why, and based on which research: [agents-2.0.md](agents-2.0.md).
 - **Core profile:**
   - `POST /mcp?profile=core` (or the header `x-innli-profile: core`) offers 8 tools: `search_stays`, `get_stay_details`, `get_quote`, `answer_question`, `request_booking`, `check_status`, `post_stay_wish` and `get_wish_offers`;
   - the instructions are short and answers are brief by default;
-  - the full profile has 19 tools.
+  - the full profile has 20 tools.
 - **`detail: "brief"`** works on `search_stays`, `get_stay_details`, `get_quote`, `check_availability` and `compare_stays`. You get the same facts and statuses, but requirements are grouped by level and facts come as `{ key: value }`. That is about 70% fewer tokens.
 - **`nextActions`** comes with every answer: the next calls, with their arguments filled in.
   - `needs` lists what you must still ask the guest.

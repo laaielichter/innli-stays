@@ -3,7 +3,7 @@
 INNLI biedt één [MCP](https://modelcontextprotocol.io)-server met kleine, onafhankelijke accommodaties (B&B's, pensions, bijzondere verblijven) waarvan de eigenaar de gegevens zelf controleert.
 
 - Endpoint: `POST https://<innli-host>/mcp` (Streamable HTTP, stateless, JSON-antwoorden)
-- Geen MCP? Dezelfde 19 tools werken via REST: `POST /api/agent/v1/tools/<toolnaam>` met de argumenten als JSON-body. De beschrijving staat in OpenAPI 3.1 op `GET /api/agent/v1/openapi.json`, bruikbaar als *GPT Action* of als functiedefinitie.
+- Geen MCP? Dezelfde 20 tools werken via REST: `POST /api/agent/v1/tools/<toolnaam>` met de argumenten als JSON-body. De beschrijving staat in OpenAPI 3.1 op `GET /api/agent/v1/openapi.json`, bruikbaar als *GPT Action* of als functiedefinitie.
 - Authenticatie: `Authorization: Bearer <agentsleutel>` (verplicht als de server met `INNLI_REQUIRE_AGENT_KEY=1` draait). Je sleutel bepaalt onder welke naam aanvragen, doorkliks en boekingen in de statistieken van eigenaren verschijnen.
 - Ieder antwoord heeft een `x-request-id`. Stuur je er zelf een mee, dan wordt die overgenomen. Vermeld hem bij een supportvraag. Bij te veel verzoeken volgt `429` met `Retry-After` (seconden).
 - MCP-resources: `innli://stay/{propertyId}` (paspoort als JSON; `resources/list` geeft alle gepubliceerde verblijven). Prompt: `plan_stay` met argument `wish`, een stappenplan van wens tot aanvraag.
@@ -125,7 +125,7 @@ Waarom en op basis van welk onderzoek: [agents-2.0.md](agents-2.0.md).
 - **Core-profiel:**
   - `POST /mcp?profile=core` (of de header `x-innli-profile: core`) biedt 8 tools: `search_stays`, `get_stay_details`, `get_quote`, `answer_question`, `request_booking`, `check_status`, `post_stay_wish` en `get_wish_offers`;
   - de instructies zijn kort en de antwoorden standaard compact;
-  - het volledige profiel heeft 19 tools.
+  - het volledige profiel heeft 20 tools.
 - **`detail: "brief"`** werkt bij `search_stays`, `get_stay_details`, `get_quote`, `check_availability` en `compare_stays`. Je krijgt dezelfde feiten en statussen, maar eisen zijn gegroepeerd per niveau (`met`, `unverified`, `unknown`, `not_met`) en gegevens staan als `{ sleutel: waarde }`. Dat is ongeveer 70% minder tokens.
 - **`nextActions`** staat in elk antwoord: de volgende aanroepen, met ingevulde argumenten.
   - `needs` zegt wat je nog aan de gast moet vragen.

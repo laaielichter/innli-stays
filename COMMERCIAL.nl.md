@@ -28,6 +28,8 @@ De AGPL vraagt dat wie een aangepaste versie via een netwerk aanbiedt, de gebrui
 - Dezelfde code als de open versie: er is geen aparte gesloten editie van de software die een verblijf zelf draait.
 - Elke versie die tijdens de licentieperiode uitkomt. Die versies mag je blijven gebruiken nadat de periode is afgelopen.
 
+**INNLI Pro** hoort bij de licentie Bedrijf. Het is een losse, gesloten uitbreiding voor agentplatforms: alles-of-niets-reizen. Een agent plant meerdere verblijven als één reis, de gast keurt één samenvatting goed, en de aanvragen gaan uit in de volgorde met het minste risico. Zegt één eigenaar nee, dan wordt de rest ingetrokken. Het werkt met elke INNLI-installatie via de openbare agentkoppeling.
+
 Niet inbegrepen: ondersteuning, maatwerk, hosting en garanties. De software wordt geleverd zoals ze is, net als de open versie.
 
 ## Prijzen
@@ -37,7 +39,7 @@ Vaste prijzen, voor iedereen gelijk. Er valt niets te onderhandelen.
 | | Voor | Prijs |
 |---|---|---|
 | **Klein bedrijf** | Een bedrijf met hooguit 10 mensen, voor één product of dienst | € 2.500 per jaar |
-| **Bedrijf** | Een groter bedrijf, of meer dan één product of dienst | € 9.500 per jaar |
+| **Bedrijf** | Een groter bedrijf, of meer dan één product of dienst. Inclusief INNLI Pro | € 9.500 per jaar |
 
 Prijzen zijn in euro's, exclusief btw, vooraf te betalen op factuur. De overeenkomst is kort en in gewone taal: [docs/commercial-licence-agreement.md](docs/commercial-licence-agreement.md) (Engels).
 

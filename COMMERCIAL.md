@@ -28,6 +28,8 @@ The AGPL requires that anyone who offers a modified version over a network gives
 - The same code as the open version: there is no separate closed edition of the software a stay runs itself.
 - Every version released during the licence period. You may keep using those versions after the period ends.
 
+**INNLI Pro** comes with the Company licence. It is a separate, closed-source add-on for agent platforms: all-or-nothing trips. An agent plans several stays as one trip, the guest approves one summary, and the requests go out in the order that risks least. If one host says no, the rest is withdrawn. It works with any INNLI installation through the public agent interface.
+
 It does not include support, custom work, hosting or warranties. The software is provided as it is, like the open version.
 
 ## Prices
@@ -37,7 +39,7 @@ Fixed prices, the same for everyone. There is nothing to negotiate.
 | | For | Price |
 |---|---|---|
 | **Small company** | A company with up to 10 people, for one product or service | € 2,500 a year |
-| **Company** | A larger company, or more than one product or service | € 9,500 a year |
+| **Company** | A larger company, or more than one product or service. Includes INNLI Pro | € 9,500 a year |
 
 Prices are in euros, excluding VAT, paid in advance by invoice. The agreement is short and in plain language: [docs/commercial-licence-agreement.md](docs/commercial-licence-agreement.md).
 

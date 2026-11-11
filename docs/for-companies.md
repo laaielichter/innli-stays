@@ -29,12 +29,14 @@ What it does in detail: [agent-features.md](agent-features.md), [agent-integrati
 | Package names | `innli-stays` on npm and `io.github.laaielichter/innli` in the MCP registry |
 | The GitHub repository | With its history, releases, issues and the website published from `site/` |
 | Research | Research questions, datasets and measurements in [research/](../research/README.md), and two write-ups with sources: [agents-2.0.md](agents-2.0.md), [agents-2.1.md](agents-2.1.md) |
+| INNLI Pro | A closed-source add-on, not in this repository: all-or-nothing trips across several stays, for agent platforms. 6 tests against the sample stays |
 | Licence tooling | Offline-verifiable Ed25519 licence keys for a guide that only lists licensed installations (`tools/license.ts`) |
 
 ## Why it is useful to own
 
 - **It covers the whole route**, from being found to a signed booking record, where other projects stop at search or send the guest to a checkout page elsewhere.
 - **One server speaks every agent ecosystem**: MCP (full and a small core profile), OpenAPI, ACP (OpenAI and Stripe), UCP lodging over REST and MCP (Google), Web Bot Auth (RFC 9421), OAuth 2.1, an agent card and `llms.txt`.
+- **It checks the agent, not only the stay**: `check_reply` compares what an agent is about to tell the guest with what the stay returned, and a whole conversation can be scored ([reply-guard.md](reply-guard.md)).
 - **It is built around trust**: facts with a status, complete prices or an explicit warning, consent tied to a hash of the terms, limits against speculative holds, and a guard against hidden instructions in text.
 - **It needs no infrastructure**: one Node.js process and files on disk. It runs on a Raspberry Pi. Storage sits behind a narrow interface, measured with 300 properties and 200,000 events ([performance.md](performance.md)).
 - **It connects to what a property has**: a live booking API ([connector-contract.md](connector-contract.md)), Beds24, iCal calendars, or its own room calendar.
@@ -45,7 +47,7 @@ Everything here can be reproduced from the repository.
 
 | Claim | How to check |
 |---|---|
-| 188 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
+| 195 automated tests pass, including end-to-end flows over MCP, REST, ACP and UCP | `npm test` |
 | Types are strict and clean | `npm run typecheck` |
 | The npm package installs and starts | `npm run smoke:npm` |
 | A running installation behaves as agents expect | `npx innli-conformance <address>`: 14 read-only checks |
