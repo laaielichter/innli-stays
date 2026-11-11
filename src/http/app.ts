@@ -46,6 +46,8 @@ import { agentCard, llmsTxt, mcpServerCard, staysOf } from '../agent/discovery.t
 import { BotAuthVerifier, DIRECTORY_PATH, DIRECTORY_TYPE, keyDirectory } from '../agent/botAuth.ts';
 import { checkWebsite, signedPassport, VERIFICATION_FILE, VERIFICATION_META, verificationToken, websiteVerified } from '../agent/trust.ts';
 import { idempotency } from './idempotency.ts';
+import { ACP_BASE_PATH, ACP_VERSIONS, AcpCheckout, AcpError, acpDiscovery } from '../acp/checkout.ts';
+import type { PaymentHandler } from '../payments/handlers.ts';
 import { createUcpMcpServer } from '../ucp/mcp.ts';
 import { UCP_BASE_PATH, UCP_MCP_PATH, UcpLodging, UcpOutcome, UcpProtocolError, ucpProfile, UCP_VERSION } from '../ucp/lodging.ts';
 import { oauthRouter, wwwAuthenticate } from './oauth.ts';
@@ -80,6 +82,8 @@ export interface AppOptions {
   /** Retry delays for outbound webhooks (tests use short ones). */
   webhookRetryDelaysMs?: number[];
   demo?: boolean;
+  /** Takes card guarantees from agent platforms (ACP delegated payment) on the property's own account. Without it the guest pays the property directly. */
+  paymentHandler?: PaymentHandler;
   /** Reverse proxies in front of this installation whose X-Forwarded-* headers are trusted (default 1; 0 when exposed directly). */
   trustProxy?: number;
   /** Accept agent key directories over plain http (tests, sample mode). Default: only in sample mode. */
@@ -163,6 +167,10 @@ export function createApp(opts: AppOptions) {
   app.locals.reviews = reviews;
   const ucp = new UcpLodging(store, catalog, agentActions, requests, opts.publicUrl);
   const idempotent = idempotency();
+  const acp = new AcpCheckout(store, catalog, agentActions, requests, opts.publicUrl, opts.paymentHandler);
+  requests.listeners.push((p, type, r) => acp.onBookingEvent(p, type, r));
+  app.locals.acp = acp;
+  const acpIdempotent = idempotency({ acp: true });
   const setupLimit = rateLimiter(10);
 
   const mcpLimit = rateWindow(120);
@@ -366,6 +374,36 @@ export function createApp(opts: AppOptions) {
   app.put(`${UCP_BASE_PATH}/booking-sessions/:id`, identify, idempotent, ucpOperation((req, agent) => ucp.update(String(req.params.id), req.body, agent)));
   app.post(`${UCP_BASE_PATH}/booking-sessions/:id/complete`, identify, idempotent, ucpOperation((req, agent) => ucp.complete(String(req.params.id), req.body, agent)));
   app.post(`${UCP_BASE_PATH}/booking-sessions/:id/cancel`, identify, idempotent, ucpOperation((req, agent) => ucp.cancel(String(req.params.id), req.body, agent)));
+
+  // ---------------------------------------------------------------- Agents (ACP checkout sessions)
+  app.get('/.well-known/acp.json', (_req, res) => {
+    res.set('cache-control', 'public, max-age=3600').json(acpDiscovery(opts.publicUrl));
+  });
+  /** ACP's own rules around every call: a supported API-Version, flat errors, and the request id echoed. */
+  const acpVersion = (req: Request, res: Response, next: NextFunction) => {
+    const requestId = String(req.headers['request-id'] ?? '');
+    if (/^[\w.:-]{1,120}$/.test(requestId)) res.set('request-id', requestId);
+    const version = String(req.headers['api-version'] ?? '');
+    if (!ACP_VERSIONS.includes(version)) {
+      res.status(400).json({ type: 'invalid_request', code: version ? 'unsupported_api_version' : 'missing_api_version', message: version ? `API-Version ${version} is not supported.` : 'Send the API-Version header.', supported_versions: ACP_VERSIONS });
+      return;
+    }
+    res.set('api-version', version);
+    next();
+  };
+  const acpOperation = (run: (req: Request, agent: AgentCaller) => Promise<unknown> | unknown, status = 200) => async (req: Request, res: Response) => {
+    try {
+      res.status(status).json(await run(req, res.locals.who as AgentCaller));
+    } catch (err) {
+      if (err instanceof AcpError) res.status(err.status).json(err.toJSON());
+      else throw err;
+    }
+  };
+  app.post(`${ACP_BASE_PATH}/checkout_sessions`, acpVersion, identify, acpIdempotent, acpOperation((req, agent) => acp.create(req.body, agent), 201));
+  app.get(`${ACP_BASE_PATH}/checkout_sessions/:id`, acpVersion, identify, acpOperation((req, agent) => acp.get(String(req.params.id), agent)));
+  app.post(`${ACP_BASE_PATH}/checkout_sessions/:id`, acpVersion, identify, acpIdempotent, acpOperation((req, agent) => acp.update(String(req.params.id), req.body, agent)));
+  app.post(`${ACP_BASE_PATH}/checkout_sessions/:id/complete`, acpVersion, identify, acpIdempotent, acpOperation((req, agent) => acp.complete(String(req.params.id), req.body, agent)));
+  app.post(`${ACP_BASE_PATH}/checkout_sessions/:id/cancel`, acpVersion, identify, acpIdempotent, acpOperation((req, agent) => acp.cancel(String(req.params.id), agent)));
 
   // The same five operations as MCP tools, for platforms that speak UCP over MCP.
   app.post(UCP_MCP_PATH, async (req, res) => {

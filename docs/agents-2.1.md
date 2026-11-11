@@ -78,10 +78,10 @@ The guide relays requests for many agents from one address. Without care, every 
 - Running your own guide: set `GIDS_PUBLIC_URL` to its public address.
 
 ## Check an installation yourself
-`npx innli-conformance https://stay.example` runs 13 read-only checks: discovery documents, key directory, MCP profiles, typed errors, signature checking, idempotency, the signed passport and the UCP profile. Nothing is booked. Exit code 1 when a check fails.
+`npx innli-conformance https://stay.example` runs 14 read-only checks: discovery documents, key directory, MCP profiles, typed errors, signature checking, idempotency, the signed passport and the UCP profile. Nothing is booked. Exit code 1 when a check fails.
 
 ## What 2.1 deliberately does not do
-- **Card payments by agents (ACP payment tokens, AP2 mandates).** They need a payment provider or a credential provider. INNLI moves no money: the guest pays the property. The session and the signed record are shaped so that a payment handler can be added later.
+- **AP2 mandates.** They need a credential provider and a second key type. Card guarantees through ACP payment tokens were added after 2.1: see [acp.md](acp.md).
 - **Signed UCP responses.** Requests are verified; responses are not signed yet.
 - **The newest MCP revision.** INNLI follows the official SDK.
 

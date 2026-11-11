@@ -27,7 +27,7 @@ export function appLocals(server: TestServer): Record<string, unknown> {
 }
 
 /** Full app with demo data and the demo booking engine, on an ephemeral port. */
-export async function startTestServer(opts: { requireAgentKey?: boolean; empty?: boolean; setupCode?: string; international?: boolean; hotel?: boolean; mediaDir?: string; guideUrl?: string; backups?: { dir: string; run: () => { folder: string; files: number; removed: number } } } = {}): Promise<TestServer> {
+export async function startTestServer(opts: { requireAgentKey?: boolean; empty?: boolean; setupCode?: string; international?: boolean; hotel?: boolean; mediaDir?: string; guideUrl?: string; paymentHandler?: import('../src/payments/handlers.ts').PaymentHandler; backups?: { dir: string; run: () => { folder: string; files: number; removed: number } } } = {}): Promise<TestServer> {
   const server: Server = createServer();
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -35,7 +35,7 @@ export async function startTestServer(opts: { requireAgentKey?: boolean; empty?:
   const catalog = new Catalog(store, new AvailabilityService(fetch, () => new Date(), (p, u, ignore) => store.occupancy(p, u, ignore)), url);
   const creds = opts.empty ? { owners: [], agentKey: '' } : seedDemo(store, url, { international: opts.international, hotel: opts.hotel });
   const mailer = new MemoryMailer();
-  const app = createApp({ store, catalog, fetcher: fetch, adminKey: 'admin-test-key', demo: true, requireAgentKey: opts.requireAgentKey, publicUrl: url, guideUrl: opts.guideUrl, mailer, setupCode: opts.setupCode, mediaDir: opts.mediaDir, backups: opts.backups });
+  const app = createApp({ store, catalog, fetcher: fetch, adminKey: 'admin-test-key', demo: true, requireAgentKey: opts.requireAgentKey, publicUrl: url, guideUrl: opts.guideUrl, paymentHandler: opts.paymentHandler, mailer, setupCode: opts.setupCode, mediaDir: opts.mediaDir, backups: opts.backups });
   server.on('request', app);
   const result: TestServer = { url, store, creds, mailer, requests: app.locals.requests as RequestService, close: () => new Promise((resolve) => server.close(() => resolve())) };
   locals.set(result, app.locals);

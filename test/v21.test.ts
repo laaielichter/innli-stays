@@ -647,7 +647,7 @@ describe('2.1: know your agent, protected holds and UCP lodging', () => {
       try {
         const checks = await runConformance(fresh.url);
         assert.deepEqual(checks.filter((c) => !c.ok), [], report(checks));
-        assert.ok(checks.length >= 12);
+        assert.ok(checks.length >= 14);
         assert.match(report(checks), /All \d+ checks passed/);
         assert.equal(fresh.store.requestsFor('prop_spaarne').length, 0, 'the check never books');
       } finally {

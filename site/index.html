@@ -244,7 +244,7 @@
     <p class="sub">Being found, being understood by an agent and actually getting booked are three different things. INNLI covers the whole route.</p>
     <div class="three">
       <div class="card"><span class="step-n">01 · PASSPORT</span><h3>Confirm your facts once</h3><p>About 40 concrete facts: enclosed garden, bed length, steps to the room, tourist tax. Each one is confirmed, unconfirmed or unknown. Only you confirm.</p></div>
-      <div class="card"><span class="step-n">02 · CONNECTION</span><h3>One address for every agent</h3><p>Agents search your passport, check live availability and get an itemised total with every mandatory cost. Over MCP, REST or UCP.</p></div>
+      <div class="card"><span class="step-n">02 · CONNECTION</span><h3>One address for every agent</h3><p>Agents search your passport, check live availability and get an itemised total with every mandatory cost. Over MCP, REST, ACP or UCP.</p></div>
       <div class="card"><span class="step-n">03 · BOOKING</span><h3>Booked with you, not through a middleman</h3><p>The guest agrees to exact terms, the room is held, and you confirm, or it books instantly within your rules. Signed record included.</p></div>
     </div>
   </div>
@@ -316,6 +316,7 @@ claude mcp add --transport http innli <span class="s">https://your-stay.example/
       <tbody>
         <tr><td>MCP, full and core profile</td><td><code>/mcp</code> · <code>/mcp?profile=core</code></td><td>About 49% less context per turn on the core profile</td></tr>
         <tr><td>REST with OpenAPI 3.1</td><td><code>/api/agent/v1/openapi.json</code></td><td>The same tools for platforms without MCP</td></tr>
+        <tr><td>ACP checkout sessions</td><td><code>/.well-known/acp.json</code> · <code>/acp</code></td><td>The protocol of OpenAI and Stripe, with a card guarantee that is only captured when the host confirms</td></tr>
         <tr><td>UCP lodging booking sessions (draft)</td><td><code>/.well-known/ucp</code> · <code>/ucp/v1</code> · <code>/ucp/mcp</code></td><td>Session-based booking with totals, policies and payment terms</td></tr>
         <tr><td>Identity without an account</td><td>Web Bot Auth, RFC 9421</td><td>Sign your requests: your own rate limit, named in the signed record</td></tr>
         <tr><td>Consent with a hash</td><td><code>consent.summary</code> · <code>consent.hash</code></td><td>If the terms changed after the guest said yes, nothing is sent</td></tr>
@@ -336,14 +337,14 @@ claude mcp add --transport http innli <span class="s">https://your-stay.example/
   <div class="wrap">
     <p class="hook">// open standards, no lock-in</p>
     <h2>Speaks what agent platforms <em>speak</em>.</h2>
-    <p class="sub">The specifications are open and the agent kit is MIT-licensed. Check any installation yourself with <code>npx innli-conformance https://your-stay.example</code>: 13 read-only checks, nothing is booked.</p>
+    <p class="sub">The specifications are open and the agent kit is MIT-licensed. Check any installation yourself with <code>npx innli-conformance https://your-stay.example</code>: 14 read-only checks, nothing is booked.</p>
     <div class="std">
       <div><b>MCP</b><span>Streamable HTTP and stdio</span></div>
       <div><b>OpenAPI 3.1</b><span>The same tools over REST</span></div>
+      <div><b>ACP checkout</b><span>OpenAI and Stripe's protocol</span></div>
       <div><b>UCP lodging</b><span>Draft capability, REST and MCP</span></div>
       <div><b>Web Bot Auth</b><span>HTTP Message Signatures</span></div>
       <div><b>OAuth 2.1</b><span>PKCE, dynamic registration</span></div>
-      <div><b>schema.org</b><span>From confirmed facts only</span></div>
     </div>
   </div>
 </section>

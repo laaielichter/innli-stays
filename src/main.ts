@@ -10,6 +10,7 @@ import { createApp } from './http/app.ts';
 import { createMailer } from './requests/mailer.ts';
 import { sendMonthlyReports } from './analytics/reports.ts';
 import { backupNow } from './backup.ts';
+import { StripeHandler } from './payments/handlers.ts';
 
 const config = loadConfig();
 /** Console messages follow the installation language (INNLI_LANG): Dutch, otherwise English. */
@@ -37,7 +38,7 @@ if (store.listProperties().length === 0) {
 
 const mailer = createMailer(config.smtpUrl, config.mailFrom);
 const backups = config.backupDir ? { dir: config.backupDir, run: () => backupNow(store, config.dataFile, config.backupDir!, { keep: config.backupKeep }) } : undefined;
-const app = createApp({ store, catalog, fetcher, adminKey: config.adminKey, requireAgentKey: config.requireAgentKey, demo: config.demo, publicUrl: config.publicUrl, guideUrl: config.guideUrl, sourceUrl: config.sourceUrl, trustProxy: config.trustProxy, mailer, setupCode, mediaDir: join(dataDir, 'media'), backups });
+const app = createApp({ store, catalog, fetcher, adminKey: config.adminKey, requireAgentKey: config.requireAgentKey, demo: config.demo, publicUrl: config.publicUrl, guideUrl: config.guideUrl, sourceUrl: config.sourceUrl, trustProxy: config.trustProxy, paymentHandler: config.stripeSecretKey ? new StripeHandler({ secretKey: config.stripeSecretKey, account: config.stripeAccount, fetcher: fetch }) : undefined, mailer, setupCode, mediaDir: join(dataDir, 'media'), backups });
 
 // Daily backup to a second place (INNLI_BACKUP_DIR), shortly after start and then every day.
 if (backups) {
@@ -81,6 +82,7 @@ setInterval(maintain, 3_600_000).unref();
 const purge = () => {
   store.pruneEvents(90);
   store.pruneBookingSessions();
+  store.pruneCheckoutSessions();
   const n = store.anonymiseRequests(config.retentionDays);
   if (n) console.log(tx(`Privacy: persoonsgegevens van ${n} oude aanvraag/aanvragen verwijderd.`, `Privacy: personal data of ${n} old request(s) removed.`));
 };

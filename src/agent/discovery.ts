@@ -83,7 +83,7 @@ export function agentCard(stays: StayLink[], publicUrl: string, opts: DiscoveryO
     additionalInterfaces: [
       { url: `${url}/mcp`, transport: 'MCP' },
       { url: `${url}/mcp?profile=core`, transport: 'MCP', note: 'core profile: 8 tools, brief answers' },
-      ...(opts.guide ? [] : [{ url: `${url}/api/agent/v1/openapi.json`, transport: 'OPENAPI' }, { url: `${url}/ucp/v1`, transport: 'UCP', note: 'UCP lodging booking sessions (draft capability dev.ucp.lodging.booking); profile at /.well-known/ucp' }]),
+      ...(opts.guide ? [] : [{ url: `${url}/api/agent/v1/openapi.json`, transport: 'OPENAPI' }, { url: `${url}/acp`, transport: 'ACP', note: 'Agentic Commerce Protocol checkout sessions; discovery at /.well-known/acp.json' }, { url: `${url}/ucp/v1`, transport: 'UCP', note: 'UCP lodging booking sessions (draft capability dev.ucp.lodging.booking); profile at /.well-known/ucp' }]),
     ],
     provider: { organization: 'INNLI', url },
     version: VERSION,
@@ -115,6 +115,7 @@ export function mcpServerCard(publicUrl: string, opts: DiscoveryOptions = {}) {
     authentication: opts.guide ? { required: false } : opts.requireAgentKey ? { required: true, oauth: `${url}/.well-known/oauth-protected-resource` } : { required: false, oauth: `${url}/.well-known/oauth-protected-resource`, note: 'Anonymous agents may search and quote; acting for guests may need a key.' },
     identity: opts.guide ? undefined : { webBotAuth: 'accepted (RFC 9421, tag web-bot-auth, Ed25519): a signed request is recognised without a key', keyDirectory: `${url}/.well-known/http-message-signatures-directory` },
     ucp: opts.guide ? undefined : { profile: `${url}/.well-known/ucp`, endpoint: `${url}/ucp/v1`, mcp: `${url}/ucp/mcp`, capability: 'dev.ucp.lodging.booking (draft)' },
+    acp: opts.guide ? undefined : { discovery: `${url}/.well-known/acp.json`, endpoint: `${url}/acp`, items: 'a quoteId, or property:unit:checkin:checkout:adults' },
     idempotency: opts.guide ? undefined : 'Idempotency-Key header on REST and UCP calls: a retry gets the first answer (24 h)',
     signing: opts.guide ? { note: 'Each installation signs its own records; see its /.well-known/innli.json.' } : { alg: 'Ed25519', key: `${url}/.well-known/innli.json`, signs: ['booking records', 'status callbacks', 'stay passports'] },
     tools: (Object.keys(TOOLS) as ToolName[]).map((name) => ({ name, title: TOOLS[name].title, readOnly: Boolean((TOOLS[name].annotations as { readOnlyHint?: boolean }).readOnlyHint), core: CORE_TOOLS.includes(name) })),
@@ -136,6 +137,7 @@ export function llmsTxt(stays: StayLink[], publicUrl: string, opts: DiscoveryOpt
       : [
           `- REST + OpenAPI 3.1: ${url}/api/agent/v1/openapi.json`,
           `- UCP lodging booking sessions (draft): profile ${url}/.well-known/ucp, REST ${url}/ucp/v1, MCP ${url}/ucp/mcp`,
+          `- ACP checkout sessions: discovery ${url}/.well-known/acp.json, endpoint ${url}/acp. An item id is a quoteId, or property:unit:checkin:checkout:adults.`,
           `- OAuth 2.1: ${url}/.well-known/oauth-protected-resource`,
           '- Identity without an account: sign requests with Web Bot Auth (RFC 9421, Ed25519, tag "web-bot-auth"). Verified agents get their own rate limit and may hold more open requests.',
           '- Retries: send an Idempotency-Key header on REST and UCP calls; the retry gets the first answer.',

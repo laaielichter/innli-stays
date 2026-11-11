@@ -180,6 +180,23 @@ export async function runConformance(baseUrl: string, opts: { fetcher?: typeof f
     }
     return `UCP ${profile.ucp.version}${viaMcp ? ', REST and MCP' : ', REST'}`;
   });
+  await check('acp', 'ACP discovery and checkout sessions', async () => {
+    const disco = await getJson('/.well-known/acp.json');
+    expect(disco.protocol?.name === 'acp' && Array.isArray(disco.protocol.supported_versions), 'no ACP protocol block');
+    expect(disco.capabilities?.services?.includes('checkout'), 'checkout is not advertised');
+    const api = String(disco.api_base_url).replace(/^https?:\/\/[^/]+/, base);
+    const headers = { 'content-type': 'application/json', 'api-version': disco.protocol.supported_versions[0], ...auth };
+    const noVersion = await f(`${api}/checkout_sessions`, { method: 'POST', headers: { 'content-type': 'application/json', ...auth }, body: '{}' });
+    expect(noVersion.status === 400 && Array.isArray(((await noVersion.json()) as Json).supported_versions), 'a call without API-Version must give 400 with supported_versions');
+    const noKey = await f(`${api}/checkout_sessions`, { method: 'POST', headers, body: '{}' });
+    expect(noKey.status === 400 && ((await noKey.json()) as Json).code === 'idempotency_key_required', 'a POST without Idempotency-Key must give 400 idempotency_key_required');
+    const bad = await f(`${api}/checkout_sessions`, { method: 'POST', headers: { ...headers, 'idempotency-key': `conformance-${Date.now()}` }, body: JSON.stringify({ items: [{ id: 'conformance-not-a-stay', quantity: 1 }] }) });
+    const body = (await bad.json()) as Json;
+    expect(bad.status === 400 && body.type === 'invalid_request' && typeof body.message === 'string', 'errors must be flat: { type, code, message }');
+    const missing = await f(`${api}/checkout_sessions/cs_conformance_unknown`, { headers });
+    expect(missing.status === 404, `an unknown session must give 404, got ${missing.status}`);
+    return `ACP ${disco.protocol.version}`;
+  });
   return checks;
 }
 

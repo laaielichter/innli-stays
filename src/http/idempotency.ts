@@ -24,11 +24,22 @@ const TTL_MS = 86_400_000;
 const MAX_ENTRIES = 2000;
 const MAX_BODY_BYTES = 32_000;
 
-export function idempotency() {
+/**
+ * @param opts.acp the Agentic Commerce Protocol's rules: the key is required on every POST, a reused key with
+ *   another body is 422, errors are flat `{ type, code, message }`, and the key is echoed on the response.
+ */
+export function idempotency(opts: { acp?: boolean } = {}) {
   const entries = new Map<string, Entry>();
   return (req: Request, res: Response, next: NextFunction) => {
     const key = String(req.headers['idempotency-key'] ?? '').trim();
     if (req.method !== 'POST' && req.method !== 'PUT') return next();
+    if (opts.acp) {
+      if (key) res.set('idempotency-key', key);
+      if (!key) {
+        res.status(400).json({ type: 'invalid_request', code: 'idempotency_key_required', message: 'Send an Idempotency-Key header on every POST.' });
+        return;
+      }
+    }
     if (!key) return next();
     if (key.length > 255) {
       res.status(400).json({ code: 'invalid_idempotency_key', content: 'Idempotency-Key is at most 255 characters.', error: 'Idempotency-Key is at most 255 characters.' });
@@ -44,10 +55,18 @@ export function idempotency() {
     const existing = entries.get(id);
     if (existing && existing.until > now) {
       if (existing.bodyHash !== bodyHash) {
+        if (opts.acp) {
+          res.status(422).json({ type: 'invalid_request', code: 'idempotency_conflict', message: 'Idempotency-Key has already been used with a different request body' });
+          return;
+        }
         res.status(409).json({ code: 'idempotency_key_reused', content: 'This Idempotency-Key was already used with a different request body.', error: 'This Idempotency-Key was already used with a different request body.', retryable: false });
         return;
       }
       if (!existing.done) {
+        if (opts.acp) {
+          res.status(409).set('retry-after', '2').json({ type: 'invalid_request', code: 'idempotency_in_flight', message: 'A request with this Idempotency-Key is currently being processed' });
+          return;
+        }
         res.status(409).set('retry-after', '2').json({ code: 'idempotency_in_progress', content: 'The first request with this Idempotency-Key is still being processed.', error: 'The first request with this Idempotency-Key is still being processed.', retryable: true, retryAfterSeconds: 2 });
         return;
       }

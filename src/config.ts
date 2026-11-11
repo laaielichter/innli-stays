@@ -28,6 +28,9 @@ export interface Config {
   backupKeep: number;
   /** Reverse proxies in front whose X-Forwarded-* headers are trusted. */
   trustProxy: number;
+  /** The property's own Stripe secret key: card guarantees from agent platforms (ACP). Empty = the guest pays the property directly. */
+  stripeSecretKey?: string;
+  stripeAccount?: string;
 }
 
 export function loadConfig(env = process.env): Config {
@@ -48,6 +51,8 @@ export function loadConfig(env = process.env): Config {
     retentionDays: Math.max(30, Number(env.INNLI_BEWAARTERMIJN_DAGEN ?? 180) || 180),
     backupDir: env.INNLI_BACKUP_DIR || undefined,
     backupKeep: Math.max(1, Number(env.INNLI_BACKUP_KEEP ?? 14) || 14),
+    stripeSecretKey: env.INNLI_STRIPE_SECRET_KEY || undefined,
+    stripeAccount: env.INNLI_STRIPE_ACCOUNT || undefined,
     trustProxy: Math.max(0, Math.min(5, Number(env.INNLI_TRUST_PROXY ?? 1) || 0)),
   };
 }

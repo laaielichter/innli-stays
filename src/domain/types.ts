@@ -500,6 +500,8 @@ export interface BookingRequest {
   /** Price lines and conditions as they were when the guest asked: the booking record. */
   terms?: { lines: QuoteLine[]; policies: Record<string, unknown>; capturedAt: string };
   payment?: PaymentState;
+  /** A card authorisation an agent platform arranged at checkout: captured when the host confirms, released otherwise. */
+  cardPayment?: { provider: string; reference: string; amount: number; currency: string; status: 'authorized' | 'captured' | 'released' | 'failed'; authorizedAt: string; settledAt?: string; error?: string };
   cancelledAt?: string;
   cancelReason?: string;
   ownerRemindedAt?: string;

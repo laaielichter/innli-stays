@@ -64,7 +64,7 @@ export class UcpProtocolError extends Error {
   }
 }
 
-const digitsOf = (currency: string) => new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2;
+export const digitsOf = (currency: string) => new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2;
 /** Amounts travel as integers in the currency's minor unit (cents; whole units for e.g. ISK). */
 export const minor = (amount: number, currency: string) => Math.round(amount * 10 ** digitsOf(currency));
 

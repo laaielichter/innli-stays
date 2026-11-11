@@ -39,7 +39,7 @@ Weten welke agent er belt, kamers vasthouden zonder misbruik, en boekingssessies
 - **`Idempotency-Key`-header** bij REST-tools en UCP: een herhaald verzoek krijgt het eerste antwoord (`Idempotent-Replayed: true`); dezelfde sleutel met andere inhoud geeft `409`. Bij `request_booking` wordt de sleutel ook bij de aanvraag bewaard.
 
 ### Zelf controleren
-- **`npx innli-conformance <adres>`** (of `npm run conformance -- <adres>`): 13 controles die alleen lezen en niets boeken. Bedoeld voor agentplatforms, eigenaren en iedereen die een installatie wil toetsen.
+- **`npx innli-conformance <adres>`** (of `npm run conformance -- <adres>`): 14 controles die alleen lezen en niets boeken. Bedoeld voor agentplatforms, eigenaren en iedereen die een installatie wil toetsen.
 
 ### Annuleren
 - Elke offerte heeft **`cancellation`**: `refundability`, `freeUntil` en wat annuleren vandaag kost. `unknown` als de eigenaar alleen een tekst heeft.
