@@ -52,8 +52,17 @@ describe('agent tools beyond search', () => {
     const cal = await call('get_availability_calendar', { propertyId: 'prop_duinzicht', month });
     const room = cal.units.find((u: Json) => u.unitId === 'kamer-2');
     assert.ok(room.calendar.length >= 28);
-    const friday = room.calendar.find((n: Json) => new Date(`${n.date}T00:00:00Z`).getUTCDay() === 5);
-    const monday = room.calendar.find((n: Json) => new Date(`${n.date}T00:00:00Z`).getUTCDay() === 1);
+    // Compare a Friday and a Monday in the same demo season, so a season boundary
+    // (Kerst 12-20..01-02, Zomer 06-15..08-31) never lands between them.
+    const season = (date: string) => {
+      const md = date.slice(5);
+      if (md >= '12-20' || md <= '01-02') return 'kerst';
+      if (md >= '06-15' && md <= '08-31') return 'zomer';
+      return '';
+    };
+    const weekday = (n: Json) => new Date(`${n.date}T00:00:00Z`).getUTCDay();
+    const friday = room.calendar.find((f: Json) => weekday(f) === 5 && room.calendar.some((m: Json) => weekday(m) === 1 && season(m.date) === season(f.date)));
+    const monday = room.calendar.find((m: Json) => weekday(m) === 1 && season(m.date) === season(friday.date));
     assert.equal(friday.price - monday.price, 15, 'weekend supplement');
     assert.ok(room.calendar.some((n: Json) => !n.available), 'demo feed has bookings');
     const live = await call('get_availability_calendar', { propertyId: 'prop_hooiberg', month });
